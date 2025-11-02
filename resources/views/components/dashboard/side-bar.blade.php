@@ -471,6 +471,7 @@
             <div class="py-2 bg-white rounded collapse-inner">
                 <a class="collapse-item" href="{{ route('admins.reports.eos.report') }}">{{ __('EOS Report') }}</a>
                 <a class="collapse-item" href="{{ route('admins.reports.leaves.report') }}">{{ __('Leaves Report') }}</a>
+                <a class="collapse-item" href="{{ route('admins.reports.employees.report') }}">{{ __('Employees    Report') }}</a>
             </div>
         </div>
     </li>

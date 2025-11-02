@@ -201,6 +201,7 @@ Route::group(['prefix' => 'hr'], function () {
     ], function () {
         Route::get('eos', 'EOSReport')->name('eos.report');
         Route::get('leaves', 'LeavesReport')->name('leaves.report');
+        Route::get('employees', 'EmployeesReport')->name('employees.report');
     });
 
     Route::resource('leave-types', LeaveTypesController::class)
