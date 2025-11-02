@@ -1,0 +1,24 @@
+{
+    "decimal": "",
+    "emptyTable": "لا توجد بيانات متاحة في الجدول",
+    "info": "إظهار _START_ إلى _END_ من أصل _TOTAL_ مدخل",
+    "infoEmpty": "عرض 0 إلى 0 من أصل 0 مدخل",
+    "infoFiltered": "(تمت التصفية من إجمالي _MAX_ مدخل)",
+    "infoPostFix": "",
+    "thousands": ",",
+    "lengthMenu": "عرض _MENU_ مدخلات",
+    "loadingRecords": "جاري التحميل...",
+    "processing": "جاري المعالجة...",
+    "search": "بحث:",
+    "zeroRecords": "لم يتم العثور على سجلات مطابقة",
+    "paginate": { 
+        "first": "الأول",
+        "last": "الأخير",
+        "next": "التالي",
+        "previous": "السابق"
+    },
+    "aria": {
+        "sortAscending": ": تفعيل لفرز العمود تصاعدياً",
+        "sortDescending": ": تفعيل لفرز العمود تنازلياً"
+    }
+}
