@@ -14,6 +14,7 @@ use App\Http\Controllers\Dashboard\GeneralSettingController;
 use App\Http\Controllers\Dashboard\IqamaTypeController;
 use App\Http\Controllers\Dashboard\PaymentAccountController;
 use App\Http\Controllers\Dashboard\ReportController;
+use App\Http\Controllers\Dashboard\RolesController;
 use App\Http\Controllers\Dashboard\SalariesController;
 use App\Http\Controllers\Dashboard\SendPushNotification;
 use App\Http\Controllers\Dashboard\StageController;
@@ -33,6 +34,13 @@ Route::group([
 
     Route::get('transactions', [TransactionController::class , 'index'])->name('transactions.index');
 
+    Route::controller(RolesController::class)->group(function () {
+        Route::get('/roles', 'index')->name('roles.index');
+        Route::post('/roles', 'store')->name('roles.store');
+        Route::post('/roles/assign', 'assignRole')->name('roles.assign');
+        Route::delete('/roles/{id}', 'destroy')->name('roles.destroy');
+        Route::delete('/roles/remove/{user}/{role}', 'removeRole')->name('roles.remove');
+    });
     //--------------------------------------------------
 
     Route::post('/language-switch', [GeneralSettingController::class, 'switchLanguage'])->name('language.switch');
@@ -42,24 +50,24 @@ Route::group([
     Route::resource('banners', BannerController::class)->except('show')
         // ->middleware('role-or-permission:super-admin,banners')
         ->names([
-            'index'                             => 'banners.index',
-            'create'                            => 'banners.create',
-            'store'                             => 'banners.store',
-            'edit'                              => 'banners.edit',
-            'update'                            => 'banners.update',
-            'destroy'                           => 'banners.destroy',
+            'index'      => 'banners.index',
+            'create'     => 'banners.create',
+            'store'      => 'banners.store',
+            'edit'       => 'banners.edit',
+            'update'     => 'banners.update',
+            'destroy'    => 'banners.destroy',
         ]);
 
     //----------------------------------------------------------------
 
     Route::resource('companies', CompanyController::class)
         ->names([
-            'index'                             => 'companies.index',
-            'create'                            => 'companies.create',
-            'store'                             => 'companies.store',
-            'edit'                              => 'companies.edit',
-            'update'                            => 'companies.update',
-            'destroy'                           => 'companies.destroy',
+            'index'     => 'companies.index',
+            'create'    => 'companies.create',
+            'store'     => 'companies.store',
+            'edit'      => 'companies.edit',
+            'update'    => 'companies.update',
+            'destroy'   => 'companies.destroy',
         ]);
     Route::put('companies/{id}/toggle', [CompanyController::class, 'toggleStatus'])
         ->name('companies.toggle');
@@ -71,25 +79,25 @@ Route::group([
 
     Route::resource('iqama-types', IqamaTypeController::class)->except('show')
         ->names([
-            'index'                             => 'types.index',
-            'create'                            => 'types.create',
-            'store'                             => 'types.store',
-            'edit'                              => 'types.edit',
-            'update'                            => 'types.update',
-            'destroy'                           => 'types.destroy',
+            'index'      => 'types.index',
+            'create'     => 'types.create',
+            'store'      => 'types.store',
+            'edit'       => 'types.edit',
+            'update'     => 'types.update',
+            'destroy'    => 'types.destroy',
         ]);
 
     //------------------------------------------------------------
 
     Route::resource('employees', EmployeeController::class)
         ->names([
-            'index'                             => 'employees.index',
-            'create'                            => 'employees.create',
-            'store'                             => 'employees.store',
-            'show'                              => 'employees.show',
-            'edit'                              => 'employees.edit',
-            'update'                            => 'employees.update',
-            'destroy'                           => 'employees.destroy',
+            'index'      => 'employees.index',
+            'create'     => 'employees.create',
+            'store'      => 'employees.store',
+            'show'       => 'employees.show',
+            'edit'       => 'employees.edit',
+            'update'     => 'employees.update',
+            'destroy'    => 'employees.destroy',
         ]);
     Route::put('employees/{id}/toggle', [EmployeeController::class, 'toggleStatus'])
         ->name('employees.toggle');
@@ -100,12 +108,12 @@ Route::group([
 
     Route::resource('stages', StageController::class)->except('show')
         ->names([
-            'index'                             => 'stages.index',
-            'create'                            => 'stages.create',
-            'store'                             => 'stages.store',
-            'edit'                              => 'stages.edit',
-            'update'                            => 'stages.update',
-            'destroy'                           => 'stages.destroy',
+            'index'    => 'stages.index',
+            'create'   => 'stages.create',
+            'store'    => 'stages.store',
+            'edit'     => 'stages.edit',
+            'update'   => 'stages.update',
+            'destroy'  => 'stages.destroy',
         ]);
     Route::get('stages/orders/get-queue', [StageController::class, 'getMaxOrder'])
         ->name('stages.getOrder');
@@ -130,36 +138,36 @@ Route::group([
 
     Route::resource('payment-accounts',PaymentAccountController::class)
         ->names([
-            'index'                             =>'paymentAccounts.index',
-            'create'                            =>'paymentAccounts.create',
-            'store'                             =>'paymentAccounts.store',
-            'show'                              =>'paymentAccounts.show',
-            'edit'                              =>'paymentAccounts.edit',
-            'update'                            =>'paymentAccounts.update',
-            'destroy'                           =>'paymentAccounts.destroy',
+            'index'       =>'paymentAccounts.index',
+            'create'      =>'paymentAccounts.create',
+            'store'       =>'paymentAccounts.store',
+            'show'        =>'paymentAccounts.show',
+            'edit'        =>'paymentAccounts.edit',
+            'update'      =>'paymentAccounts.update',
+            'destroy'     =>'paymentAccounts.destroy',
         ]);
 
     //------------------------------------------------------------
 
     Route::resource('admins',AdminController::class)->except('show')
         ->names([
-            'index'                             =>'admins.index',
-            'create'                            =>'admins.create',
-            'store'                             =>'admins.store',
-            'edit'                              =>'admins.edit',
-            'update'                            =>'admins.update',
-            'destroy'                           =>'admins.destroy',
+            'index'      =>'admins.index',
+            'create'     =>'admins.create',
+            'store'      =>'admins.store',
+            'edit'       =>'admins.edit',
+            'update'     =>'admins.update',
+            'destroy'    =>'admins.destroy',
         ]);
     //------------------------------------------------------------
 
     Route::resource('company-moderators',CompanyModeratorsController::class)
         ->names([
-            'index'                             =>'moderators.index',
-            'create'                            =>'moderators.create',
-            'store'                             =>'moderators.store',
-            'edit'                              =>'moderators.edit',
-            'update'                            =>'moderators.update',
-            'destroy'                           =>'moderators.destroy',
+            'index'     =>'moderators.index',
+            'create'    =>'moderators.create',
+            'store'     =>'moderators.store',
+            'edit'      =>'moderators.edit',
+            'update'    =>'moderators.update',
+            'destroy'   =>'moderators.destroy',
         ]);
 
     //------------------------------------------------------------
@@ -170,26 +178,26 @@ Route::group(['prefix' => 'hr'], function () {
     Route::resource('leaves', LeaveController::class)
         // ->middleware('role-or-permission:super-admin,leaves')
         ->names([
-            'index'                             => 'hr.leaves.index',
-            'create'                            => 'hr.leaves.create',
-            'store'                             => 'hr.leaves.store',
-            'show'                              => 'hr.leaves.show',
-            'edit'                              => 'hr.leaves.edit',
-            'update'                            => 'hr.leaves.update',
-            'destroy'                           => 'hr.leaves.destroy',
+            'index'     => 'hr.leaves.index',
+            'create'    => 'hr.leaves.create',
+            'store'     => 'hr.leaves.store',
+            'show'      => 'hr.leaves.show',
+            'edit'      => 'hr.leaves.edit',
+            'update'    => 'hr.leaves.update',
+            'destroy'   => 'hr.leaves.destroy',
         ]);
 
 
     Route::resource('eos', EndOfServiceController::class)
         // ->middleware('role-or-permission:super-admin,leaves')
         ->names([
-            'index'                             => 'eos.index',
-            'create'                            => 'eos.create',
-            'store'                             => 'eos.store',
-            'show'                              => 'eos.show',
-            'edit'                              => 'eos.edit',
-            'update'                            => 'eos.update',
-            'destroy'                           => 'eos.destroy'
+            'index'     => 'eos.index',
+            'create'    => 'eos.create',
+            'store'     => 'eos.store',
+            'show'      => 'eos.show',
+            'edit'      => 'eos.edit',
+            'update'    => 'eos.update',
+            'destroy'   => 'eos.destroy'
         ]);
     Route::post('/eos/calculate', [EndOfServiceController::class, 'calculate'])->name('eos.calculate');
 
@@ -202,18 +210,19 @@ Route::group(['prefix' => 'hr'], function () {
         Route::get('eos', 'EOSReport')->name('eos.report');
         Route::get('leaves', 'LeavesReport')->name('leaves.report');
         Route::get('employees', 'EmployeesReport')->name('employees.report');
+        Route::get('transactions', 'TransactionsReport')->name('transactions.report');
     });
 
     Route::resource('leave-types', LeaveTypesController::class)
         // ->middleware('role-or-permission:super-admin,leaves')
         ->names([
-            'index'                             => 'hr.leaveType.index',
-            'create'                            => 'hr.leaveType.create',
-            'store'                             => 'hr.leaveType.store',
-            'show'                              => 'hr.leaveType.show',
-            'edit'                              => 'hr.leaveType.edit',
-            'update'                            => 'hr.leaveType.update',
-            'destroy'                           => 'hr.leaveType.destroy',
+            'index'     => 'hr.leaveType.index',
+            'create'    => 'hr.leaveType.create',
+            'store'     => 'hr.leaveType.store',
+            'show'      => 'hr.leaveType.show',
+            'edit'      => 'hr.leaveType.edit',
+            'update'    => 'hr.leaveType.update',
+            'destroy'   => 'hr.leaveType.destroy',
         ]);
 
 //    Route::resource('salaries', SalariesController::class)

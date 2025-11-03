@@ -25,8 +25,6 @@
             </div>
 
 
-
-
             <div class="card-body table-responsive">
                 <table id="employeesTable" class="table table-bordered table-striped text-center align-middle">
                     <thead class="table-primary">
@@ -36,6 +34,7 @@
                         <th>{{ __('Company') }}</th>
                         <th>{{ __('Iqama Type') }}</th>
                         <th>{{ __('Upcoming Stage') }}</th>
+                        <th>{{ __('Salary') }}</th>
                         <th>{{ __('Expired Date') }}</th>
                         <th>{{ __('Status') }}</th>
                         <th>{{ __('Leaves') }}</th>
@@ -49,6 +48,7 @@
                             <td>{{ $employee->company?->name ?? '-' }}</td>
                             <td>{{ $employee->iqamaType?->name ?? '-' }}</td>
                             <td>{{ $employee->upcomingStage?->stage?->name ?? __('Completed') }}</td>
+                            <td>{{ $employee->salary ?? __('N/A') }}</td>
                             <td>
                                 @if($employee->expired_date)
                                     @if($employee->expired_date->isPast())
@@ -150,8 +150,8 @@
             // Initialize DataTable
             const table = $('#employeesTable').DataTable({
                 dom: 'Bfrtip',
-                pageLength: 25, // default perPage
-                lengthChange: false, // we’ll use our custom dropdown
+                pageLength: 25,
+                lengthChange: false,
                 buttons: [
                     {
                         extend: 'print',

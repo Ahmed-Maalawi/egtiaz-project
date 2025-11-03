@@ -33,7 +33,7 @@
 
             <div class="form-group">
 
-                <label for="payment_account">{{ __('Payment Account') }}</label>
+                <label for="payment_account">{{ __('Description') }}</label>
                 <textarea name="description" id="description" rows="5" class="form-control"></textarea>
             </div>
 

@@ -4,7 +4,9 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class PermissionsSeeder extends Seeder
 {
@@ -13,22 +15,58 @@ class PermissionsSeeder extends Seeder
      */
     public function run(): void
     {
-        $array = [
-            'categories',
-            'providers',
-            'users',
-            'cities',
-            'banners',
-            'cashiers',
-            'cards',
-            'orders',
-            'services',
-            'notifications',
-            'provider.moderator'
+        // Disable foreign key checks to safely truncate
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        DB::table('role_has_permissions')->truncate();
+        DB::table('model_has_roles')->truncate();
+        DB::table('model_has_permissions')->truncate();
+        DB::table('permissions')->truncate();
+        DB::table('roles')->truncate();
+        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+
+
+        $roles = [
+            'super-admin',
+            'admin',
+            'moderator',
         ];
 
-        foreach ($array as $permission){
-            Permission::create(['name'=>$permission]);
+
+        foreach ($roles as $roleName) {
+            Role::create(['name' => $roleName]);
         }
+
+
+        $permissions = [
+            'admins',
+            'iqamaTypes',
+            'employees',
+            'users',
+            'companies',
+            'stages',
+            'paymentAccounts',
+            'moderators',
+            'leaves',
+            'eos',
+            'reports',
+            'roles',
+        ];
+
+
+        foreach ($permissions as $perm) {
+            Permission::create(['name' => $perm]);
+        }
+
+        $allPermissions = Permission::all();
+
+        $superAdminRole = Role::where('name', 'super-admin')->first();
+        $adminRole = Role::where('name', 'admin')->first();
+
+        $superAdminRole->syncPermissions($allPermissions);
+        $adminRole->syncPermissions($allPermissions);
+
+        // Optional: assign limited permissions to moderator
+        $moderatorRole = Role::where('name', 'moderator')->first();
+        $moderatorRole->givePermissionTo(['reports']);
     }
 }

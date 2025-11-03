@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Str;
 
 class Transaction extends Model
 {
@@ -19,6 +20,15 @@ class Transaction extends Model
         'processed_at'  => 'datetime',
     ];
 
+    public function fromPaymentAccount()
+    {
+        return $this->belongsTo(PaymentAccount::class, 'from_payment_account_id');
+    }
+
+    public function toWallet()
+    {
+        return $this->belongsTo(Wallet::class, 'to_wallet_id');
+    }
 
     public function paymentAccount()
     {
@@ -38,5 +48,18 @@ class Transaction extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id', 'id');
+    }
+
+    public function transactionable()
+    {
+        return $this->morphTo();
+    }
+
+    public function getTransactionableTypeNameAttribute()
+    {
+        $class = class_basename($this->transactionable_type);
+
+
+        return Str::headline($class); // StagePayment → Stage Payment
     }
 }

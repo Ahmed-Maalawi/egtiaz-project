@@ -1,7 +1,7 @@
 <x-dashboard.main-layout>
 
     <div class="card-body">
-        <form class="my-3" action="{{ route('admins.moderators.store') }}" method="post" enctype="multipart/form-data">
+        <form class="my-3" action="{{ route('admins.admins.store') }}" method="post" enctype="multipart/form-data">
             @csrf
 
             <div class="form-group">
@@ -24,8 +24,9 @@
 
             <div class="form-group">
                 <label for="password_confirmation">{{ __('Confirm Password') }}</label>
-                <input type="password" name="password_confirmation" class="form-control" id="password_confirmation"
-                    placeholder="{{ __('Confirm Password') }}" required value="{{ old('password_confirmation') }}">
+                <input type="password" name="password_confirmation" class="form-control"
+                    id="password_confirmation" placeholder="{{ __('Confirm Password') }}" required
+                    value="{{ old('password_confirmation') }}">
             </div>
 
             <div class="form-group">
@@ -35,7 +36,28 @@
                     <option value="inactive" @selected(old('status') == 'inactive')>{{ __('Banned') }}</option>
                 </select>
             </div>
+            
+            @php
+                $permissions_tr = [];
+                foreach ($permissions as $value) {
+                    $permissions_tr[] = [
+                        'id' => $value->id,
+                        'name' => __(ucfirst($value->name)),
+                    ];
+                }
+            @endphp
 
+            <div class="form-group">
+                <label for="permissions">{{ __('Permissions') }}</label>
+                <select name="permissions[]" class="form-control select2" id="permissions" required multiple >
+                    @foreach ($permissions_tr as $permission)
+                        <option dir="rtl" value="{{ $permission['id'] }}" @selected(in_array($permission['id'], old('permissions', [])))>
+                            {{ $permission['name'] }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            
             <div class="form-group">
                 <label for="paymentAccounts">{{ __('Payment Accounts') }}</label>
                 <select name="paymentAccounts[]" class="form-control select2" id="paymentAccounts" multiple >
@@ -44,12 +66,6 @@
                             {{ $account['name'] }}
                         </option>
                     @endforeach
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="company_id">{{ __('Company') }}</label>
-                <select name="company_id" class="form-control select2" id="select_company" required>
                 </select>
             </div>
 
@@ -64,31 +80,11 @@
 
     </div>
 
-    <script>
-        $(document).ready(function() {
-            $('#select_company').select2({
-                placeholder: "{{ __('Type A Company Name') }}",
-                ajax: {
-                    url: "{{ route('admins.companies.search') }}",
-                    dataType: 'json',
-                    delay: 500,
-                    data: function(params) {
-                        return {
-                            q: params.term
-                        };
-                    },
-                    processResults: function(data) {
-                        return {
-                            results: data.map(company => ({
-                                id: company.id,
-                                text: company.name,
-                            }))
-                        };
-                    },
-                    cache: true,
-                }
-            });
-        });
-    </script>
-
+    @if (app()->getLocale() == 'ar')
+        <style>
+            .select2-results__option--selectable{
+                display: flex
+            }
+        </style>
+    @endif
 </x-dashboard.main-layout>

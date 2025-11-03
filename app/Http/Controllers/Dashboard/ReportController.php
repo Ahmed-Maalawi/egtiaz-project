@@ -6,9 +6,13 @@ namespace App\Http\Controllers\Dashboard;
 use App\Http\Controllers\Controller;
 use App\Models\Company;
 use App\Models\Employee;
+use App\Models\EmployeeStage;
 use App\Models\EndOfService;
 use App\Models\IqamaType;
 use App\Models\OfficialLeave;
+use App\Models\PaymentAccount;
+use App\Models\Stage;
+use App\Models\Transaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
@@ -154,5 +158,32 @@ class ReportController extends Controller
         $iqamaTypes = IqamaType::select('id', 'name')->get();
 
         return view('admin.reports.employees-report', compact('employees', 'companies', 'iqamaTypes'));
+    }
+
+
+    public function TransactionsReport(Request $request)
+    {
+        $perPage = $request->per_page ?? 10;
+
+        $transactions = Transaction::with([
+            'fromPaymentAccount',
+            'toWallet',
+            'paymentAccount',
+            'user',
+            'createdBy',
+            'transactionable'
+        ])
+            ->when($request->status, fn($q) => $q->where('status', $request->status))
+            ->when($request->type, fn($q) => $q->where('type', $request->type))
+            ->latest()
+            ->paginate($perPage);
+
+        return view('admin.reports.transactions-report', [
+            'transactions' => $transactions,
+            'accounts' => PaymentAccount::all(),
+            'statuses' => ['pending', 'completed', 'failed', 'refund', 'canceled'],
+            'types' => ['stage_payment', 'salary_payment', 'refund', 'charge'],
+            'stages' => Stage::all()
+        ]);
     }
 }

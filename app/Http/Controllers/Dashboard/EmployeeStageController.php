@@ -129,23 +129,20 @@ class EmployeeStageController extends Controller
                 return back()->with('error', __('Stage already completed.'));
             }
 
-            // Get the amount - use price if available, otherwise use cost
+
             $amount = $employeeStage->stage->price ?? $employeeStage->stage->cost;
 
-            // Validate that amount is valid
+
             if (!$amount || $amount <= 0) {
                 return back()->with('error', __('Invalid stage amount. Please check stage price or cost.'));
             }
 
-            // Check if payment account has sufficient balance
             if ($paymentAccount->balance < $amount) {
                 return back()->with('error', __('Insufficient balance in the payment account.'));
             }
 
-            // Get moderator and company information
             $moderator = User::with('companyOfModeration.wallet')->find(Auth::id());
 
-//            dd($moderator, $moderator->moderator_company_id);
             if (!$moderator || !$moderator->moderator_company_id) {
                 return back()->with('error', __('Moderator company not found.'));
             }

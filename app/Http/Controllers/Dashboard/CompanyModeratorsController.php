@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
+use App\Models\PaymentAccount;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -27,7 +28,8 @@ class CompanyModeratorsController extends Controller
 
     public function create()
     {
-        return view('admin.moderators.create');
+        $paymentAccounts = PaymentAccount::get();
+        return view('admin.moderators.create', compact('paymentAccounts'));
     }
 
     public function store(Request $request)
@@ -40,6 +42,8 @@ class CompanyModeratorsController extends Controller
             'image'                     => 'nullable|image|max:5120',
             'status'                    => 'required|in:active,inactive',
             'company_id'                => 'required|exists:companies,id',
+            'paymentAccounts'           => 'nullable|array',
+            'paymentAccounts.*'         => 'required|exists:payment_accounts,id',
         ]);
 
         $image_path = '';
@@ -65,6 +69,11 @@ class CompanyModeratorsController extends Controller
                 'moderator_company_id'          => $request->company_id,
             ]);
 
+            if ($request->has('paymentAccounts')) {
+                dd($request->paymentAccounts);
+                $moderator->paymentAccounts()->attach($request->paymentAccounts);
+            }
+
             $moderator->assignRole('moderator');
             DB::commit();
 
@@ -78,9 +87,10 @@ class CompanyModeratorsController extends Controller
 
     public function edit($id)
     {
-        $moderator = User::with('companyOfModeration')->findOrFail($id);
+        $moderator = User::with(['companyOfModeration', 'paymentAccounts'])->findOrFail($id);
+        $paymentAccounts = PaymentAccount::get();
 
-        return view('admin.moderators.edit', compact('moderator'));
+        return view('admin.moderators.edit', compact('moderator', 'paymentAccounts'));
     }
 
     public function update(Request $request, $id)
@@ -93,6 +103,8 @@ class CompanyModeratorsController extends Controller
             'status'                    => 'required|in:active,inactive',
             'image'                     => 'nullable|image|max:5120',
             'company_id'                => 'required|exists:companies,id',
+            'paymentAccounts'           => 'nullable|array',
+            'paymentAccounts.*'         => 'required|exists:payment_accounts,id',
         ]);
 
         $moderator = User::findOrFail($id);
@@ -118,6 +130,9 @@ class CompanyModeratorsController extends Controller
                 'status'                        => $request->status,
                 'moderator_company_id'          => $request->company_id,
             ]);
+
+            $moderator->paymentAccounts()->sync($request->paymentAccounts);
+
             return redirect()->route('admins.moderators.index')
                 ->with('success', __('Moderator Updated '));
         } catch (Throwable $th) {
