@@ -39,12 +39,12 @@ class Company extends Model
         return $this->hasMany(Employee::class);
     }
 
-    
+
     public function wallet()
     {
         return $this->hasOne(Wallet::class);
     }
-    
+
     public function getBalanceAttribute()
     {
         return $this->wallet->balance ?? 0;
@@ -59,5 +59,27 @@ class Company extends Model
     public function getBannerImageUrlAttribute()
     {
         return $this->banner_image ? asset('storage/'.$this->banner_image) : null;
+    }
+
+
+    public function scopeFilter($query, $filters)
+    {
+        $local = app()->getLocale();
+
+        if (isset($filters['name'])) {
+            $query->where("name->{ $local }", "like", "%{$filters['name']}%");
+        }
+
+        if (isset($filters['description'])) {
+            $query->where("description->{ $local }", "like", "%{$filters['description']}%");
+        }
+
+
+        if (isset($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        // add more filters as needed
+        return $query;
     }
 }

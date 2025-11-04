@@ -4,6 +4,8 @@ use App\Http\Controllers\AdminTransactionController;
 use App\Http\Controllers\Api\BannerController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CityController;
+use App\Http\Controllers\Api\CompaniesController;
+use App\Http\Controllers\Api\EmployeeController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\OtpController;
 use App\Http\Controllers\Api\ProviderController;
@@ -33,8 +35,12 @@ Route::group([
     Route::get('user',[UserAuthController::class , 'user']);
     Route::post('send-verification-code',[OtpController::class , 'send']);
     Route::post('verify-code',[OtpController::class , 'verify']);
+
+    Route::apiResource('companies', CompaniesController::class)->only(['index', 'show']);
+    Route::apiResource('employees', EmployeeController::class)->only(['index', 'show']);
+
     Route::group([
-        'middleware'            =>[
+        'middleware' => [
             'phone-verified-sanctum',
             'user-unbanned'
         ],

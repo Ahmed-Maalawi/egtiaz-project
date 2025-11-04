@@ -93,7 +93,7 @@
     <script>
         $(function () {
             $('#transactionsTable').DataTable({
-                pageLength: 10,
+                pageLength: 3,
                 scrollX: true,
                 dom: 'Blfrtip',
                 buttons: [

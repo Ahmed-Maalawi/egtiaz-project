@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Traits\ActivityScopeTrait;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\App;
 
 class Employee extends Model
 {
@@ -26,7 +27,7 @@ class Employee extends Model
     ];
 
     protected $casts = [
-        'expired_date'              => 'date',
+        'expired_date'  => 'date',
     ];
 
     protected $with = ['files'];
@@ -103,6 +104,16 @@ class Employee extends Model
         return $this->hasOne(EndOfService::class, 'employee_id', 'id');
     }
 
+    public function scopeFilter($query, array $filters)
+    {
+        $locale = App::getLocale();
+
+        if (isset($filters['name'])) {
+            $query->where("name->$locale", 'like', '%' . $filters['name'] . '%');
+        }
+
+        return $query;
+    }
 //    public function getCurrentMonthSalaryAttribute()
 //    {
 //        return $this->salaries()

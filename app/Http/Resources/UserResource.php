@@ -21,18 +21,13 @@ class UserResource extends JsonResource
             'email'                     => $this->email,
             'phone'                     => $this->phone,
             'type'                      => $this->type,
+            'salary'                    => $this->salary,
             'image'                     => $this->image ? asset('storage/' . $this->image) : null,
             'fcm_token'                 => $this->fcm_token,
-            'player_id'                 => $this->player_id,
-            'reviews'                   => ReviewResource::collection($this->whenLoaded('reviews')),
-            'service_providers'         => ServiceProviderResource::collection($this->whenLoaded('serviceProviders')),
-            'referral_code'             => $this->referral_code,
-            'refers_count'              => $this->whenLoaded('refers') ? $this->refers->count() : 0,
-            'qr_code'                   => $this->qr_code,
-            'card_code'                 => $this->card_code , 
-            'city'                      => new CityResource($this->whenLoaded('city')),
-            'is_cashier'                => $this->provider_cashier_id ? true : false,
-            'is_phone_verified'         => $this->phone_verified_at ? true : false ,
+            'moderator_company_id'      => $this->moderator_company_id,
+            'email_verified_at'         => $this->email_verified_at,
+            'status'                    => $this->status,
+            'is_phone_verified'         => $this->phone_verified_at ? true : false,
         ];
     }
 }

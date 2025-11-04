@@ -37,7 +37,7 @@ class UserAuthController extends Controller
         if ($request->has('country_code')) {
             $country_code = $request->country_code;
         }
-        
+
         $matched = preg_match('/^\+201[0-9]{9}$/', $country_code . $request->phone_number);
 
         if (! $matched) {
@@ -87,35 +87,30 @@ class UserAuthController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'country_code'                  => 'nullable|string|max:5',
-            'phone_number'                  => 'required|string|max:15|exists:users,phone_number',
-            'password'                      => 'required|min:8',
+            'email'     => 'required|email|exists:users,email',
+            'password'  => 'required|string|min:8',
         ]);
 
-        $country_code = $request->country_code ?? '+20';
+        $user = User::where('email', $request->email)->first();
 
-        $user = User::where('country_code', $country_code)
-            ->where('phone_number', $request->phone_number)
-            ->first();
-
-        if (!$user || ! Hash::check($request->password, $user->password)) {
+        if (! $user || ! Hash::check($request->password, $user->password)) {
             return response()->json([
-                'message'                   => __('Invalid Phone Or Password'),
+                'message' => __('Invalid Email Or Password'),
             ], 401);
         }
 
-        if ($user->status != 'active') {
+        if ($user->status !== 'active') {
             return response()->json([
-                'message'                   => __('User Banned By Admins'),
+                'message' => __('User Banned By Admins'),
             ], 401);
         }
 
         $auth_token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
-            'message'                   => __('logged in'),
-            'user'                      => new UserResource($user),
-            'auth_token'                => $auth_token,
+            'message'     => __('Logged in successfully'),
+            'user'        => new UserResource($user),
+            'auth_token'  => $auth_token,
         ]);
     }
 
@@ -125,14 +120,14 @@ class UserAuthController extends Controller
 
         if (! $user) {
             return response()->json([
-                'message'                   => __('Unauthenticated'),
+                'message'   => __('Unauthenticated'),
             ], 401);
         }
 
         $user->currentAccessToken()->delete();
 
         return response()->json([
-            'message'                   => __('Logged out'),
+            'message'   => __('Logged out'),
         ], 204);
     }
 
