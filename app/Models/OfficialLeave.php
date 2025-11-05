@@ -53,4 +53,29 @@ class OfficialLeave extends Model
     {
         return $query->whereYear('start_date', date('Y'));
     }
+    public function scopeFilter($query, $filter)
+    {
+        if (isset($filters['employee_id'])) {
+            $query->where("employee_id", $filters['employee_id']);
+        }
+
+        if (isset($filters['approved_by'])) {
+            $query->where("approved_by", $filters['approved_by']);
+        }
+
+        if (isset($filters['type'])) {
+            $query->where("type", $filters['type']);
+        }
+
+        if (isset($filters['reason'])) {
+            $query->where("reason", 'like', '%' . $filters['reason'] . '%');
+        }
+
+        if (isset($filters['notes'])) {
+            $query->where("notes", 'like', '%' . $filters['notes'] . '%');
+        }
+
+
+        return $query;
+    }
 }

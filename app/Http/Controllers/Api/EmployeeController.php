@@ -3,13 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Resources\CityResource;
-use App\Http\Resources\CompanyResource;
 use App\Http\Resources\EmployeeResource;
-use App\Models\City;
-use App\Models\Company;
 use App\Models\Employee;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class EmployeeController extends Controller
 {
@@ -17,7 +14,7 @@ class EmployeeController extends Controller
    {
        $per_page = $request->get('per_page', 10);
 
-       $companies = Employee::with([
+       $query = Employee::with([
            'upcomingStage',
            'company',
            'iqamaType',
@@ -25,28 +22,40 @@ class EmployeeController extends Controller
            'leaves',
            'eos'
        ])
-           ->filter($request->all())
-           ->paginate($per_page);
+           ->filter($request->all());
+
+           if (Auth::user()){
+
+           }
+
+           $emloyees = $query->paginate($per_page);
 
        return response()->json([
            'success' => true,
-           'data' => EmployeeResource::collection($companies),
+           'data' => EmployeeResource::collection($emloyees),
            'meta' => [
-               'current_page' => $companies->currentPage(),
-               'last_page' => $companies->lastPage(),
-               'per_page' => $companies->perPage(),
-               'total' => $companies->total(),
+               'current_page' => $emloyees->currentPage(),
+               'last_page' => $emloyees->lastPage(),
+               'per_page' => $emloyees->perPage(),
+               'total' => $emloyees->total(),
            ]
        ]);
    }
 
-    public function show(Company $company)
+    public function show(int $id)
     {
-        $company->load(['moderators', 'employees', 'wallet', 'getBalanceAttribute']);
+        $employee = Employee::with([
+            'iqamaType:id,name',
+            'upcomingStage',
+            'company',
+            'employeeStages.files',
+            'leaves',
+            'eos'
+        ])->findOrFail($id);
 
-        response()->json([
+       return response()->json([
             'success' => true,
-            'data' => EmployeeResource::collection($company)
-        ]);
+            'data' => new EmployeeResource($employee)
+       ]);
     }
 }

@@ -6,11 +6,15 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CityController;
 use App\Http\Controllers\Api\CompaniesController;
 use App\Http\Controllers\Api\EmployeeController;
+use App\Http\Controllers\Api\EOSController;
+use App\Http\Controllers\Api\LeaveController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\OtpController;
+use App\Http\Controllers\Api\PaymentAccountController;
 use App\Http\Controllers\Api\ProviderController;
 use App\Http\Controllers\Api\ServiceController;
 use App\Http\Controllers\Api\UserAuthController;
+use App\Models\PaymentAccount;
 use Illuminate\Support\Facades\Route;
 
 Route::group([
@@ -38,6 +42,9 @@ Route::group([
 
     Route::apiResource('companies', CompaniesController::class)->only(['index', 'show']);
     Route::apiResource('employees', EmployeeController::class)->only(['index', 'show']);
+    Route::apiResource('leaves', LeaveController::class)->only(['index', 'show']);
+    Route::apiResource('payment-accounts', PaymentAccountController::class)->only(['index', 'show']);
+    Route::apiResource('eos', EOSController::class)->only(['index', 'show']);
 
     Route::group([
         'middleware' => [

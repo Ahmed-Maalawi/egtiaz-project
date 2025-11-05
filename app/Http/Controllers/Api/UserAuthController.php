@@ -42,13 +42,13 @@ class UserAuthController extends Controller
 
         if (! $matched) {
             return response()->json([
-                'message'                   => __('Invalid Phone Number'),
+                'message'   => __('Invalid Phone Number'),
             ], 403);
         }
 
         if (User::where('country_code', $country_code)->where('phone_number', $request->phone_number)->exists()) {
             return response()->json([
-                'message'                   => __('phone number already taken'),
+                'message'   => __('phone number already taken'),
             ], 403);
         }
 

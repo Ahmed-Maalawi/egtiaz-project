@@ -15,7 +15,6 @@ class EmployeeResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $locale = app()->getLocale();
 
         return [
             'id'                    => $this->id,
@@ -26,6 +25,12 @@ class EmployeeResource extends JsonResource
             'expired_date'          => Carbon::parse($this->expired_date)->format('Y-m-d'),
             'salary'                => $this->salary,
             'status'                => $this->status,
+            'iqamaType'             => $this->whenLoaded('iqamaType'),
+            'upcomingStage'         => $this->whenLoaded('upcomingStage'),
+            'company'               => $this->whenLoaded('company'),
+            'employeeStages'        => $this->whenLoaded('employeeStages'),
+            'leaves'                => $this->whenLoaded('leaves'),
+            'eos'                   => $this->whenLoaded('eos'),
             'phone'                 => $this->phone,
             'image_url'             => $this->image_url,
             'passport_image_url'    => $this->image_url,

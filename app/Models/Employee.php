@@ -52,7 +52,7 @@ class Employee extends Model
             ->where('status', 'pending')
             ->join('stages', 'stages.id', '=', 'employee_stages.stage_id')
             ->orderBy('stages.order', 'asc')
-            ->select('employee_stages.*'); // important so you get only EmployeeStage columns
+            ->select('employee_stages.*');
     }
 
 
@@ -106,10 +106,36 @@ class Employee extends Model
 
     public function scopeFilter($query, array $filters)
     {
-        $locale = App::getLocale();
-
         if (isset($filters['name'])) {
-            $query->where("name->$locale", 'like', '%' . $filters['name'] . '%');
+            $query->where("name", 'like', '%' . $filters['name'] . '%');
+        }
+
+        if (isset($filters['email'])) {
+            $query->where("email", 'like', '%' . $filters['email'] . '%');
+        }
+
+        if (isset($filters['phone'])) {
+            $query->where("phone", 'like', '%' . $filters['phone'] . '%');
+        }
+
+        if (isset($filters['address'])) {
+            $query->where("address", 'like', '%' . $filters['address'] . '%');
+        }
+
+        if (isset($filters['passport_number'])) {
+            $query->where("passport_number", 'like', '%' . $filters['passport_number'] . '%');
+        }
+
+        if (isset($filters['status'])) {
+            $query->where("status", $filters['status']);
+        }
+
+        if (isset($filters['company_id'])) {
+            $query->where("company_id", $filters['company_id']);
+        }
+
+        if (isset($filters['iqama_type_id'])) {
+            $query->where("iqama_type_id", $filters['iqama_type_id']);
         }
 
         return $query;
