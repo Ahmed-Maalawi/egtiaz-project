@@ -79,7 +79,6 @@ class Company extends Model
             $query->where('status', $filters['status']);
         }
 
-        // add more filters as needed
         return $query;
     }
 }

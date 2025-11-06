@@ -245,6 +245,12 @@ Route::group(['prefix' => 'hr'], function () {
     Route::post('/salaries/bulk-pay', [SalariesController::class, 'bulkPaySalaries'])->name('hr.salaries.bulk-pay');
     Route::get('/salaries/company-balance', [SalariesController::class, 'getCompanyBalance'])->name('hr.salaries.company-balance');
 
+
+    Route::get('/employees/{employee}/files', [EmployeeController::class, 'showFiles'])->name('employees.files');
+    Route::get('/employees/{employee}/files/{file}/download', [EmployeeController::class, 'downloadFile'])->name('employees.files.download');
+    Route::delete('/employees/files/{file}', [EmployeeController::class, 'destroyFile'])->name('employees.files.delete');
+    Route::post('/{employee}/files/upload', [EmployeeController::class, 'uploadFile'])->name('employees.files.upload');
+
 });
 
 

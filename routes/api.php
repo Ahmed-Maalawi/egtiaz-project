@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CityController;
 use App\Http\Controllers\Api\CompaniesController;
 use App\Http\Controllers\Api\EmployeeController;
+use App\Http\Controllers\Api\EmployeeStageController;
 use App\Http\Controllers\Api\EOSController;
 use App\Http\Controllers\Api\LeaveController;
 use App\Http\Controllers\Api\OrderController;
@@ -14,7 +15,7 @@ use App\Http\Controllers\Api\PaymentAccountController;
 use App\Http\Controllers\Api\ProviderController;
 use App\Http\Controllers\Api\ServiceController;
 use App\Http\Controllers\Api\UserAuthController;
-use App\Models\PaymentAccount;
+use App\Http\Controllers\Api\WalletController;
 use Illuminate\Support\Facades\Route;
 
 Route::group([
@@ -33,7 +34,7 @@ Route::post('forget-password', [OtpController::class, 'forgotPassword'])->middle
 Route::post('reset-password', [OtpController::class, 'resetPassword'])->middleware('throttle:30,1');
 
 Route::group([
-    'middleware'            =>['auth:sanctum','throttle:100,1'],
+    'middleware' => ['auth:sanctum','throttle:100,1'],
 ],function(){
     Route::post('logout',[UserAuthController::class  , 'logout']);
     Route::get('user',[UserAuthController::class , 'user']);
@@ -41,10 +42,28 @@ Route::group([
     Route::post('verify-code',[OtpController::class , 'verify']);
 
     Route::apiResource('companies', CompaniesController::class)->only(['index', 'show']);
+//        ->middleware('role:super-admin|admin');
     Route::apiResource('employees', EmployeeController::class)->only(['index', 'show']);
     Route::apiResource('leaves', LeaveController::class)->only(['index', 'show']);
     Route::apiResource('payment-accounts', PaymentAccountController::class)->only(['index', 'show']);
-    Route::apiResource('eos', EOSController::class)->only(['index', 'show']);
+    Route::apiResource('eos', EOSController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
+    Route::apiResource('wallets', WalletController::class)->only(['index', 'show']);
+
+
+    Route::prefix('employee-stages')
+        ->controller(EmployeeStageController::class)
+        ->group(function () {
+            Route::get('/single-employee', 'getSingleEmployee');
+            Route::get('/pending', 'getPending');
+            Route::get('/{employeeStageId}', 'show');
+            Route::get('/{employeeStageId}/payment-page', 'showPayEmployeeStagePage');
+            Route::post('/pay', 'payEmployeeStage');
+
+        // Placeholder routes for future implementation
+//        Route::post('/', [EmployeeStageController::class, 'store']);
+//        Route::put('/{employeeStageId}', [EmployeeStageController::class, 'update']);
+//        Route::delete('/{employeeStageId}', [EmployeeStageController::class, 'destroy']);
+    });
 
     Route::group([
         'middleware' => [

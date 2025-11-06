@@ -24,10 +24,10 @@ class Stage extends Model
     ];
 
     protected $casts = [
-        'price'                         => 'float',
-        'cost'                         => 'float',
-        'options'                       => 'array',
-        'estimated_time_in_days'        => 'integer',
+        'price'                     => 'float',
+        'cost'                      => 'float',
+        'options'                   => 'array',
+        'estimated_time_in_days'    => 'integer',
     ];
 
     public $translatable = [

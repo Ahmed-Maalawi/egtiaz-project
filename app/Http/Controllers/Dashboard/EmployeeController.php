@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Models\Employee;
+use App\Models\EmployeeFile;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\Company;
@@ -11,6 +12,7 @@ use App\Models\IqamaType;
 use App\Models\Stage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class EmployeeController extends Controller
@@ -127,7 +129,8 @@ class EmployeeController extends Controller
      */
     public function show(Employee $employee)
     {
-        //
+        $employee->load(['company', 'iqamaType', 'upcomingStage.stage', 'files', 'employeeStages']);
+        return view('admin.employees.show', compact('employee'));
     }
 
     /**
@@ -302,5 +305,79 @@ class EmployeeController extends Controller
                 ];
             })
         );
+    }
+
+    public function showFiles(Employee $employee)
+    {
+        $employee->load('files');
+
+        return view('admin.employees.files', compact('employee'));
+    }
+
+    public function downloadFile(Employee $employee, EmployeeFile $file)
+    {
+        if ($file->employee_id !== $employee->id) {
+            abort(404, 'File not found for this employee');
+        }
+
+        if (empty($file->path)) {
+            abort(404, 'File path is missing');
+        }
+
+        $filePath = storage_path('app/public/' . $file->path);
+
+        if (!file_exists($filePath)) {
+            abort(404, 'File not found: ' . $filePath);
+        }
+
+        return response()->download($filePath, $file->original_name);
+    }
+
+    public function destroyFile(EmployeeFile $file)
+    {
+        if (!$file) {
+            abort(404, 'File not found');
+        }
+
+        if (Storage::disk('public')->exists($file->path)) {
+            Storage::disk('public')->delete($file->path);
+        }
+
+        $employeeId = $file->employee_id;
+
+        $file->delete();
+
+        return redirect()->route('admins.employees.files', $employeeId)
+            ->with('success', __('File deleted successfully'));
+    }
+
+    public function uploadFile(Request $request, Employee $employee)
+    {
+        $request->validate([
+            'file' => 'required|file|max:10240', // 10MB max
+            'description' => 'nullable|string|max:500',
+        ]);
+
+        try {
+            $file = $request->file('file');
+            $fileType = $file->getClientOriginalExtension();
+
+
+            $filename = Str::random(20) . '_' . time() . '.' . $fileType;
+            $filePath = $file->storeAs('employee_files', $filename, 'public');
+
+
+            EmployeeFile::create([
+                'employee_id' => $employee->id,
+                'path' => $filePath,
+            ]);
+
+            return redirect()->route('admins.employees.files', $employee->id)
+                ->with('success', __('File uploaded successfully'));
+
+        } catch (\Exception $e) {
+            return redirect()->route('admins.employees.files', $employee->id)
+                ->with('error', __('Failed to upload file: ') . $e->getMessage());
+        }
     }
 }

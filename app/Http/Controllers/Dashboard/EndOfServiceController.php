@@ -13,7 +13,17 @@ class EndOfServiceController extends Controller
 {
     public function index()
     {
-        $eosRecords = EndOfService::with('employee')->latest()->paginate(10);
+        $user = Auth::user();
+
+        $query = EndOfService::with('employee');
+
+        if (!$user->hasRole('super-admin|admin') && !is_null($user->moderator_company_id)) {
+            $query->whereHas('employee', function ($query) use ($user) {
+                $query->where('company_id', $user->moderator_company_id);
+            });
+        }
+
+        $eosRecords = $query->latest()->paginate(10);
         return view('admin.eos.index', compact('eosRecords'));
     }
 
@@ -54,7 +64,7 @@ class EndOfServiceController extends Controller
         $leaving = Carbon::parse($data['leaving_date']);
         $years = $joining->diffInYears($leaving);
 
-        // EOS Formula
+
         if ($years < 1) {
             $eosAmount = 0;
         } elseif ($years < 5) {
@@ -108,17 +118,17 @@ class EndOfServiceController extends Controller
             'other_deductions' => 'nullable|numeric|min:0',
         ]);
 
-        // Calculate years of service
+
         $joining = Carbon::parse($data['joining_date']);
         $leaving = Carbon::parse($data['leaving_date']);
         $years = $joining->diffInYears($leaving);
 
-        // Calculate EOS Amount
+
         if ($years < 1) $eoAmount = 0;
         elseif ($years < 5) $eoAmount = $data['basic_salary'] * 21 / 30 * $years;
         else $eoAmount = $data['basic_salary'] * 30 / 30 * $years;
 
-        // Additions & Deductions
+
         $additions = ($data['incentive'] ?? 0) + ($data['rewards'] ?? 0) + ($data['other_additions'] ?? 0);
         $deductions = ($data['cash_advance'] ?? 0) + ($data['petty_cash'] ?? 0) + ($data['fines'] ?? 0) + ($data['compensation_notice'] ?? 0) + ($data['other_deductions'] ?? 0);
 
@@ -141,7 +151,6 @@ class EndOfServiceController extends Controller
 
     public function calculate(Request $request)
     {
-        // ✅ Step 1: Validate the required fields
         $validated = $request->validate([
             'joining_date' => 'required|date',
             'leaving_date' => 'required|date|after:joining_date',
@@ -157,7 +166,7 @@ class EndOfServiceController extends Controller
             'other_deductions' => 'nullable|numeric|min:0',
         ]);
 
-        // ✅ Step 2: Safe parsing after validation
+
         $joining = Carbon::parse($validated['joining_date']);
         $leaving = Carbon::parse($validated['leaving_date']);
         $years = $joining->diffInYears($leaving);
@@ -165,7 +174,7 @@ class EndOfServiceController extends Controller
         $basic_salary = $validated['basic_salary'];
         $annual_leave_balance = $validated['annual_leave_balance'] ?? 0;
 
-        // ✅ Step 3: Handle null-safe arithmetic
+
         $additions = ($validated['incentive'] ?? 0)
             + ($validated['rewards'] ?? 0)
             + ($validated['other_additions'] ?? 0);
@@ -176,7 +185,7 @@ class EndOfServiceController extends Controller
             + ($validated['compensation_notice'] ?? 0)
             + ($validated['other_deductions'] ?? 0);
 
-        // ✅ Step 4: Calculate EOS
+
         if ($years < 1) {
             $eosAmount = 0;
         } elseif ($years < 5) {
@@ -188,7 +197,7 @@ class EndOfServiceController extends Controller
         $leavePay = $annual_leave_balance * ($basic_salary / 30);
         $netPay = $eosAmount + $additions + $leavePay - $deductions;
 
-        // ✅ Step 5: Return response
+
         return response()->json([
             'years' => number_format($years, 2),
             'eos_amount' => number_format($eosAmount, 2),

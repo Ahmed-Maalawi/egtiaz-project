@@ -104,6 +104,19 @@ class Employee extends Model
         return $this->hasOne(EndOfService::class, 'employee_id', 'id');
     }
 
+    public function getTotalFilesSize()
+    {
+        $totalSize = $this->files->sum('file_size');
+
+        if ($totalSize == 0) return '0 Bytes';
+
+        $k = 1024;
+        $sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        $i = floor(log($totalSize) / log($k));
+
+        return round($totalSize / pow($k, $i), 2) . ' ' . $sizes[$i];
+    }
+
     public function scopeFilter($query, array $filters)
     {
         if (isset($filters['name'])) {

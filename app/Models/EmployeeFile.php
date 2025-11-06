@@ -14,4 +14,25 @@ class EmployeeFile extends Model
     {
         return $this->belongsTo(Employee::class);
     }
+
+    public function getFileIcon()
+    {
+
+
+        return $iconMap[strtolower($this->path)] ?? 'file';
+    }
+
+    /**
+     * Get formatted file size
+     */
+    public function getFormattedSize()
+    {
+        if ($this->file_size == 0) return '0 Bytes';
+
+        $k = 1024;
+        $sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        $i = floor(log($this->file_size) / log($k));
+
+        return round($this->file_size / pow($k, $i), 2) . ' ' . $sizes[$i];
+    }
 }
