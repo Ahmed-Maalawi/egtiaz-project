@@ -29,6 +29,7 @@ class EmployeeResource extends JsonResource
             'upcomingStage'         => $this->whenLoaded('upcomingStage'),
             'company'               => $this->whenLoaded('company', new CompanyResource($this->company)) ?? null,
             'employeeStages'        => $this->whenLoaded('employeeStages'),
+            'salaries'              => $this->whenLoaded('salaries'),
             'leaves'                => $this->whenLoaded('leaves', new LeaveResource($this->leaves)) ?? null,
             'eos'                   => $this->whenLoaded('eos', new EndOfServiceResource($this->eos)),
             'phone'                 => $this->phone,

@@ -11,6 +11,7 @@ use App\Models\EndOfService;
 use App\Models\IqamaType;
 use App\Models\OfficialLeave;
 use App\Models\PaymentAccount;
+use App\Models\Salary;
 use App\Models\Stage;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
@@ -62,11 +63,11 @@ class ReportController extends Controller
             }
         }
 
-        $employees = Employee::whereHas('eos')->get(); // Only employees with EOS records
+        $employees = Employee::whereHas('eos')->get();
 
         $eosRecords = $query->paginate($perPage);
 
-        // For filter counts with null checks
+
         $filterData = [
             'min_year' => EndOfService::min('joining_date') ? Carbon::parse(EndOfService::min('joining_date'))->year : date('Y') - 10,
             'max_year' => EndOfService::max('leaving_date') ? Carbon::parse(EndOfService::max('leaving_date'))->year : date('Y'),
@@ -79,12 +80,12 @@ class ReportController extends Controller
 
     public function LeavesReport(Request $request)
     {
-        $query = OfficialLeave::with(['employee', 'approver']);
+        $query = OfficialLeave::with(['user', 'approver']);
 
         $perPage = $request->per_page ?? 10;
         // Apply filters
-        if ($request->filled('employee_id')) {
-            $query->where('employee_id', $request->employee_id);
+        if ($request->filled('user_id')) {
+            $query->where('user_id', $request->user_id);
         }
 
         if ($request->filled('leave_type')) {
@@ -158,6 +159,18 @@ class ReportController extends Controller
         $iqamaTypes = IqamaType::select('id', 'name')->get();
 
         return view('admin.reports.employees-report', compact('employees', 'companies', 'iqamaTypes'));
+    }
+
+    public function SalaryReport(Request $request)
+    {
+        $perPage = $request->per_page ?? 10;
+
+        $query = Salary::query()->with(['company', 'iqamaType', 'upcomingStage']);
+
+        $employees = $query->paginate($perPage);
+
+
+//        return view('admin.reports.employees-report', compact('employees', 'companies', 'iqamaTypes'));
     }
 
 

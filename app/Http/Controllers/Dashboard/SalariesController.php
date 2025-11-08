@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
+use App\Models\Employee;
 use App\Models\PaymentAccount;
 use App\Models\Salary;
 use App\Models\Transaction;
@@ -20,12 +21,11 @@ class SalariesController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Salary::with('user');
+        $query = Salary::with('employee');
 
         if ($request->has('month') && $request->month) {
             $query->where('month', $request->month);
-        }
-        else {
+        } else {
 //            $query->where('month', now()->format('Y-m'));
             $query->get();
         }
@@ -45,10 +45,15 @@ class SalariesController extends Controller
             ->sum('amount');
 
         // Get payment accounts for the dropdown (only those accessible by user)
-        $paymentAccounts = PaymentAccount::whereHas('users', function($query) {
+        if (Auth::user()->hasRole('super-admin')) {
+            $paymentAccounts = PaymentAccount::all();
+        } else {
+            $paymentAccounts = PaymentAccount::whereHas('users', function($query) {
                 $query->where('user_id', Auth::id());
             })
-            ->get();
+                ->get();
+        }
+
 
         return view('admin.hr.salaries.index', compact('salaries', 'totalPending', 'totalPaid', 'paymentAccounts'));
     }
@@ -57,7 +62,7 @@ class SalariesController extends Controller
     {
 //        $employees = Employee::where('status', 'active')->get();
 //        $paymentAccounts = PaymentAccount::whereHas('users', function($query) {
-//                $query->where('user_id', Auth::id());
+//                $query->where('employee_id', Auth::id());
 //            })
 //            ->get();
 //
@@ -72,11 +77,7 @@ class SalariesController extends Controller
 
         $month = $request->month;
 
-        $users = User::where('salary', '>', 0)
-            ->whereDoesntHave('roles', function($query) {
-                $query->where('name', 'super admin');
-            })
-            ->get();
+        $users = Employee::where('salary', '>', 0)->get();
 
         $generatedCount = 0;
         $skippedCount = 0;
@@ -90,7 +91,7 @@ class SalariesController extends Controller
         foreach ($users as $user) {
             try {
 
-                $existingSalary = Salary::where('user_id', $user->id)
+                $existingSalary = Salary::where('employee_id', $user->id)
                     ->where('month', $month)
                     ->first();
 
@@ -100,7 +101,7 @@ class SalariesController extends Controller
                 }
 
                 Salary::create([
-                    'user_id'       => $user->id,
+                    'employee_id'       => $user->id,
                     'amount'        => $user->salary,
                     'month'         => $month,
                     'status'        => 'pending',
@@ -148,7 +149,7 @@ class SalariesController extends Controller
             ]);
 
 
-            $salary = Salary::with(['user'])->find($request->salary_id);
+            $salary = Salary::with(['employee'])->find($request->salary_id);
             $paymentAccount = PaymentAccount::find($request->payment_account_id);
 
             if (!$salary) {
@@ -160,7 +161,7 @@ class SalariesController extends Controller
             }
 
 
-            if (!$salary->user) {
+            if (!$salary->employee) {
                 return back()->with('error', __('Employee information not found for this salary.'));
             }
 
@@ -185,7 +186,7 @@ class SalariesController extends Controller
             }
 
 
-            $hasAccess = $paymentAccount->users()->where('user_id', $user->id)->exists();
+            $hasAccess = $paymentAccount->users()->where('employee_id', $user->id)->exists();
             if (!$hasAccess) {
                 return back()->with('error', __('You do not have access to this payment account.'));
             }
@@ -198,7 +199,7 @@ class SalariesController extends Controller
                 $transaction =  Transaction::create([
                     'transaction_id'            => Str::uuid(),
                     'from_payment_account_id'   => $paymentAccount->id,
-                    'user_id'                   => $salary->user->id,
+                    'employee_id'               => $salary->user->id,
                     'payment_account_id'        => $paymentAccount->id,
                     'created_by'                => $user->id,
                     'amount'                    => $amount,
@@ -261,7 +262,7 @@ class SalariesController extends Controller
             }
 
 
-            $hasAccess = $paymentAccount->users()->where('user_id', $user->id)->exists();
+            $hasAccess = $paymentAccount->users()->where('employee_id', $user->id)->exists();
             if (!$hasAccess) {
                 return back()->with('error', __('You do not have access to this payment account.'));
             }
@@ -287,7 +288,7 @@ class SalariesController extends Controller
                             $transaction = Transaction::create([
                                 'transaction_id'            => Str::uuid(),
                                 'from_payment_account_id'   => $paymentAccount->id,
-                                'user_id'                   => $salary->user->id,
+                                'employee_id'                   => $salary->user->id,
                                 'payment_account_id'        => $paymentAccount->id,
                                 'created_by'                => $user->id,
                                 'amount'                    => $amount,

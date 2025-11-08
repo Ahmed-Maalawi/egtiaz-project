@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('salaries', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->foreignIdFor('employee_id')->constrained('employees')->cascadeOnDelete();
             $table->decimal('amount', 8, 2);
             $table->string('month');
             $table->enum('status', ['pending', 'paid'])->default('pending');
@@ -22,8 +22,8 @@ return new class extends Migration
             $table->timestamps();
 
 
-            $table->unique(['user_id', 'month']);
-            $table->index(['month', 'status']);
+            $table->unique(['employee_id', 'month']);
+            $table->index(['month', 'status', 'employee_id']);
         });
     }
 

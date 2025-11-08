@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Salary extends Model
 {
     protected $fillable = [
-        'user_id',
+        'employee_id',
         'amount',
         'month',
         'status',
@@ -23,6 +23,11 @@ class Salary extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+//    public function employee()
+//    {
+//        return $this->belongsTo(Employee::class);
+//    }
 
     public function markAsPaid(): void
     {

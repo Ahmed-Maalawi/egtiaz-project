@@ -18,7 +18,7 @@
                     {{-- Active Filters Badge --}}
                     @php
                         $activeFilterCount = 0;
-                        $filterFields = ['employee_id', 'leave_type', 'status', 'date_range', 'days_min', 'days_max', 'year_from', 'year_to'];
+                        $filterFields = ['user_id', 'leave_type', 'status', 'date_range', 'days_min', 'days_max', 'year_from', 'year_to'];
                         foreach ($filterFields as $field) {
                             if (request()->filled($field)) {
                                 $activeFilterCount++;
@@ -81,13 +81,13 @@
                             }
                         @endphp
 
-                        @if(request('employee_id'))
+                        @if(request('user_id'))
                             @php
-                                $employeeName = $employees->where('id', request('employee_id'))->first()->name ?? 'N/A';
+                                $userName = $users->where('id', request('user_id'))->first()->name ?? 'N/A';
                             @endphp
                             <span class="badge bg-primary me-1 mb-1 text-white">
-                            {{ __('Employee') }}: {{ $employeeName }}
-                            <a href="{{ removeQueryParamsLeaves('employee_id') }}" class="text-white ms-1" style="text-decoration: none;">×</a>
+                            {{ __('User') }}: {{ $userName }}
+                            <a href="{{ removeQueryParamsLeaves('user_id') }}" class="text-white ms-1" style="text-decoration: none;">×</a>
                         </span>
                         @endif
 
@@ -147,7 +147,7 @@
                     <thead class="table-light text-center">
                     <tr>
                         <th>#</th>
-                        <th>{{ __('Employee Name') }}</th>
+                        <th>{{ __('User Name') }}</th>
                         <th>{{ __('Leaves Type') }}</th>
                         <th>{{ __('Leaves Days Number') }}</th>
                         <th>{{ __('Reason') }}</th>
@@ -163,7 +163,7 @@
                     @foreach($leaves as $leave)
                         <tr>
                             <td>{{ $loop->iteration }}</td>
-                            <td>{{ $leave->employee->name ?? __('N/A') }}</td>
+                            <td>{{ $leave->user->name ?? __('N/A') }}</td>
                             <td>{{ __($leave->type) ?? __('N/A') }}</td>
                             <td>{{ $leave->days_taken ?? __('N/A') }}</td>
                             <td>{{ $leave->reason ?? __('N/A') }}</td>
@@ -205,15 +205,15 @@
                 <div class="modal-body">
                     <form id="filterForm" method="GET" action="{{ url()->current() }}">
                         <div class="row g-3">
-                            {{-- Employee Filter --}}
+                            {{-- User Filter --}}
                             <div class="col-md-6">
-                                <label for="employee_id" class="form-label">{{ __('Employee Name') }}</label>
-                                <select id="employee_id" name="employee_id" class="form-select select2-filter">
-                                    <option value="">{{ __('All Employees') }}</option>
-                                    @foreach($employees as $employee)
-                                        <option value="{{ $employee->id }}"
-                                            {{ request('employee_id') == $employee->id ? 'selected' : '' }}>
-                                            {{ $employee->name }}
+                                <label for="user_id" class="form-label">{{ __('User Name') }}</label>
+                                <select id="user_id" name="user_id" class="form-select select2-filter">
+                                    <option value="">{{ __('All Users') }}</option>
+                                    @foreach($users as $user)
+                                        <option value="{{ $user->id }}"
+                                            {{ request('user_id') == $user->id ? 'selected' : '' }}>
+                                            {{ $user->name }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -373,7 +373,7 @@
     $(document).ready(function () {
         // Initialize Select2
         $('.select2-filter').select2({
-            placeholder: "{{ __('Select Employee') }}",
+            placeholder: "{{ __('Select User') }}",
             allowClear: true,
             dropdownParent: $('#filterModal')
         });

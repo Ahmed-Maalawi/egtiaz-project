@@ -5,16 +5,16 @@
             @method('PUT')
             <div class="row">
                 <div class="m-3 mb-4">
-                    <label for="employee_id" class="block mb-2 font-semibold">{{ __('Employee') }}</label>
-                    <select id="employee_id" name="employee_id" class="w-full p-2 border rounded">
-                        <option value="">{{ __('Choose Employee') }}</option>
-                        @foreach ($employees as $employee)
-                            <option value="{{ $employee->id }}" {{ $leave->employee->id == $employee->id ? 'selected' : '' }}>
-                                {{ $employee->name }}
+                    <label for="user_id" class="block mb-2 font-semibold">{{ __('User') }}</label>
+                    <select id="user_id" name="user_id" class="w-full p-2 border rounded">
+                        <option value="">{{ __('Choose User') }}</option>
+                        @foreach ($users as $user)
+                            <option value="{{ $user->id }}" {{ $leave->user->id == $user->id ? 'selected' : '' }}>
+                                {{ $user->name }}
                             </option>
                         @endforeach
                     </select>
-                    @error('employee_id')
+                    @error('user_id')
                     <span class="text-red d-block text-sm">{{ $message }}</span>
                     @enderror
                 </div>
@@ -30,7 +30,7 @@
                         @endforeach
                     </select>
                     @error('type')
-                    <span class="text-red d-block text-sm">{{ $message }}</span>
+                        <span class="text-red d-block text-sm">{{ $message }}</span>
                     @enderror
                 </div>
             </div>
@@ -40,7 +40,7 @@
                 <input type="text" id="reason" name="reason" class="form-control w-full p-2 border rounded"
                        value="{{ old('reason', $leave->reason) }}">
                 @error('reason')
-                <span class="text-red d-block text-sm">{{ $message }}</span>
+                    <span class="text-red d-block text-sm">{{ $message }}</span>
                 @enderror
             </div>
 
@@ -99,7 +99,7 @@
             <h3 class="font-semibold mb-3">{{ __('Leave Information') }}</h3>
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <strong>{{ __('Employee:') }}</strong> {{ $leave->employee->name ?? __('unknown') }}
+                    <strong>{{ __('User:') }}</strong> {{ $leave->user->name ?? __('unknown') }}
                 </div>
                 <div>
                     <strong>{{ __('Type:') }}</strong> {{ __($leave->type) }}

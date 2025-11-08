@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Traits\ActivityScopeTrait;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\App;
 
 class Employee extends Model
@@ -27,7 +28,7 @@ class Employee extends Model
     ];
 
     protected $casts = [
-        'expired_date'  => 'date',
+        'expired_date' => 'date',
     ];
 
     protected $with = ['files'];
@@ -38,9 +39,9 @@ class Employee extends Model
             $stages = Stage::where('iqama_type_id', $employee->iqama_type_id)->get();
             foreach ($stages as $stage) {
                 EmployeeStage::create([
-                    'employee_id'                   => $employee->id,
-                    'stage_id'                      => $stage->id,
-                    'status'                        => 'pending',
+                    'employee_id' => $employee->id,
+                    'stage_id' => $stage->id,
+                    'status' => 'pending',
                 ]);
             }
         });
@@ -89,6 +90,11 @@ class Employee extends Model
         return $this->hasMany(EmployeeStage::class);
     }
 
+    public function salaries()
+    {
+        return $this->hasMany(Salary::class);
+    }
+
     public function scopeActive($query)
     {
         return $query->whereStatus('active');
@@ -115,6 +121,13 @@ class Employee extends Model
         $i = floor(log($totalSize) / log($k));
 
         return round($totalSize / pow($k, $i), 2) . ' ' . $sizes[$i];
+    }
+
+    public function getCurrentMonthSalaryAttribute()
+    {
+        return $this->salaries()
+            ->where('month', now()->format('Y-m'))
+            ->first();
     }
 
     public function scopeFilter($query, array $filters)
@@ -153,10 +166,5 @@ class Employee extends Model
 
         return $query;
     }
-//    public function getCurrentMonthSalaryAttribute()
-//    {
-//        return $this->salaries()
-//            ->where('month', now()->format('Y-m'))
-//            ->first();
-//    }
+
 }

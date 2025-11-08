@@ -32,20 +32,20 @@ class PaymentAccountController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name_ar'                       => 'required|string',
-            'name_en'                       => 'required|string',
-            'description_ar'                => 'nullable|required_with:description_en|string',
-            'description_en'                => 'nullable|required_with:description_ar|string',
+            'name_ar'           => 'required|string',
+            'name_en'           => 'required|string',
+            'description_ar'    => 'nullable|required_with:description_en|string',
+            'description_en'    => 'nullable|required_with:description_ar|string',
         ]);
 
         PaymentAccount::create([
-            'name'                      => [
-                'en'                        => $request->name_en,
-                'ar'                        => $request->name_ar,
+            'name'  => [
+                'en'    => $request->name_en,
+                'ar'    => $request->name_ar,
             ],
             'description'               => [
-                'ar'                        => $request->description_ar,
-                'en'                        => $request->description_en,
+                'ar'    => $request->description_ar,
+                'en'    => $request->description_en,
             ],
         ]);
 

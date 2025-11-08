@@ -178,7 +178,7 @@
                 <thead class="thead-light">
                 <tr>
                     <th style="width: 40px;"></th>
-                    <th>{{ __('User') }}</th>
+                    <th>{{ __('Employee') }}</th>
                     <th>{{ __('Amount') }}</th>
                     <th>{{ __('Month') }}</th>
                     <th>{{ __('Status') }}</th>
@@ -197,8 +197,8 @@
                         </td>
                         <td>
                             <div>
-                                <strong>{{ $salary->user?->name }}</strong><br>
-                                <small class="text-muted">{{ $salary->user?->email }}</small>
+                                <strong>{{ $salary->employee?->name }}</strong><br>
+                                <small class="text-muted">{{ $salary->employee?->email }}</small>
                             </div>
                         </td>
                         <td>

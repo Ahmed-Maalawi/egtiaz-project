@@ -4,14 +4,14 @@
             @csrf
             <div class="row">
                 <div class="m-3 mb-4 form-group">
-                    <label for="employee_id" class="block mb-2 font-semibold">{{ __('Employee') }}</label>
-                    <select id="employee_id" name="employee_id" class="w-full p-2 border rounded">
-                        <option value="">{{ __('Choose Employee') }}</option>
-                        @foreach ($employees as $employee)
-                            <option value="{{ $employee->id }}">{{ $employee->name  }}</option>
+                    <label for="user_id" class="block mb-2 font-semibold">{{ __('User') }}</label>
+                    <select id="user_id" name="user_id" class="w-full p-2 border rounded">
+                        <option value="">{{ __('Choose User') }}</option>
+                        @foreach ($users as $user)
+                            <option value="{{ $user->id }}">{{ $user->name  }}</option>
                         @endforeach
                     </select>
-                    @error('employee_id')
+                    @error('user_id')
                         <span class="text-red d-block text-sm">{{ $message }}</span>
                     @enderror
                 </div>

@@ -3,9 +3,9 @@
         <form class="my-3">
             <div class="row">
                 <div class="m-3 mb-4">
-                    <label for="employee_id" class="block mb-2 font-semibold">{{ __('Employee') }}</label>
-                    <select disabled id="employee_id" name="employee_id" class="w-full p-2 border rounded">
-                        <option value="">{{ $leave->employee->name }}</option>
+                    <label for="user_id" class="block mb-2 font-semibold">{{ __('User') }}</label>
+                    <select disabled id="user_id" name="user_id" class="w-full p-2 border rounded">
+                        <option value="">{{ $leave->user->name }}</option>
                     </select>
                 </div>
 

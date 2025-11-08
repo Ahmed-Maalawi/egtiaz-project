@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('official_leaves', function (Blueprint $table) {
             $table->id();
-            $table->foreignIdFor(Employee::class,'employee_id')->constrained('employees')->onDelete('cascade');
+            $table->foreignIdFor(User::class,'user_id')->constrained('users')->onDelete('cascade');
             $table->enum('type', ['annual', 'sick', 'maternity', 'paternity', 'unpaid', 'other']);
             $table->date('start_date');
             $table->date('end_date');
@@ -26,7 +26,7 @@ return new class extends Migration
             $table->foreignIdFor(User::class,'approved_by')->nullable()->constrained('users');
             $table->timestamps();
 
-            $table->index(['employee_id', 'status']);
+            $table->index(['user_id', 'status']);
             $table->index(['start_date', 'end_date']);
         });
     }

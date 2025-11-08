@@ -10,7 +10,7 @@ class OfficialLeave extends Model
 
     protected $table = 'official_leaves';
 
-    protected $with = ['employee', 'approver'];
+    protected $with = ['user', 'approver'];
 
     protected $casts = [
         'start_date' => 'date',
@@ -18,9 +18,9 @@ class OfficialLeave extends Model
         'approved_at' => 'datetime',
     ];
 
-    public function employee()
+    public function user()
     {
-        return $this->belongsTo(Employee::class, 'employee_id', 'id');
+        return $this->belongsTo(User::class, 'user_id', 'id');
     }
 
     public function approver()
@@ -55,8 +55,8 @@ class OfficialLeave extends Model
     }
     public function scopeFilter($query, $filter)
     {
-        if (isset($filters['employee_id'])) {
-            $query->where("employee_id", $filters['employee_id']);
+        if (isset($filters['user_id'])) {
+            $query->where("user_id", $filters['user_id']);
         }
 
         if (isset($filters['approved_by'])) {

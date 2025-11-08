@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminTransactionController;
+use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\BannerController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CityController;
@@ -9,10 +10,12 @@ use App\Http\Controllers\Api\EmployeeController;
 use App\Http\Controllers\Api\EmployeeStageController;
 use App\Http\Controllers\Api\EOSController;
 use App\Http\Controllers\Api\LeaveController;
+use App\Http\Controllers\Api\ModeratorsController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\OtpController;
 use App\Http\Controllers\Api\PaymentAccountController;
 use App\Http\Controllers\Api\ProviderController;
+use App\Http\Controllers\Api\ReportsController;
 use App\Http\Controllers\Api\ServiceController;
 use App\Http\Controllers\Api\UserAuthController;
 use App\Http\Controllers\Api\WalletController;
@@ -48,6 +51,10 @@ Route::group([
     Route::apiResource('payment-accounts', PaymentAccountController::class)->only(['index', 'show']);
     Route::apiResource('eos', EOSController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
     Route::apiResource('wallets', WalletController::class)->only(['index', 'show']);
+    Route::apiResource('admins', AdminController::class)->middleware('role:super-admin|admin')->except(['update']);
+    Route::post('/admins/update/{id}', [AdminController::class, 'update'])->middleware('role:super-admin|admin');
+    Route::apiResource('moderators', ModeratorsController::class)->middleware('role:super-admin|admin')->except(['update']);
+    Route::post('/moderators/update/{id}', [ModeratorsController::class, 'update'])->middleware('role:super-admin|admin');
 
 
     Route::prefix('employee-stages')
@@ -103,6 +110,17 @@ Route::group([
         //-------------------------------------------------------
         Route::get('nearby-providers',[ProviderController::class , 'nearbyProvider']);
 
+    });
+
+    Route::group([
+        'controller' => ReportsController::class,
+        'prefix' => 'reports',
+        'middleware' => ['auth:sanctum'],
+    ], function () {
+        Route::get('employees', 'getEmployeesReport');
+        Route::get('end-of-services', 'getEOSReport');
+        Route::get('leaves', 'getLeavesReport');
+        Route::get('employees-salaries', 'getEmployeesSalaryReport');
     });
 });
 

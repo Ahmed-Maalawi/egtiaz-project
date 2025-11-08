@@ -5,8 +5,11 @@ namespace App\Http\Controllers\Dashboard;
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
 use App\Models\OfficialLeave;
+use App\Models\User;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Validator;
 
 class LeaveController extends Controller
 {
@@ -15,7 +18,7 @@ class LeaveController extends Controller
      */
     public function index()
     {
-        $leaves = OfficialLeave::with('employee')->latest()->get();
+        $leaves = OfficialLeave::with('user')->latest()->get();
         return view('admin.hr.leaves.index', ['leaves' => $leaves]);
     }
 
@@ -24,9 +27,9 @@ class LeaveController extends Controller
      */
     public function create()
     {
-        $employees = Employee::where('status', 'active')->get();
+        $users = User::where('status', 'active')->get();
         $leaveTypes = ['annual', 'sick', 'maternity', 'paternity', 'unpaid', 'other'];
-        return view('admin.hr.leaves.create', ['employees' => $employees, 'leaveTypes' => $leaveTypes]);
+        return view('admin.hr.leaves.create', ['users' => $users, 'leaveTypes' => $leaveTypes]);
     }
 
     /**
@@ -36,12 +39,12 @@ class LeaveController extends Controller
     {
         try {
             $validatedData = $request->validate([
-                'employee_id'   => 'required|integer|exists:employees,id',
+                'user_id'   => 'required|integer|exists:users,id',
                 'start_date'    => 'required|date',
                 'end_date'      => 'required|date|gte:start_date',
-                'type'          => 'required|in:annual,sick,maternity paternity,unpaid,other',
+                'type'          => 'required|in:annual,sick,maternity,paternity,unpaid,other',
                 'reason'        => 'nullable|string',
-                'notes'          => 'nullable|string',
+                'notes'         => 'nullable|string',
             ]);
 
             $startDate = Carbon::parse($validatedData['start_date']);
@@ -50,7 +53,7 @@ class LeaveController extends Controller
             $days = $startDate->diffInDays($endDate) + 1;
 
             $leave = OfficialLeave::create([
-                'employee_id'   => $validatedData['employee_id'],
+                'user_id'       => $validatedData['user_id'],
                 'start_date'    => $validatedData['start_date'],
                 'end_date'      => $validatedData['end_date'],
                 'type'          => $validatedData['type'],
@@ -61,10 +64,10 @@ class LeaveController extends Controller
 
             return redirect()->route('admins.hr.leaves.index')
                 ->with('success', __('leave Added Successfully'));
-
-        } catch (\Exception $exception) {
-            return redirect()->route('admins.hr.leaves.index');
+        } catch (Exception $e) {
+            return back()->with('error', $e->getMessage());
         }
+
     }
 
     /**
@@ -72,7 +75,7 @@ class LeaveController extends Controller
      */
     public function show($id)
     {
-        $leave = OfficialLeave::with('employee')->findOrFail($id);
+        $leave = OfficialLeave::with('user')->findOrFail($id);
         return view('admin.hr.leaves.show', ['leave' => $leave]);
     }
 
@@ -84,16 +87,16 @@ class LeaveController extends Controller
         try {
             $leave = OfficialLeave::findOrFail($id);
 
-            $employees = Employee::active()->get();
+            $users = User::where('status', 'active')->get();
 
             $leaveTypes = ['annual', 'sick', 'maternity', 'paternity', 'unpaid', 'other'];
 
             return view('admin.hr.leaves.edit', [
                 'leaveTypes' => $leaveTypes,
-                'employees' => $employees,
+                'users' => $users,
                 'leave' => $leave
             ]);
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             return redirect()->route('admins.hr.leaves.index');
         }
     }
@@ -105,10 +108,10 @@ class LeaveController extends Controller
     {
         try {
             $validatedData = $request->validate([
-                'employee_id'   => 'required|integer|exists:employees,id',
+                'user_id'   => 'required|integer|exists:users,id',
                 'start_date'    => 'required|date',
                 'end_date'      => 'required|date|gte:start_date',
-                'type'          => 'required|in:annual,sick,maternity paternity,unpaid,other',
+                'type'          => 'required|in:annual,sick,maternity,paternity,unpaid,other',
                 'reason'        => 'nullable|string',
                 'notes'         => 'nullable|string',
                 'status'        => 'required|in:pending,approved,rejected',
@@ -122,7 +125,7 @@ class LeaveController extends Controller
             $days = $startDate->diffInDays($endDate) + 1;
 
             $leave->update([
-                'employee_id'   => $validatedData['employee_id'],
+                'user_id'   => $validatedData['user_id'],
                 'start_date'    => $validatedData['start_date'],
                 'end_date'      => $validatedData['end_date'],
                 'type'          => $validatedData['type'],
@@ -134,8 +137,8 @@ class LeaveController extends Controller
 
             return redirect()->route('admins.hr.leaves.index')
                 ->with('success', __('leave Updated Successfully'));
-        } catch (\Exception $exception) {
-            return redirect()->route('admins.hr.leaves.index');
+        } catch (Exception $exception) {
+            return back()->with('error', $exception->getMessage());
         }
     }
 
@@ -150,7 +153,7 @@ class LeaveController extends Controller
 
             return redirect()->route('admins.hr.leaves.index')
                 ->with('success', __('Leave Deleted Successfully'));
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             return redirect()->route('admins.hr.leaves.index');
         }
     }

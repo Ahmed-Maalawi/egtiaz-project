@@ -19,7 +19,7 @@
                     <thead>
                     <tr>
                         <th>{{ __('Serial') }}</th>
-                        <th>{{ __('Employee Name') }}</th>
+                        <th>{{ __('User Name') }}</th>
                         <th>{{ __('start date') }}</th>
                         <th>{{ __('end date') }}</th>
                         <th>{{ __('reason') }}</th>
@@ -33,7 +33,7 @@
                     @foreach ($leaves as $leave)
                         <tr data-id="{{ $leave->id }}">
                             <td>{{ ++$i }}</td>
-                            <td>{{ $leave->employee->name }}</td>
+                            <td>{{ $leave->user->name }}</td>
                             <td>{{ $leave->start_date ?? __('Not found')}}</td>
                             <td>{{ $leave->end_date ?? __('Not found')}}</td>
                             <td>{{  __($leave->reason) ?? __('Not found')}}</td>
