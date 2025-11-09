@@ -43,5 +43,5 @@ class ServiceController extends Controller
         return ServiceResource::collection($services);
     }
 
-    
+
 }

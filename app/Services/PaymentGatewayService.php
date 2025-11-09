@@ -42,7 +42,7 @@ class PaymentGatewayService
             'shopperResultUrl' => $this->shopperResultUrl,
 
             // Customer details
-            'customer.givenName' => $customerData['role'] ?? 'Customer',
+            'customer.givenName' => $customerData['role'] ?? '',
             'customer.surname' => $customerData['name'] ?? '',
             'customer.email' => $customerData['email'] ?? '',
 
@@ -62,7 +62,7 @@ class PaymentGatewayService
         if (isset($customerData['billing'])) {
             $params = array_merge($params, $this->formatBillingData($customerData['billing']));
         }
-//        dd($params);
+
 
         try {
             $response = Http::withHeaders([
@@ -115,29 +115,57 @@ class PaymentGatewayService
     }
 
     /**
-     * Get payment status by checking the transaction
+     * Get payment status for Pay by Link
      *
-     * @param string $paymentId
+     * @param string $paymentId The link ID returned from generatePaymentLink
      * @return array|null
      */
     public function getPaymentStatus($paymentId)
     {
         try {
-            // The status check endpoint (adjust based on your gateway documentation)
-            $statusUrl = str_replace('/paybylink/v1', '/v1/checkouts/' . $paymentId . '/payment', $this->baseUrl);
+            // Try multiple possible endpoints
+            $endpoints = [
+                // Pay by Link status endpoint
+                'https://eu-test.oppwa.com/paybylink/v1/' . $paymentId,
+                // Standard checkout status endpoint
+                'https://eu-test.oppwa.com/v1/checkouts/' . $paymentId . '/payment',
+            ];
 
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $this->authToken,
-            ])->get($statusUrl, [
-                'entityId' => $this->entityId
+            foreach ($endpoints as $statusUrl) {
+                Log::info('Trying payment status endpoint', [
+                    'payment_id' => $paymentId,
+                    'url' => $statusUrl
+                ]);
+
+                $response = Http::withHeaders([
+                    'Authorization' => 'Bearer ' . $this->authToken,
+                ])->get($statusUrl, [
+                    'entityId' => $this->entityId
+                ]);
+
+                $data = $response->json();
+
+                // If we get a valid response (not 404), return it
+                if (isset($data['result']['code']) && !str_contains($data['result']['code'], '200.300.')) {
+                    Log::info('Payment status retrieved', [
+                        'payment_id' => $paymentId,
+                        'endpoint' => $statusUrl,
+                        'response' => $data
+                    ]);
+                    return $data;
+                }
+            }
+
+            Log::warning('Could not retrieve payment status from any endpoint', [
+                'payment_id' => $paymentId
             ]);
 
-            Log::info('Payment Gateway redirect Response', ['response' => $response->json()]);
-            return $response->json();
+            return null;
         } catch (\Exception $e) {
             Log::error('Payment status check error', [
                 'payment_id' => $paymentId,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
             return null;
         }

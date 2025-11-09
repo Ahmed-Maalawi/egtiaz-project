@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\User;
+use App\Models\Wallet;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -13,7 +15,8 @@ return new class extends Migration
     {
         Schema::create('wallet_transactions', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignIdFor(User::class,'user_id')->constrained()->onDelete('cascade');
+            $table->foreignIdFor(Wallet::class,'wallet_id')->constrained()->onDelete('cascade');
             $table->string('payment_id')->unique(); // The 'id' from payment gateway
             $table->string('merchant_transaction_id')->unique();
             $table->decimal('amount', 10, 2);

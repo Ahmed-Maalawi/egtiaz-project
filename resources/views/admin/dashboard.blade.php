@@ -405,8 +405,8 @@
                                                 <td>
                                                     <div class="d-flex align-items-center">
                                                         <div>
-                                                            <div class="fw-bold">{{ $leave->employee->name ?? 'N/A' }}</div>
-                                                            <small class="text-muted">{{ $leave->employee->employee_id ?? '' }}</small>
+                                                            <div class="fw-bold">{{ $leave->user->name ?? 'N/A' }}</div>
+                                                            <small class="text-muted">{{ $leave->user->user_id ?? '' }}</small>
                                                         </div>
                                                     </div>
                                                 </td>
@@ -469,8 +469,8 @@
                                                 <td>
                                                     <div class="d-flex align-items-center">
                                                         <div>
-                                                            <div class="fw-bold">{{ $eos->employee->name ?? 'N/A' }}</div>
-                                                            <small class="text-muted">{{ $eos->employee->employee_id ?? '' }}</small>
+                                                            <div class="fw-bold">{{ $eos->user->name ?? 'N/A' }}</div>
+                                                            <small class="text-muted">{{ $eos->user->user_id ?? '' }}</small>
                                                         </div>
                                                     </div>
                                                 </td>

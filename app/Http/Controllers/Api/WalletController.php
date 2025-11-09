@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Resources\CompanyResource;
 use App\Http\Resources\WalletResource;
 use App\Models\Company;
 use App\Models\Wallet;
@@ -12,7 +11,8 @@ use App\Services\PaymentGatewayService;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class WalletController extends Controller
@@ -86,19 +86,23 @@ class WalletController extends Controller
     public function chargeWallet(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'amount'   => 'required|numeric|min:1|max:1000000',
+            'amount' => 'required|numeric|min:1|max:100000',
             'currency' => 'sometimes|string|size:3',
+            'customer_name' => 'sometimes|string|max:100',
+            'customer_mobile' => 'sometimes|string|max:20',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Validation error',
-                'errors'  => $validator->errors(),
+                'errors' => $validator->errors()
             ], 422);
         }
 
-        $user = Auth::user();
+        $user = auth()->user();
+        $amount = $request->amount;
+        $currency = $request->currency ?? 'SAR';
 
         if (!$user->hasRole('moderator')) {
             return response()->json([
@@ -123,67 +127,116 @@ class WalletController extends Controller
             ], 404);
         }
 
-        $userId   = $user->id;
-        $amount   = $request->amount;
-        $currency = $request->currency ?? 'SAR';
+        // Prepare customer data
+        $customerData = [
+            'given_name' => $request->customer_name ?? $user->name ?? '',
+            'surname' => '',
+            'email' => $user->email ?? '',
+            'mobile' => $request->customer_mobile ?? $user->phone ?? '',
+        ];
 
-        $result = $this->paymentService->generatePaymentLink($amount, $userId, $user, $currency);
+        // Generate payment link
+        $result = $this->paymentService->generatePaymentLink(
+            $amount,
+            $user->id,
+            $customerData,
+            $currency
+        );
 
         if (!$result['success']) {
             return response()->json([
                 'success' => false,
                 'message' => $result['message'],
+                'code' => $result['code'] ?? null
             ], 400);
         }
 
+        // Store transaction record
         $transaction = WalletTransaction::create([
-            'user_id'                => $userId,
-            'payment_id'             => $result['id'],
-            'merchant_transaction_id'=> $result['merchant_transaction_id'],
-            'amount'                 => $amount,
-            'currency'               => $currency,
-            'status'                 => 'pending',
-            'payment_link'           => $result['payment_link'],
+            'user_id' => $user->id,
+            'wallet_id' => $wallet->id,
+            'payment_id' => $result['id'],
+            'merchant_transaction_id' => $result['merchant_transaction_id'],
+            'amount' => $amount,
+            'currency' => $currency,
+            'status' => 'pending',
+            'payment_link' => $result['payment_link'],
+            'qr_code' => $result['qr_code'],
+            'ndc' => $result['ndc'],
         ]);
 
         return response()->json([
             'success' => true,
             'message' => 'Payment link generated successfully',
-            'data'    => [
+            'data' => [
                 'transaction_id' => $transaction->id,
-                'payment_link'   => $result['payment_link'],
-                'amount'         => $amount,
-                'currency'       => $currency,
-            ],
-        ]);
+                'payment_link' => $result['payment_link'],
+                'qr_code' => $result['qr_code'],
+                'payment_id' => $result['id'],
+                'amount' => $amount,
+                'currency' => $currency,
+                'expires_in' => '24 hours'
+            ]
+        ], 200);
     }
 
     /**
-     * Payment callback/webhook handler
+     * Handle shopper result (redirect back from payment page)
+     * This is called when user completes/cancels payment
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\RedirectResponse
      */
-    public function paymentCallback(Request $request)
+    public function handleShopperResult(Request $request)
     {
+        // The callback might send either 'id' or the full resourcePath
+        $paymentId = $request->input('id');
+        $resourcePath = $request->input('resourcePath');
 
-        $checkoutId = $request->input('id') ?? $request->input('checkoutId');
+        Log::info('Payment callback received', [
+            'payment_id' => $paymentId,
+            'resource_path' => $resourcePath,
+            'all_params' => $request->all()
+        ]);
 
-        if (!$checkoutId) {
-            return response()->json(['success' => false, 'message' => 'transaction not found'], 400);
+        if (!$paymentId && !$resourcePath) {
+            return $this->redirectToApp($request, 'failed', 'Invalid payment callback');
         }
 
-
-        // Get payment status from gateway
-        $paymentStatus = $this->paymentService->getPaymentStatus($checkoutId);
-        dd($paymentStatus);
-        $transaction = WalletTransaction::where('payment_id', $checkoutId)->first();
+        // Find transaction
+        $transaction = WalletTransaction::where('payment_id', $paymentId)->first();
 
         if (!$transaction) {
-            return response()->json(['success' => false, 'message' => 'transaction not found'], 404);
+            Log::warning('Transaction not found for payment', ['payment_id' => $paymentId]);
+            return $this->redirectToApp($request, 'failed', 'Transaction not found');
         }
 
-        // Update transaction based on payment status
-        if (isset($paymentStatus['result']['code']) &&
-            preg_match('/^(000\.000\.|000\.100\.1|000\.[36])/', $paymentStatus['result']['code'])) {
+        // If we have resourcePath, use it to get payment status
+        if ($resourcePath) {
+            $paymentStatus = $this->getPaymentStatusFromResourcePath($resourcePath);
+        } else {
+            // Otherwise try the Pay by Link endpoint
+            $paymentStatus = $this->paymentService->getPaymentStatus($paymentId);
+        }
 
+        if (!$paymentStatus || !isset($paymentStatus['result']['code'])) {
+            return $this->redirectToApp($request, 'failed', 'Unable to verify payment status');
+        }
+
+        $resultCode = $paymentStatus['result']['code'];
+
+        // Check if payment was successful
+        if ($this->paymentService->isSuccessfulPayment($resultCode)) {
+
+            // Prevent double processing
+            if ($transaction->status === 'completed') {
+                return $this->redirectToApp($request, 'success', 'Payment already processed', [
+                    'transaction_id' => $transaction->id,
+                    'amount' => $transaction->amount
+                ]);
+            }
+
+            // Update transaction
             $transaction->update([
                 'status' => 'completed',
                 'gateway_response' => $paymentStatus,
@@ -193,32 +246,249 @@ class WalletController extends Controller
             // Update user wallet balance
             $user = $transaction->user;
 
-            $wallet = Wallet::where('id', $user->moderator_company_id)->first();
-
-            $wallet->update([
-               'amount' => $wallet->amount + $transaction->amount,
+            $transaction->wallet->update([
+                'balance' => $user->balance + $transaction->amount
             ]);
+
 //            $user->increment('wallet_balance', $transaction->amount);
 
-            return response()->json(['success' => true], 200);
+            Log::info('Wallet charged successfully', [
+                'user_id' => $user->id,
+                'transaction_id' => $transaction->id,
+                'amount' => $transaction->amount
+            ]);
+
+            return $this->redirectToApp($request, 'success', 'Wallet charged successfully', [
+                'transaction_id' => $transaction->id,
+                'amount' => $transaction->amount,
+                'currency' => $transaction->currency,
+                'wallet_balance' => $user->wallet_balance
+            ]);
         }
 
+        // Payment failed or pending
+        $status = $this->determineTransactionStatus($resultCode);
+
         $transaction->update([
-            'status' => 'failed',
+            'status' => $status,
             'gateway_response' => $paymentStatus
         ]);
 
-        return response()->json(['success' => false], 200);
+        $message = $paymentStatus['result']['description'] ?? 'Payment ' . $status;
+
+        return $this->redirectToApp($request, $status, $message, [
+            'transaction_id' => $transaction->id,
+            'code' => $resultCode
+        ]);
     }
 
-    public function getTransactionStatus(Request $request, int $id)
+    /**
+     * Get payment status using resourcePath from callback
+     *
+     * @param string $resourcePath
+     * @return array|null
+     */
+    protected function getPaymentStatusFromResourcePath($resourcePath)
     {
+        try {
+            // Build the full URL: baseUrl + resourcePath
+            $baseUrl = 'https://eu-test.oppwa.com';
+            $statusUrl = $baseUrl . $resourcePath;
 
+            Log::info('Checking payment via resourcePath', [
+                'url' => $statusUrl
+            ]);
+
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . config('services.payment_gateway.auth_token'),
+            ])->get($statusUrl, [
+                'entityId' => config('services.payment_gateway.entity_id')
+            ]);
+
+            $data = $response->json();
+
+            Log::info('Payment status from resourcePath', [
+                'response' => $data
+            ]);
+
+            return $data;
+        } catch (\Exception $e) {
+            Log::error('Payment status check via resourcePath error', [
+                'resource_path' => $resourcePath,
+                'error' => $e->getMessage()
+            ]);
+            return null;
+        }
     }
 
+    /**
+     * Redirect to mobile app with payment result
+     *
+     * @param Request $request
+     * @param string $status
+     * @param string $message
+     * @param array $data
+     * @return \Illuminate\Http\RedirectResponse|\Illuminate\View\View
+     */
+    protected function redirectToApp($request, $status, $message, $data = [])
+    {
+        // For mobile app deep linking
+        // Format: yourapp://payment/result?status=success&message=...&data=...
+        $scheme = config('app.mobile_scheme', 'yourapp');
+
+        $params = [
+            'status' => $status,
+            'message' => $message,
+        ];
+
+        if (!empty($data)) {
+            $params['data'] = base64_encode(json_encode($data));
+        }
+
+        $deepLink = $scheme . '://payment/result?' . http_build_query($params);
+
+        // If it's a web request, show a simple page
+        if (!$request->expectsJson() && !str_contains($request->userAgent() ?? '', 'Mobile')) {
+            return redirect()->route('admins.companies.index')->with([
+                'status' => $status,
+                'message' => $message,
+                'data' => $data
+            ]);
+        }
+
+        return redirect($deepLink);
+    }
+
+    /**
+     * Get transaction status
+     *
+     * @param int $transactionId
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getTransactionStatus($transactionId)
+    {
+        $transaction = WalletTransaction::where('id', $transactionId)
+            ->where('user_id', auth()->id())
+            ->first();
+
+        if (!$transaction) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Transaction not found'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'transaction_id' => $transaction->id,
+                'amount' => $transaction->amount,
+                'currency' => $transaction->currency,
+                'status' => $transaction->status,
+                'payment_link' => $transaction->payment_link,
+                'created_at' => $transaction->created_at,
+                'completed_at' => $transaction->completed_at,
+            ]
+        ], 200);
+    }
+
+    /**
+     * Get user wallet transactions history
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getTransactionHistory(Request $request)
     {
+        $perPage = $request->input('per_page', 15);
 
+        $transactions = WalletTransaction::where('user_id', auth()->id())
+            ->orderBy('created_at', 'desc')
+            ->paginate($perPage);
+
+        return response()->json([
+            'success' => true,
+            'data' => $transactions
+        ], 200);
     }
 
+    /**
+     * Determine transaction status based on result code
+     *
+     * @param string $code
+     * @return string
+     */
+    protected function determineTransactionStatus($code)
+    {
+        // Pending codes
+        if (preg_match('/^(000\.200|800\.400\.5|100\.400\.500)/', $code)) {
+            return 'pending';
+        }
+
+        // Rejected/cancelled codes
+        if (preg_match('/^(000\.400\.0|100\.400\.0)/', $code)) {
+            return 'cancelled';
+        }
+
+        // Default to failed
+        return 'failed';
+    }
+
+
+    public function handleWebhook(Request $request)
+    {
+        Log::info('Payment webhook received', [
+            'payload' => $request->all()
+        ]);
+
+        $paymentId = $request->input('id');
+
+        if (!$paymentId) {
+            return response()->json(['status' => 'error'], 400);
+        }
+
+        // Find transaction
+        $transaction = WalletTransaction::where('payment_id', $paymentId)->first();
+
+        if (!$transaction) {
+            Log::warning('Webhook: Transaction not found', ['payment_id' => $paymentId]);
+            return response()->json(['status' => 'not_found'], 404);
+        }
+
+        // Don't reprocess completed transactions
+        if ($transaction->status === 'completed') {
+            return response()->json(['status' => 'already_processed'], 200);
+        }
+
+        $resultCode = $request->input('result.code');
+
+        if ($this->paymentService->isSuccessfulPayment($resultCode)) {
+            // Update transaction
+            $transaction->update([
+                'status' => 'completed',
+                'gateway_response' => $request->all(),
+                'completed_at' => now()
+            ]);
+
+            // Update user wallet
+            $user = $transaction->user;
+            $user->increment('wallet_balance', $transaction->amount);
+
+            Log::info('Webhook: Wallet charged successfully', [
+                'user_id' => $user->id,
+                'transaction_id' => $transaction->id,
+                'amount' => $transaction->amount
+            ]);
+
+            return response()->json(['status' => 'success'], 200);
+        }
+
+        // Payment failed
+        $transaction->update([
+            'status' => 'failed',
+            'gateway_response' => $request->all()
+        ]);
+
+        return response()->json(['status' => 'failed'], 200);
+    }
 }

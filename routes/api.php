@@ -36,7 +36,8 @@ Route::get('banners', [BannerController::class, 'index'])->middleware('throttle:
 Route::post('forget-password', [OtpController::class, 'forgotPassword'])->middleware('throttle:30,1');
 Route::post('reset-password', [OtpController::class, 'resetPassword'])->middleware('throttle:30,1');
 
-Route::get('/payment/result', [WalletController::class, 'paymentCallback'])->name('payment.result');
+Route::post('/payment/webhook', [WalletController::class, 'handleWebhook']);
+Route::get('/payment/result', [WalletController::class, 'handleShopperResult'])->name('payment.result');
 
 Route::group([
     'middleware' => ['auth:sanctum','throttle:100,1'],
