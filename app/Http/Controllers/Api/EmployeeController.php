@@ -14,18 +14,18 @@ class EmployeeController extends Controller
    {
        $per_page = $request->get('per_page', 10);
 
+       $user = Auth::user();
+
        $query = Employee::with([
            'upcomingStage',
            'company',
            'iqamaType',
            'employeeStages',
-           'leaves',
-           'eos'
        ])
            ->filter($request->all());
 
-           if (Auth::user()){
-
+           if (Auth::user()->hasRole('moderator')) {
+               $query->where('company_id', $user?->moderator_company_id ?? NULL);
            }
 
            $emloyees = $query->paginate($per_page);
@@ -48,9 +48,7 @@ class EmployeeController extends Controller
             'iqamaType:id,name',
             'upcomingStage',
             'company',
-            'employeeStages.files',
-            'leaves',
-            'eos'
+            'employeeStages.files'
         ])->findOrFail($id);
 
        return response()->json([

@@ -36,6 +36,8 @@ Route::get('banners', [BannerController::class, 'index'])->middleware('throttle:
 Route::post('forget-password', [OtpController::class, 'forgotPassword'])->middleware('throttle:30,1');
 Route::post('reset-password', [OtpController::class, 'resetPassword'])->middleware('throttle:30,1');
 
+Route::get('/payment/result', [WalletController::class, 'paymentCallback'])->name('payment.result');
+
 Route::group([
     'middleware' => ['auth:sanctum','throttle:100,1'],
 ],function(){
@@ -50,7 +52,13 @@ Route::group([
     Route::apiResource('leaves', LeaveController::class)->only(['index', 'show']);
     Route::apiResource('payment-accounts', PaymentAccountController::class)->only(['index', 'show']);
     Route::apiResource('eos', EOSController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
+
     Route::apiResource('wallets', WalletController::class)->only(['index', 'show']);
+    Route::controller(WalletController::class)->group(function () {
+        Route::post('wallet/charge', 'chargeWallet')->name('wallet.charge');
+    });
+
+
     Route::apiResource('admins', AdminController::class)->middleware('role:super-admin|admin')->except(['update']);
     Route::post('/admins/update/{id}', [AdminController::class, 'update'])->middleware('role:super-admin|admin');
     Route::apiResource('moderators', ModeratorsController::class)->middleware('role:super-admin|admin')->except(['update']);

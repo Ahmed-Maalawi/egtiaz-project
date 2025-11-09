@@ -188,10 +188,13 @@ class AdminController extends Controller
             return $request->file('image')->store('users', 'public');
         }
 
-        $avatar = Avatar::create($request->name)->toBase64();
+        $avatar = app(Avatar::class)->create($request->name)->toBase64();
+
         $image_content = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $avatar));
         $filename = 'users/' . uniqid() . '.png';
+
         Storage::disk('public')->put($filename, $image_content);
+
         return $filename;
     }
 

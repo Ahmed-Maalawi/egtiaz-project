@@ -40,10 +40,10 @@ return [
         'credentials'               => env('FIREBASE_CREDENTIALS'),
     ],
 
-    'vodafone'  => [
-        'account_id'                => env('VODAFONE_ACCOUNT_ID'),
-        'password'                  => env('VODAFONE_PASSWORD'),
-        'secure_key'                => env('VODAFONE_SECURE_KEY'),
-        'sender_name'               => env('SENDER_NAME'),
+    'afs_payment_gateway' => [
+        'url' => env('PAYMENT_GATEWAY_URL', 'https://eu-test.oppwa.com/paybylink/v1'),
+        'entity_id' => env('PAYMENT_GATEWAY_ENTITY_ID'),
+        'auth_token' => env('PAYMENT_GATEWAY_AUTH_TOKEN'),
+        'shopper_result_url' => env('PAYMENT_GATEWAY_SHOPPER_RESULT_URL'),
     ],
 ];

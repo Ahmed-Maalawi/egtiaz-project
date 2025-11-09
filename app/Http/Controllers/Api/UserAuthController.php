@@ -108,9 +108,11 @@ class UserAuthController extends Controller
         $auth_token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
-            'message'     => __('Logged in successfully'),
-            'user'        => new UserResource($user),
-            'auth_token'  => $auth_token,
+            'message'       => __('Logged in successfully'),
+            'user'          => new UserResource($user),
+            'auth_token'    => $auth_token,
+            'roles'         => $user->roles,
+            'permissions'   => $user->getAllPermissions(),
         ]);
     }
 

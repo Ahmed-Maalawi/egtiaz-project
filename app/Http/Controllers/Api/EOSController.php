@@ -24,22 +24,22 @@ class EOSController extends Controller
             $user = Auth::user();
             $per_page = $request->get('per_page', 10);
 
-            $query = EndOfService::with(['employee']);
+            $query = EndOfService::with(['user']);
 
-            if (! $user->hasAnyRole(['super-admin', 'admin'])) {
-                $company = $user->companyOfModeration;
-
-                if (is_null($company?->id)) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => __('Forbidden: You do not have access to view end of service records.'),
-                    ], 403);
-                }
-
-                $query->whereHas('employee', function ($q) use ($company) {
-                    $q->where('company_id', $company->id);
-                });
-            }
+//            if (! $user->hasAnyRole(['super-admin', 'admin'])) {
+//                $company = $user->companyOfModeration;
+//
+//                if (is_null($company?->id)) {
+//                    return response()->json([
+//                        'success' => false,
+//                        'message' => __('Forbidden: You do not have access to view end of service records.'),
+//                    ], 403);
+//                }
+//
+//                $query->whereHas('employee', function ($q) use ($company) {
+//                    $q->where('company_id', $company->id);
+//                });
+//            }
 
             $eoss = $query->paginate($per_page);
 
@@ -72,7 +72,7 @@ class EOSController extends Controller
         try {
             $user = Auth::user();
 
-            $query = EndOfService::with(['employee']);
+            $query = EndOfService::with(['user']);
 
             if (! $user->hasAnyRole(['super-admin', 'admin'])) {
                 $company = $user->companyOfModeration;
@@ -84,7 +84,7 @@ class EOSController extends Controller
                     ], 403);
                 }
 
-                $query->whereHas('employee', function ($q) use ($company) {
+                $query->whereHas('user', function ($q) use ($company) {
                     $q->where('company_id', $company->id);
                 });
             }
@@ -112,7 +112,7 @@ class EOSController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'employee_id' => 'required|exists:employees,id',
+            'user_id' => 'required|exists:users,id',
             'joining_date' => 'required|date',
             'leaving_date' => 'required|date|after:joining_date',
             'basic_salary' => 'required|numeric|min:0',
@@ -191,7 +191,7 @@ class EOSController extends Controller
             }
 
             $validator = Validator::make($request->all(), [
-                'employee_id' => 'required|exists:employees,id',
+                'user_id' => 'required|exists:users,id',
                 'joining_date' => 'required|date',
                 'leaving_date' => 'required|date|after:joining_date',
                 'basic_salary' => 'required|numeric|min:0',

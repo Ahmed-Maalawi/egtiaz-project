@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -67,6 +68,10 @@ class PermissionsSeeder extends Seeder
 
         // Optional: assign limited permissions to moderator
         $moderatorRole = Role::where('name', 'moderator')->first();
-        $moderatorRole->givePermissionTo(['reports']);
+        $moderatorRole->givePermissionTo(['reports', 'iqamaTypes', 'employees', 'stages']);
+
+        $admin = User::where('name', 'Super Admin')->first();
+
+        $admin->assignRole('super-admin');
     }
 }
