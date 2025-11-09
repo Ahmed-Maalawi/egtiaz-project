@@ -18,15 +18,15 @@
                 {{-- Employee --}}
                 <div class="col-md-6 mb-3">
                     <label>{{ __('Employee') }}</label>
-                    <select name="employee_id" class="form-control @error('employee_id') is-invalid @enderror">
-                        <option value="">{{ __('Select Employee') }}</option>
-                        @foreach($employees as $emp)
-                            <option value="{{ $emp->id }}" {{ old('employee_id') == $emp->id ? 'selected' : '' }}>
-                                {{ $emp->name }}
+                    <select name="user_id" class="form-control @error('user_id') is-invalid @enderror">
+                        <option value="">{{ __('Select User') }}</option>
+                        @foreach($users as $user)
+                            <option value="{{ $user->id }}" {{ old('user_id') == $user->id ? 'selected' : '' }}>
+                                {{ $user->name }}
                             </option>
                         @endforeach
                     </select>
-                    @error('employee_id')
+                    @error('user_id')
                     <div class="alert alert-danger mt-2 py-1 px-2">{{ $message }}</div>
                     @enderror
                 </div>

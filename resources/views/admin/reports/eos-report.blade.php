@@ -16,7 +16,7 @@
                     {{-- Active Filters Badge --}}
                     @php
                         $activeFilterCount = 0;
-                        $filterFields = ['employee_id', 'year_from', 'year_to', 'service_years', 'net_pay_min', 'net_pay_max', 'date_range'];
+                        $filterFields = ['user_id', 'year_from', 'year_to', 'service_years', 'net_pay_min', 'net_pay_max', 'date_range'];
                         foreach ($filterFields as $field) {
                             if (request()->filled($field)) {
                                 $activeFilterCount++;
@@ -79,13 +79,13 @@
                             }
                         @endphp
 
-                        @if(request('employee_id'))
+                        @if(request('user_id'))
                             @php
-                                $employeeName = $employees->where('id', request('employee_id'))->first()->name ?? 'N/A';
+                                $employeeName = $employees->where('id', request('user_id'))->first()->name ?? 'N/A';
                             @endphp
                             <span class="badge bg-primary me-1 mb-1 text-white">
                             {{ __('Employee') }}: {{ $employeeName }}
-                            <a href="{{ removeQueryParams('employee_id') }}" class="text-white ms-1" style="text-decoration: none;">×</a>
+                            <a href="{{ removeQueryParams('user_id') }}" class="text-white ms-1" style="text-decoration: none;">×</a>
                         </span>
                         @endif
 
@@ -151,12 +151,12 @@
                     @foreach($eosRecords as $eo)
                         <tr>
                             <td>{{ $loop->iteration }}</td>
-                            <td>{{ $eo->employee->name ?? __('N/A') }}</td>
+                            <td>{{ $eo->user->name ?? __('N/A') }}</td>
                             <td>{{ \Carbon\Carbon::parse($eo->joining_date)->format('Y-m-d') }}</td>
                             <td>{{ \Carbon\Carbon::parse($eo->leaving_date)->format('Y-m-d') }}</td>
                             <td>{{ number_format(\Carbon\Carbon::parse($eo->joining_date)->diffInYears(\Carbon\Carbon::parse($eo->leaving_date)), 2) }}</td>
-                            <td>{{ number_format($eo->employee->salary, 2) }}</td>
-                            <td>{{ $eo->employee->leaves()->count() }}</td>
+                            <td>{{ number_format($eo->user->salary, 2) }}</td>
+                            <td>{{ $eo->user->leaves()->count() }}</td>
                             <td><strong>{{ number_format($eo->net_pay, 2) }}</strong></td>
                         </tr>
                     @endforeach
@@ -181,13 +181,13 @@
                         <div class="row g-3">
                             {{-- Employee Filter --}}
                             <div class="col-md-6">
-                                <label for="employee_id" class="form-label">{{ __('Employee Name') }}</label>
-                                <select id="employee_id" name="employee_id" class="form-select select2-filter">
+                                <label for="user_id" class="form-label">{{ __('Employee Name') }}</label>
+                                <select id="user_id" name="user_id" class="form-select select2-filter">
                                     <option value="">{{ __('All Employees') }}</option>
-                                    @foreach($employees as $employee)
-                                        <option value="{{ $employee->id }}"
-                                            {{ request('employee_id') == $employee->id ? 'selected' : '' }}>
-                                            {{ $employee->name }}
+                                    @foreach($users as $user)
+                                        <option value="{{ $user->id }}"
+                                            {{ request('user_id') == $user->id ? 'selected' : '' }}>
+                                            {{ $user->name }}
                                         </option>
                                     @endforeach
                                 </select>

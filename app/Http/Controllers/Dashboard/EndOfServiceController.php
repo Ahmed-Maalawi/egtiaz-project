@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Dashboard;
 
-use App\Models\Employee;
 use App\Models\EndOfService;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
@@ -15,13 +15,13 @@ class EndOfServiceController extends Controller
     {
         $user = Auth::user();
 
-        $query = EndOfService::with('employee');
+        $query = EndOfService::with('user');
 
-        if (!$user->hasRole('super-admin|admin') && !is_null($user->moderator_company_id)) {
-            $query->whereHas('employee', function ($query) use ($user) {
-                $query->where('company_id', $user->moderator_company_id);
-            });
-        }
+//        if (!$user->hasRole('super-admin|admin') && !is_null($user->moderator_company_id)) {
+//            $query->whereHas('user', function ($query) use ($user) {
+//                $query->where('company_id', $user->moderator_company_id);
+//            });
+//        }
 
         $eosRecords = $query->latest()->paginate(10);
         return view('admin.eos.index', compact('eosRecords'));
@@ -32,19 +32,21 @@ class EndOfServiceController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->hasRole('super-admin')) {
-            $employees = Employee::whereDoesntHave('eos')->get();
-        } else {
-            $employees = Employee::where('company_id', $user?->moderator_company_id ?? null)->whereDoesntHave('eos')->get();
-        }
 
-        return view('admin.eos.create', compact('employees'));
+//        if ($user->hasRole('super-admin')) {
+//            $employees = Employee::whereDoesntHave('eos')->get();
+//        } else {
+//            $employees = Employee::where('company_id', $user?->moderator_company_id ?? null)->whereDoesntHave('eos')->get();
+//        }
+
+        $users = User::whereDoesntHave('eos')->get();
+        return view('admin.eos.create', compact('users'));
     }
 
     public function store(Request $request)
     {
         $data = $request->validate([
-            'employee_id' => 'required',
+            'user_id' => 'required|exists:users,id',
             'joining_date' => 'required|date',
             'leaving_date' => 'required|date|after:joining_date',
             'basic_salary' => 'required|numeric',
@@ -88,21 +90,21 @@ class EndOfServiceController extends Controller
 
     public function show(EndOfService $eo)
     {
-        $eo->load('employee');
+        $eo->load('user');
         return view('admin.eos.show', compact('eo'));
     }
 
 
     public function edit(EndOfService $eo)
     {
-        $employees = Employee::all();
-        return view('admin.eos.edit', compact('eo', 'employees'));
+        $users = User::all();
+        return view('admin.eos.edit', compact('eo', 'users'));
     }
 
     public function update(Request $request, EndOfService $eo)
     {
         $data = $request->validate([
-            'employee_id' => 'required',
+            'user_id' => 'required|exists:users,id',
             'joining_date' => 'required|date',
             'leaving_date' => 'required|date|after:joining_date',
             'basic_salary' => 'required|numeric|min:0',

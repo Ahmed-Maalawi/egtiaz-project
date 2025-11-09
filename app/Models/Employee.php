@@ -100,15 +100,15 @@ class Employee extends Model
         return $query->whereStatus('active');
     }
 
-    public function leaves()
-    {
-        return $this->belongsTo(OfficialLeave::class, 'id', 'employee_id');
-    }
+//    public function leaves()
+//    {
+//        return $this->belongsTo(OfficialLeave::class, 'id', 'employee_id');
+//    }
 
-    public function eos()
-    {
-        return $this->hasOne(EndOfService::class, 'employee_id', 'id');
-    }
+//    public function eos()
+//    {
+//        return $this->hasOne(EndOfService::class, 'employee_id', 'id');
+//    }
 
     public function getTotalFilesSize()
     {

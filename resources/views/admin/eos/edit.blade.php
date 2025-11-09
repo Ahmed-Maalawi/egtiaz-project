@@ -9,10 +9,10 @@
             <div class="row">
                 <div class="col-md-6 mb-2">
                     <label>{{ __('Employee') }}</label>
-                    <select name="employee_id" class="form-control">
-                        @foreach($employees as $emp)
-                            <option value="{{ $emp->id }}" {{ $emp->id == $eo->employee_id ? 'selected' : '' }}>
-                                {{ $emp->name }}
+                    <select name="user_id" class="form-control">
+                        @foreach($users as $user)
+                            <option value="{{ $user->id }}" {{ $user->id == $eo->user_id ? 'selected' : '' }}>
+                                {{ $user->name }}
                             </option>
                         @endforeach
                     </select>

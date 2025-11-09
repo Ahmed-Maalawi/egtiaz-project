@@ -33,7 +33,7 @@
                     @forelse($eosRecords as $eo)
                         <tr>
                             <td>{{ $loop->iteration }}</td>
-                            <td>{{ $eo->employee->name ?? __('N/A') }}</td>
+                            <td>{{ $eo->user->name ?? __('N/A') }}</td>
                             <td>{{ $eo->joining_date }}</td>
                             <td>{{ $eo->leaving_date }}</td>
                             <td>

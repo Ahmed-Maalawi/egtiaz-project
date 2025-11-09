@@ -19,9 +19,9 @@
                 <table class="table table-borderless table-sm">
                     <tr>
                         <th>{{ __('Employee Name') }}:</th>
-                        <td>{{ $eo->employee->name ?? __('N/A') }}</td>
+                        <td>{{ $eo->user->name ?? __('N/A') }}</td>
                         <th>{{ __('Employee ID') }}:</th>
-                        <td>{{ $eo->employee->id ?? __('N/A') }}</td>
+                        <td>{{ $eo->user->id ?? __('N/A') }}</td>
                     </tr>
                     <tr>
                         <th>{{ __('Joining Date') }}:</th>

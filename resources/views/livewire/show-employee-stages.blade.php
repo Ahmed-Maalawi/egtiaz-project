@@ -165,21 +165,21 @@
                         @if ($employeeStage->status == 'pending')
                             <span class="px-2 py-1 text-white rounded bg-warning">
                                     {{ __('Pending') }}
-                                </span>
+                            </span>
                         @elseif ($employeeStage->status == 'in_progress')
                             <span class="px-2 py-1 text-white rounded bg-info">
                                     {{ __('In Progress') }}
-                                </span>
+                            </span>
                         @elseif ($employeeStage->status == 'completed')
                             <span class="px-2 py-1 text-white rounded bg-success">
                                     {{ __('Completed') }}
-                                </span>
+                            </span>
                         @endif
                     </td>
                     <td>
                         <div class="d-flex">
-                            <button type="button" class="btn btn-warning">{{ __('Update') }}</button>
-                            @if($employeeStage)
+{{--                            <button type="button" class="btn btn-warning">{{ __('Update') }}</button>--}}
+                            @if($employeeStage && $employeeStage->status !== 'completed')
                                 <a type="button" class="btn btn-primary text-white mx-1"
                                    href="{{ route('admins.employee-stages.get-pay-page', ['id' => $employeeStage->id]) }}">
                                     {{ __('Pay') }}

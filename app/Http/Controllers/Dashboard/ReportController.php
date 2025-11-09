@@ -14,6 +14,7 @@ use App\Models\PaymentAccount;
 use App\Models\Salary;
 use App\Models\Stage;
 use App\Models\Transaction;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
@@ -23,15 +24,11 @@ class ReportController extends Controller
     {
         $perPage = 10;
 
-        $query = EndOfService::with([
-            'employee.files',
-            'employee.iqamaType',
-            'employee.leaves',
-        ]);
+        $query = EndOfService::with(['user.leaves']);
 
-        if ($request->has('employee_id') && $request->employee_id) {
-            $query->whereHas('employee', function($q) use ($request) {
-                $q->where('id', $request->employee_id);
+        if ($request->has('user_id') && $request->user_id) {
+            $query->whereHas('user', function($q) use ($request) {
+                $q->where('id', $request->user_id);
             });
         }
 
@@ -63,7 +60,7 @@ class ReportController extends Controller
             }
         }
 
-        $employees = Employee::whereHas('eos')->get();
+        $users = User::whereHas('eos')->get();
 
         $eosRecords = $query->paginate($perPage);
 
@@ -75,7 +72,7 @@ class ReportController extends Controller
             'max_net_pay' => EndOfService::max('net_pay') ?? 100000,
         ];
 
-        return view('admin.reports.eos-report', compact('eosRecords', 'employees', 'filterData'));
+        return view('admin.reports.eos-report', compact('eosRecords', 'users', 'filterData'));
     }
 
     public function LeavesReport(Request $request)
@@ -121,10 +118,10 @@ class ReportController extends Controller
         }
 
         $leaves = $query->paginate($perPage);
-        $employees = Employee::whereHas('leaves')->get();
+        $users = User::whereHas('leaves')->get();
 
 
-        return view('admin.reports.leaves-report', compact('leaves', 'employees'));
+        return view('admin.reports.leaves-report', compact('leaves', 'users'));
     }
 
     public function EmployeesReport(Request $request)
@@ -167,10 +164,10 @@ class ReportController extends Controller
 
         $query = Salary::query()->with(['company', 'iqamaType', 'upcomingStage']);
 
-        $employees = $query->paginate($perPage);
+        $salaries = $query->paginate($perPage);
 
 
-//        return view('admin.reports.employees-report', compact('employees', 'companies', 'iqamaTypes'));
+        return view('admin.reports.employees-report', compact('salaries'));
     }
 
 

@@ -91,4 +91,13 @@ class   User extends Authenticatable
         return $this->hasMany(Salary::class);
     }
 
+    public function eos()
+    {
+        return $this->hasOne(EndOfService::class, 'user_id', 'id');
+    }
+
+    public function leaves()
+    {
+        return $this->hasMany(OfficialLeave::class, 'user_id', 'id');
+    }
 }
