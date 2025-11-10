@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\WalletResource;
-use App\Models\Company;
 use App\Models\Wallet;
 use App\Models\WalletTransaction;
 use App\Services\PaymentGatewayService;

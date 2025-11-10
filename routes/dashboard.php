@@ -211,6 +211,7 @@ Route::group(['prefix' => 'hr'], function () {
         Route::get('leaves', 'LeavesReport')->name('leaves.report');
         Route::get('employees', 'EmployeesReport')->name('employees.report');
         Route::get('transactions', 'TransactionsReport')->name('transactions.report');
+        Route::get('employee-details', 'getEmployeeDetails')->name('employee.details');
     });
 
     Route::resource('leave-types', LeaveTypesController::class)

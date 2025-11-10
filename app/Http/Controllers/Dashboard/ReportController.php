@@ -196,4 +196,32 @@ class ReportController extends Controller
             'stages' => Stage::all()
         ]);
     }
+
+    public function getEmployeeDetails(Request $request)
+    {
+        $validatedData = $request->validate([
+            'employee_id' => 'nullable|integer|exists:employees,id',
+        ]);
+
+        $employees = Employee::get();
+        $employee = null;
+        if (isset($validatedData['employee_id'])) {
+            $employee = Employee::with([
+                'company',
+                'iqamaType',
+                'iqamaType.stages',
+                'upcomingStage',
+                'files',
+                'employeeStages',
+                'employeeStages.doneBy',
+                'employeeStages.files',
+                'employeeStages.transactions',
+            ])
+                ->findOrFail($request->employee_id);
+        }
+
+
+
+        return view('admin.reports.employee-details', compact('employee', 'employees'));
+    }
 }

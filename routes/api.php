@@ -155,6 +155,7 @@ Route::group([
         Route::get('end-of-services', 'getEOSReport');
         Route::get('leaves', 'getLeavesReport');
         Route::get('employees-salaries', 'getEmployeesSalaryReport');
+        Route::get('employee-details', 'getEmployeeDetails');
     });
 });
 

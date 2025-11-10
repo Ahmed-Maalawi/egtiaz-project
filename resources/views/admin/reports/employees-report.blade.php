@@ -37,7 +37,7 @@
                         <th>{{ __('Salary') }}</th>
                         <th>{{ __('Expired Date') }}</th>
                         <th>{{ __('Status') }}</th>
-                        <th>{{ __('Leaves') }}</th>
+{{--                        <th>{{ __('Leaves') }}</th>--}}
                     </tr>
                     </thead>
                     <tbody>
@@ -69,7 +69,7 @@
                                         {{ ucfirst($employee->status) }}
                                     </span>
                             </td>
-                            <td>{{ $employee->leaves()->count() }}</td>
+{{--                            <td>{{ $employee->leaves()->count() }}</td>--}}
                         </tr>
                     @endforeach
                     </tbody>
