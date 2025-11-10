@@ -46,7 +46,7 @@ class EmployeeStage extends Model
     public function doneBy()
     {
         return $this->belongsTo(User::class , 'done_by')->withDefault([
-            'name'                  =>__('User Deleted'),
+            'name'  => __('User Deleted'),
         ]);
     }
 
@@ -68,6 +68,11 @@ class EmployeeStage extends Model
     public function files()
     {
         return $this->hasMany(EmployeeStageFile::class);
+    }
+
+    public function transactions()
+    {
+        return $this->morphMany(Transaction::class, 'transactionable');
     }
 
     public function markAsPaid($amount): void

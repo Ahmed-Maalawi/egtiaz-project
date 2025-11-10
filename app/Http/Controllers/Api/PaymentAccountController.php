@@ -14,64 +14,63 @@ class PaymentAccountController extends Controller
 {
    public function index(Request $request)
    {
-       $user = Auth::user();
-       $per_page = $request->get('per_page', 10);
-
-       $query = PaymentAccount::with([
-           'users',
-           'transactions'
-       ]);
-
-       if (! $user->hasAnyRole(['super-admin', 'admin'])) {
-           $query->whereHas('users', function ($q) use ($user) {
-               $q->where('users.id', $user->id);
-           });
-       }
-
-       $payment_accounts = $query->paginate($per_page);
+      $payment_accounts = Auth::user()->paymentAccounts()->get();
 
        return response()->json([
            'success' => true,
-           'data' => PaymentAccountResource::collection($payment_accounts),
-           'meta' => [
-               'current_page' => $payment_accounts->currentPage(),
-               'last_page'    => $payment_accounts->lastPage(),
-               'per_page'     => $payment_accounts->perPage(),
-               'total'        => $payment_accounts->total(),
-           ]
+           'data' => PaymentAccountResource::collection($payment_accounts)
        ]);
    }
 
     public function show(int $id)
     {
-        $user = Auth::user();
+        $paymentAccount = PaymentAccount::with(['users', 'transactions'])
+            ->findOrFail($id);
 
-        if ($user->hasAnyRole(['super-admin', 'admin'])) {
-            $payment_account = PaymentAccount::with(['users', 'transactions'])
-                ->findOrFail($id);
+        // Eager load relationships
+        $paymentAccount->load([
+            'transactions' => function($query) {
+                $query->latest()->with(['user', 'createdBy']);
+            },
+            'users.roles',
+            'transactions.user.roles',
+            'transactions.createdBy.roles'
+        ]);
 
-            return response()->json([
-                'success' => true,
-                'data' => new PaymentAccountResource($payment_account),
-            ]);
-        }
+        // Calculate statistics
+        $totalTransactions = $paymentAccount->transactions->count();
+        $totalAmount = $paymentAccount->transactions->sum('amount');
+        $completedTransactions = $paymentAccount->transactions->where('status', 'completed')->count();
+        $pendingTransactions = $paymentAccount->transactions->where('status', 'pending')->count();
 
-        $payment_account = PaymentAccount::with(['users', 'transactions'])
-            ->whereHas('users', function ($q) use ($user) {
-                $q->where('users.id', $user->id);
-            })
-            ->find($id);
+        // Get all users associated with this payment account
+        $assignedUsers = $paymentAccount->users;
+        $transactionUsers = $paymentAccount->transactions->pluck('user')->filter()->unique('id');
 
-        if (! $payment_account) {
-            return response()->json([
-                'success' => false,
-                'message' => __('Forbidden: You do not have access to this payment account.'),
-            ], 403);
-        }
+        // Combine all users (assigned + transaction users)
+        $allUsers = $assignedUsers->merge($transactionUsers)->unique('id');
+
+        // Monthly breakdown
+        $monthlyBreakdown = $paymentAccount->transactions()
+            ->selectRaw('YEAR(created_at) as year, MONTH(created_at) as month, SUM(amount) as total_amount, COUNT(*) as transaction_count')
+            ->where('status', 'completed')
+            ->groupBy('year', 'month')
+            ->orderBy('year', 'desc')
+            ->orderBy('month', 'desc')
+            ->get();
+
+        $data['paymentAccount'] = $paymentAccount;
+        $data['totalTransactions'] = $totalTransactions;
+        $data['totalAmount'] = $totalAmount;
+        $data['completedTransactions'] = $completedTransactions;
+        $data['pendingTransactions'] = $pendingTransactions;
+        $data['monthlyBreakdown'] = $monthlyBreakdown;
+        $data['allUsers'] = $allUsers;
 
         return response()->json([
             'success' => true,
-            'data' => new PaymentAccountResource($payment_account),
+            'message' => 'get payment account details',
+            'data' => $data
         ]);
     }
 

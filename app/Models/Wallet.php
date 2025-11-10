@@ -24,4 +24,9 @@ class Wallet extends Model
     {
         return $this->hasMany(WalletTransaction::class);
     }
+
+    public function paymentTransactions()
+    {
+        return $this->hasMany(Transaction::class, 'to_wallet_id', 'id');
+    }
 }

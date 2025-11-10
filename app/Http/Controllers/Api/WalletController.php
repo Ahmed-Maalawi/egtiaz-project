@@ -104,12 +104,12 @@ class WalletController extends Controller
         $amount = $request->amount;
         $currency = $request->currency ?? 'SAR';
 
-        if (!$user->hasRole('moderator')) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Only moderators can charge company wallets',
-            ], 403);
-        }
+//        if (!$user->hasRole('moderator')) {
+//            return response()->json([
+//                'success' => false,
+//                'message' => 'Only moderators can charge company wallets',
+//            ], 403);
+//        }
 
         $company = $user->companyOfModeration()->first();
         if (!$company) {
@@ -247,10 +247,8 @@ class WalletController extends Controller
             $user = $transaction->user;
 
             $transaction->wallet->update([
-                'balance' => $user->balance + $transaction->amount
+                'balance' => $transaction->wallet->balance + $transaction->amount
             ]);
-
-//            $user->increment('wallet_balance', $transaction->amount);
 
             Log::info('Wallet charged successfully', [
                 'user_id' => $user->id,
@@ -258,11 +256,15 @@ class WalletController extends Controller
                 'amount' => $transaction->amount
             ]);
 
-            return $this->redirectToApp($request, 'success', 'Wallet charged successfully', [
-                'transaction_id' => $transaction->id,
-                'amount' => $transaction->amount,
-                'currency' => $transaction->currency,
-                'wallet_balance' => $user->wallet_balance
+            return response()->json( [
+                'success'   => true,
+                'message'   => 'Wallet charged successfully',
+                'data'      => [
+                    'transaction_id' => $transaction->id,
+                    'amount' => $transaction->amount,
+                    'currency' => $transaction->currency,
+                    'wallet_balance' => $transaction->wallet->balance
+                ]
             ]);
         }
 
@@ -276,9 +278,15 @@ class WalletController extends Controller
 
         $message = $paymentStatus['result']['description'] ?? 'Payment ' . $status;
 
-        return $this->redirectToApp($request, $status, $message, [
-            'transaction_id' => $transaction->id,
-            'code' => $resultCode
+//        ----------    working if from view    ----------------
+//        return $this->redirectToApp($request, $status, $message, [
+//            'transaction_id' => $transaction->id,
+//            'code' => $resultCode
+//        ]);
+
+        return response()->json([
+            'message' => $message,
+            'transaction' => $transaction,
         ]);
     }
 

@@ -25,6 +25,7 @@ class EmployeeResource extends JsonResource
             'expired_date'          => Carbon::parse($this->expired_date)->format('Y-m-d'),
             'salary'                => $this->salary,
             'status'                => $this->status,
+            'files'                 => $this->whenLoaded('files', EmployeeFileResource::collection($this->files)),
             'iqamaType'             => $this->whenLoaded('iqamaType'),
             'upcomingStage'         => $this->whenLoaded('upcomingStage'),
             'company'               => $this->whenLoaded('company', new CompanyResource($this->company)) ?? null,

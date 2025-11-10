@@ -35,18 +35,17 @@ class ReportsController extends Controller
         $query = Employee::with([
             'upcomingStage',
             'company',
-            'salaries',
             'files',
             'iqamaType',
             'employeeStages',
-            'leaves',
-            'eos'
+            'employeeStages.doneBy',
+            'employeeStages.transactions'
         ])->filter($filters);
 
 
-        if (!Auth::user()->hasRole('super-admin') && !is_null(Auth::user()->companyOfModeration)) {
-            $query->where('company_id', Auth::user()->companyOfModeration);
-        }
+//        if (!Auth::user()->hasRole('super-admin') && !is_null(Auth::user()->companyOfModeration)) {
+//            $query->where('company_id', Auth::user()->companyOfModeration);
+//        }
 
 
         $employees = $query->orderBy($sortColumn, $sortDirection)
@@ -55,15 +54,15 @@ class ReportsController extends Controller
 
         return response([
             'message'   => 'list employees report data',
-            'data'      => EmployeeResource::collection($employees),
-            'pagination' => [
-                'total'         => $employees->total(),
-                'per_page'      => $employees->perPage(),
-                'current_page'  => $employees->currentPage(),
-                'last_page'     => $employees->lastPage(),
-                'from'          => $employees->firstItem(),
-                'to'            => $employees->lastItem()
-            ]
+            'data'      =>  $employees, //EmployeeResource::collection($employees),
+//            'pagination' => [
+//                'total'         => $employees->total(),
+//                'per_page'      => $employees->perPage(),
+//                'current_page'  => $employees->currentPage(),
+//                'last_page'     => $employees->lastPage(),
+//                'from'          => $employees->firstItem(),
+//                'to'            => $employees->lastItem()
+//            ]
         ]);
     }
 }

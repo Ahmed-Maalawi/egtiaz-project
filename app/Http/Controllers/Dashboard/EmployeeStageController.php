@@ -171,6 +171,7 @@ class EmployeeStageController extends Controller
                 $transaction = Transaction::create([
                     'created_by'                => Auth::id(),
                     'transaction_id'            => Str::uuid(),
+                    'to_wallet_id'              => $company->wallet->id,
                     'from_payment_account_id'   => $paymentAccount->id,
 //                    'employee_id'               => $employeeStage->employee->id,
                     'payment_account_id'        => $paymentAccount->id,

@@ -17,9 +17,12 @@ class EmployeeFile extends Model
 
     public function getFileIcon()
     {
-
-
         return $iconMap[strtolower($this->path)] ?? 'file';
+    }
+
+    public function getFileUrlAttribute()
+    {
+        return $this->path ? asset('storage/'.$this->path) : null;
     }
 
     /**

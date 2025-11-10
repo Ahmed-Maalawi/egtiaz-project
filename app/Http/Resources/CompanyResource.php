@@ -20,6 +20,7 @@ class CompanyResource extends JsonResource
             'id'            => $this->id,
             'name'          => $this->getTranslation('name', $locale),
             'description'   => $this->getTranslation('description', $locale),
+            'balance'       => $this->Balance,
             'status'        => $this->status,
             'banner_image'  => $this->banner_image_url,
             'image_url'     => $this->image_url,

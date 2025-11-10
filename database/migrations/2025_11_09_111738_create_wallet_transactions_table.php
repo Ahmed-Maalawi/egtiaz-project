@@ -23,8 +23,8 @@ return new class extends Migration
             $table->string('currency', 3)->default('USD');
             $table->enum('status', ['pending', 'completed', 'failed', 'cancelled'])->default('pending');
             $table->text('payment_link')->nullable();
-            $table->text('qr_code')->nullable(); // QR code image data
-            $table->string('ndc')->nullable(); // Network transaction ID
+            $table->text('qr_code')->nullable();
+            $table->string('ndc')->nullable();
             $table->json('gateway_response')->nullable();
             $table->timestamp('completed_at')->nullable();
             $table->timestamps();

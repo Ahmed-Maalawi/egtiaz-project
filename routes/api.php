@@ -16,8 +16,10 @@ use App\Http\Controllers\Api\OtpController;
 use App\Http\Controllers\Api\PaymentAccountController;
 use App\Http\Controllers\Api\ProviderController;
 use App\Http\Controllers\Api\ReportsController;
+use App\Http\Controllers\Api\SalaryController;
 use App\Http\Controllers\Api\ServiceController;
 use App\Http\Controllers\Api\UserAuthController;
+use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\WalletController;
 use Illuminate\Support\Facades\Route;
 
@@ -47,7 +49,8 @@ Route::group([
     Route::post('send-verification-code',[OtpController::class , 'send']);
     Route::post('verify-code',[OtpController::class , 'verify']);
 
-    Route::apiResource('companies', CompaniesController::class)->only(['index', 'show']);
+//    Route::apiResource('companies', CompaniesController::class)->only(['index', 'show']);
+    Route::get('companies/profile', [CompaniesController::class, 'getCompanyProfile']);
 //        ->middleware('role:super-admin|admin');
     Route::apiResource('employees', EmployeeController::class)->only(['index', 'show']);
     Route::apiResource('leaves', LeaveController::class)->only(['index', 'show']);
@@ -64,6 +67,28 @@ Route::group([
     Route::post('/admins/update/{id}', [AdminController::class, 'update'])->middleware('role:super-admin|admin');
     Route::apiResource('moderators', ModeratorsController::class)->middleware('role:super-admin|admin')->except(['update']);
     Route::post('/moderators/update/{id}', [ModeratorsController::class, 'update'])->middleware('role:super-admin|admin');
+
+    Route::group([
+        'controller' => SalaryController::class,
+    ], function () {
+       Route::get('/salaries', 'index')->name('salaries.index');
+       Route::post('/salaries/generate', 'generate')->name('salaries.generate');
+       Route::post('/salaries/paySalary', 'paySalary')->name('salaries.pay');
+       Route::post('/salaries/bulkPaySalaries', 'bulkPaySalaries')->name('salaries.bulkPaySalaries');
+       Route::delete('/salaries/{id}', 'destroy')->name('salaries.destroy');
+    });
+
+
+    Route::resource('users', UserController::class)->except(['show', 'create', 'edit', 'update'])
+        ->names([
+            'index'     => 'users.index',
+            'destroy'   => 'users.destroy',
+        ]);
+
+    Route::put('users/{id}/toggle', [UserController::class, 'toggleStatus'])
+        ->name('users.toggle');
+//    Route::post('users/export', [UserController::class, 'export'])
+//        ->name('users.export');
 
 
     Route::prefix('employee-stages')

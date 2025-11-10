@@ -18,9 +18,10 @@ class EmployeeController extends Controller
 
        $query = Employee::with([
            'upcomingStage',
-           'company',
            'iqamaType',
            'employeeStages',
+           'employeeStages.doneBy',
+           'employeeStages.stage',
        ])
            ->filter($request->all());
 
@@ -48,7 +49,10 @@ class EmployeeController extends Controller
             'iqamaType:id,name',
             'upcomingStage',
             'company',
-            'employeeStages.files'
+            'employeeStages',
+            'employeeStages.files',
+            'employeeStages.doneBy',
+            'employeeStages.stage',
         ])->findOrFail($id);
 
        return response()->json([

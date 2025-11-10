@@ -34,6 +34,7 @@ class PaymentAccountController extends Controller
         $request->validate([
             'name_ar'           => 'required|string',
             'name_en'           => 'required|string',
+            'balance'           => 'required|numeric',
             'description_ar'    => 'nullable|required_with:description_en|string',
             'description_en'    => 'nullable|required_with:description_ar|string',
         ]);
@@ -47,6 +48,7 @@ class PaymentAccountController extends Controller
                 'ar'    => $request->description_ar,
                 'en'    => $request->description_en,
             ],
+            'balance' => $request->balance,
         ]);
 
         return redirect()->route('admins.paymentAccounts.index')
@@ -117,6 +119,8 @@ class PaymentAccountController extends Controller
         $request->validate([
             'name_ar'                       => 'required|string',
             'name_en'                       => 'required|string',
+            'name_en'                       => 'required|string',
+            'balance'           => 'required|numeric',
             'description_ar'                => 'nullable|required_with:description_en|string',
             'description_en'                => 'nullable|required_with:description_ar|string',
         ]);
@@ -130,6 +134,7 @@ class PaymentAccountController extends Controller
                 'ar'                        => $request->description_ar,
                 'en'                        => $request->description_en,
             ],
+            'balance' => $request->balance,
         ]);
 
         return redirect()->route('admins.paymentAccounts.index')

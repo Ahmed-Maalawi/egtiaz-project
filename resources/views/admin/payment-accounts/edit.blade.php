@@ -28,6 +28,12 @@
                     >{{ old('description_en', $paymentAccount->getTranslation('description', 'en')) }}</textarea>
             </div>
 
+            <div class="form-group">
+                <label for="name">{{ __('Balance') }}</label>
+                <input type="number" name="balance" class="form-control" id="balance"
+                       placeholder="{{ __('Balance') }}" required value="{{ old('balance', $paymentAccount->balance) }}">
+            </div>
+
             <button type="submit" class="btn btn-success btn-block mb_40">{{ __('Update') }}</button>
         </form>
 

@@ -27,7 +27,7 @@ class Transaction extends Model
 
     public function toWallet()
     {
-        return $this->belongsTo(Wallet::class, 'to_wallet_id');
+        return $this->belongsTo(Wallet::class, 'to_wallet_id', 'id');
     }
 
     public function paymentAccount()
