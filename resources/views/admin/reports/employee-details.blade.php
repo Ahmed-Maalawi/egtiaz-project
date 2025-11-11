@@ -196,16 +196,65 @@
                 margin-bottom: 1rem;
             }
         }
+
+        @media print {
+            /* Hide everything except the printable section */
+            body * {
+                visibility: hidden;
+            }
+
+            #employeeProfile, #employeeProfile * {
+                visibility: visible;
+            }
+
+            #employeeProfile {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                padding: 20px;
+                background: white;
+            }
+
+            #viewStageFiles {
+                display: none !important;
+            }
+            /* Hide elements that shouldn’t appear in print */
+            #printReportBtn,
+            .employee-selector,
+            .header-section {
+                display: none !important;
+            }
+
+            /* Remove card hover and shadows for print clarity */
+            .info-card, .card {
+                box-shadow: none !important;
+                border: 1px solid #ddd !important;
+            }
+
+            .card-header-custom {
+                background: #3498db !important;
+                color: white !important;
+            }
+
+            .profile-header {
+                background: #2c3e50 !important;
+                color: white !important;
+                box-shadow: none !important;
+            }
+
+            /* Page setup */
+            @page {
+                margin: 15mm;
+            }
+        }
     </style>
+
     <div class="header-section">
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-md-8">
-                    <h1 class="display-4">نظام إدارة الموظفين</h1>
-                    <p class="lead">عرض معلومات الموظفين وتتبع مراحل الإقامة</p>
-                </div>
-                <div class="col-md-4 text-left">
-                    <i class="fas fa-users fa-5x opacity-75"></i>
+                    <p class="lead">{{ __('View employee information and track iqama stages') }}</p>
                 </div>
             </div>
         </div>
@@ -214,25 +263,37 @@
     <div class="container-fluid">
         <!-- Employee Selector -->
         <div class="employee-selector">
-            <h3 class="mb-3"><i class="fas fa-search mr-2"></i>اختر موظفاً</h3>
+            <h6 class="mb-3"><i class="fas fa-search mr-2"></i>{{ __('Select an Employee') }}</h6>
             <form id="employeeForm">
                 <div class="form-group">
-                    <label for="employeeSelect" class="font-weight-bold">بحث عن الموظف:</label>
+                    <label for="employeeSelect" class="font-weight-bold">{{ __('Search for Employee:') }}</label>
                     <select class="form-control select2" id="employeeSelect" name="employee_id">
-                        <option value="">-- اختر موظفا --</option>
-                        <!-- Sample employees data - in real app this would come from backend -->
+                        <option value="">{{ __('-- Select Employee --') }}</option>
                         @foreach($employees as $index => $emp)
-                            <option value="{{$emp->id}}" {{ $employee->id === $emp->id? 'select' : '' }}>{{ $emp->name }}</option>
+                            <option value="{{ $emp->id }}" {{ $employee?->id === $emp->id ? 'selected' : '' }}>{{ $emp->name }}</option>
                         @endforeach
                     </select>
                 </div>
-                <button type="submit" class="btn btn-primary mt-2">
-                    <i class="fas fa-user-check mr-2"></i>عرض الملف الشخصي
-                </button>
+                <div class="row justify-content-between">
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-primary my-2" id="view-profile-btn">
+                            <i class="fas fa-user-check mr-2"></i>{{ __('View Profile') }}
+                        </button>
+                    </div>
+
+                        @if($employee)
+                        <div class="col-md-3">
+                            <div class="text-right mb-3">
+                                <button class="btn btn-outline-primary mb-3" id="printReport">
+                                    <i class="fas fa-print mr-2"></i> {{ __('Print Report') }}
+                                </button>
+                            </div>
+                        </div>
+                        @endif
+                    </div>
             </form>
         </div>
 
-        <!-- Employee Profile (initially hidden) -->
         @if($employee)
             <div id="employeeProfile" class="{{ $employee ? '' : 'd-none' }}">
                 <div class="profile-header">
@@ -240,7 +301,6 @@
                         <div class="row align-items-center">
                             <div class="col-md-3 text-center">
                                 <div class="profile-avatar" id="profileAvatar">
-{{--                                    <img src="{{ asset('storage/' . $employee->image) }}" alt="">--}}
                                     <i class="fas fa-user"></i>
                                 </div>
                             </div>
@@ -260,36 +320,36 @@
                     <div class="col-lg-4 mb-4">
                         <div class="info-card">
                             <div class="card-header card-header-custom">
-                                <i class="fas fa-id-card mr-2"></i>المعلومات الشخصية
+                                <i class="fas fa-id-card mr-2"></i>{{ __('Personal Information') }}
                             </div>
                             <div class="card-body p-0">
                                 <div class="info-item">
-                                    <span class="info-label">البريد الإلكتروني:</span>
+                                    <span class="info-label">{{ __('Email:') }}</span>
                                     <span id="infoEmail">{{ $employee->email }}</span>
                                 </div>
                                 <div class="info-item">
-                                    <span class="info-label">رقم الهاتف:</span>
+                                    <span class="info-label">{{ __('Phone Number:') }}</span>
                                     <span id="infoPhone">{{ $employee->phone }}</span>
                                 </div>
                                 <div class="info-item">
-                                    <span class="info-label">الراتب:</span>
-                                    <span id="infoSalary">{{ $employee->salary . ' ' .  __('SAR')}}</span>
+                                    <span class="info-label">{{ __('Salary:') }}</span>
+                                    <span id="infoSalary">{{ $employee->salary . ' ' . __('SAR') }}</span>
                                 </div>
                                 <div class="info-item">
-                                    <span class="info-label">العنوان:</span>
+                                    <span class="info-label">{{ __('Address:') }}</span>
                                     <span id="infoAddress">{{ $employee->address }}</span>
                                 </div>
                                 <div class="info-item">
-                                    <span class="info-label">الجنس:</span>
+                                    <span class="info-label">{{ __('Gender:') }}</span>
                                     <span id="infoGender">{{ $employee->gender }}</span>
                                 </div>
                                 <div class="info-item">
-                                    <span class="info-label">رقم الجواز:</span>
+                                    <span class="info-label">{{ __('Passport Number:') }}</span>
                                     <span id="infoPassport">{{ $employee->passport_number }}</span>
                                 </div>
                                 <div class="info-item">
-                                    <span class="info-label">تاريخ الانتهاء:</span>
-                                    <span id="infoExpiry">{{ $employee->expired_date }}</span>
+                                    <span class="info-label">{{ __('Expiry Date:') }}</span>
+                                    <span id="infoExpiry">{{ \Illuminate\Support\Carbon::parse($employee->expired_date)->format('Y-m-d') }}</span>
                                 </div>
                             </div>
                         </div>
@@ -297,7 +357,7 @@
                         <!-- Company Information -->
                         <div class="info-card">
                             <div class="card-header card-header-custom">
-                                <i class="fas fa-building mr-2"></i>معلومات الشركة
+                                <i class="fas fa-building mr-2"></i>{{ __('Company Information') }}
                             </div>
                             <div class="card-body p-0">
                                 <div class="text-center py-3">
@@ -307,11 +367,11 @@
                                     <h5 id="companyNameAr">{{ $employee->company->getTranslation('name', app()->getLocale()) }}</h5>
                                 </div>
                                 <div class="info-item">
-                                    <span class="info-label">الوصف:</span>
+                                    <span class="info-label">{{ __('Description:') }}</span>
                                     <span id="companyDescription">{{ $employee->company->getTranslation('description', app()->getLocale()) }}</span>
                                 </div>
                                 <div class="info-item">
-                                    <span class="info-label">الرصيد:</span>
+                                    <span class="info-label">{{ __('Balance:') }}</span>
                                     <span id="companyBalance">{{ $employee->company->wallet->balance . ' ' . __('SAR') }}</span>
                                 </div>
                             </div>
@@ -323,13 +383,12 @@
                         <!-- Iqama Type -->
                         <div class="info-card mb-4">
                             <div class="card-header card-header-custom">
-                                <i class="fas fa-file-contract mr-2"></i>نوع الإقامة
+                                <i class="fas fa-file-contract mr-2"></i>{{ __('Iqama Type') }}
                             </div>
                             <div class="card-body">
                                 <div class="row">
                                     <div class="col-md-6">
                                         <h5 id="iqamaNameAr">{{ $employee->IqamaType->getTranslation('name', app()->getLocale()) }}</h5>
-{{--                                        <p class="text-muted" id="iqamaNameEn">medical</p>--}}
                                     </div>
                                     <div class="col-md-6">
                                         <p id="iqamaDescription">{{ $employee->IqamaType->getTranslation('description', app()->getLocale()) }}</p>
@@ -340,55 +399,258 @@
 
                         <!-- Stages Progress -->
                         <div class="info-card mb-4">
-                            <div class="card-header card-header-custom">
-                                <i class="fas fa-tasks mr-2"></i>مراحل الإقامة
+                            <div class="card-header card-header-custom d-flex align-items-center">
+                                <i class="fas fa-tasks mr-2"></i>
+                                <span>{{ __('Iqama Stages') }}</span>
                             </div>
-                            <div class="card-body">
-                                <!-- Progress Tracker -->
-                                <div class="progress-tracker" id="progressTracker">
-                                    <!-- Progress steps will be dynamically inserted here -->
-                                </div>
 
-                                <!-- Stages Details -->
-                                <div id="stagesDetails">
-                                    <!-- Stages will be dynamically inserted here -->
-                                </div>
+                            <div class="card-body">
+                                @if($employee->employeeStages && $employee->employeeStages->count())
+                                    <div class="timeline">
+                                        @foreach($employee->employeeStages as $stage)
+                                            <div class="timeline-item {{ $stage->status == 'completed' ? 'completed' : ($stage->status == 'in_progress' ? 'active' : '') }}">
+                                                <div class="timeline-marker"></div>
+                                                <div class="timeline-content">
+                                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                                        <h5 class="mb-0">
+                                                            {{ $stage->stage->getTranslation('name', app()->getLocale()) }}
+                                                        </h5>
+                                                        <span class="badge
+                                                            @if($stage->status == 'completed') badge-success
+                                                            @elseif($stage->status == 'in_progress') badge-info
+                                                            @else badge-secondary
+                                                            @endif
+                                                        ">
+                                                            {{ ucfirst($stage->status) }}
+                                                        </span>
+                                                    </div>
+
+                                                    @if($stage->expired_at)
+                                                        <p class="text-muted mb-1">
+                                                            <i class="fas fa-calendar-alt mr-1"></i>
+                                                            {{ __('Expires at:') }} {{ $stage->expired_at->format('Y-m-d') }}
+                                                        </p>
+                                                    @endif
+
+                                                    @if($stage->completed_at)
+                                                        <p class="text-muted mb-1">
+                                                            <i class="fas fa-check-circle mr-1"></i>
+                                                            {{ __('Completed at:') }} {{ $stage->completed_at->format('Y-m-d') }}
+                                                        </p>
+                                                    @endif
+
+                                                    <p class="text-muted mb-1">
+                                                        <i class="fas fa-money-bill mr-1"></i>
+                                                        {{ __('Payment Status:') }}
+                                                        <strong>{{ ucfirst($stage->status ?? 'Pending') }}</strong>
+                                                    </p>
+
+                                                    @if($stage->amount_paid)
+                                                        <p class="text-muted mb-1">
+                                                            <i class="fas fa-dollar-sign mr-1"></i>
+                                                            {{ __('Amount Paid:') }} {{ number_format($stage->amount_paid, 2) }}
+                                                        </p>
+                                                    @endif
+
+                                                    @if($stage->doneBy)
+                                                        <p class="text-muted mb-1">
+                                                            <i class="fas fa-user-check mr-1"></i>
+                                                            {{ __('Done by:') }} {{ $stage?->doneBy?->name ?? 'N/A' }}
+                                                        </p>
+                                                    @endif
+
+                                                    @if($stage->files->count())
+                                                        <div class="mt-2">
+                                                            <strong><i class="fas fa-paperclip mr-1"></i>{{ __('Files:') }}</strong>
+                                                            <ul class="list-unstyled ml-3">
+                                                                @foreach($stage->files as $file)
+                                                                    <li>
+                                                                        <a href="{{ asset($file->path) }}" target="_blank">
+                                                                            <i class="fas fa-file mr-1"></i>{{ $file->name ?? basename($file->path) }}
+                                                                        </a>
+                                                                    </li>
+                                                                @endforeach
+                                                            </ul>
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <p class="text-muted">{{ __('No stages found for this employee.') }}</p>
+                                @endif
                             </div>
                         </div>
 
                         <!-- Upcoming Stage -->
-                        <div class="info-card" id="upcomingStageCard">
-                            <div class="card-header card-header-custom">
-                                <i class="fas fa-arrow-circle-right mr-2"></i>المرحلة القادمة
-                            </div>
                             <div class="card-body" id="upcomingStageBody">
-                                <pre>{{$employee->upcomingStage->stage->getTranslation('name', app()->getLocale())}}</pre>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <h5 id="iqamaNameAr">{{ $employee->upcomingStage }}</h5>
-                                        {{--                                        <p class="text-muted" id="iqamaNameEn">medical</p>--}}
+                                @if($employee->upcomingStage)
+                                    @php $stage = $employee->upcomingStage; @endphp
+
+                                    <div class="card shadow-sm border-0 mb-4">
+                                        <div class="card-header bg-primary text-white d-flex align-items-center justify-content-between">
+                                            <div>
+                                                <i class="fas fa-passport mr-2"></i>
+                                                {{ __('Iqama Upcoming Stage') }}
+                                            </div>
+                                            <span class="badge
+                                                @if($stage->status == 'completed') badge-success
+                                                @elseif($stage->status == 'pending') badge-warning
+                                                @else badge-info
+                                                @endif
+                                            ">
+                                                {{ ucfirst($stage->status) }}
+                                            </span>
+                                        </div>
+
+                                        <div class="card-body">
+                                            {{-- Stage Name --}}
+                                            <h4 class="text-primary mb-3">
+                                                {{ $stage->stage->getTranslation('name', app()->getLocale()) }}
+                                            </h4>
+
+                                            {{-- Image --}}
+                                            @if($stage->stage->image)
+                                                <div class="text-center mb-3">
+                                                    <img src="{{ asset($stage->stage->image) }}"
+                                                         alt="Stage Image"
+                                                         class="img-fluid rounded shadow-sm"
+                                                         style="max-height: 200px;">
+                                                </div>
+                                            @endif
+
+                                            {{-- Description --}}
+                                            @if($stage->stage->description)
+                                                <p class="text-muted">
+                                                    {{ $stage->stage->getTranslation('description', app()->getLocale()) }}
+                                                </p>
+                                            @endif
+
+                                            <hr>
+
+                                            {{-- Stage Info --}}
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <p><strong><i class="fas fa-list-ol mr-1 text-secondary"></i>{{ __('Order:') }}</strong> {{ $stage->stage->order }}</p>
+                                                    <p><strong><i class="fas fa-calendar-plus mr-1 text-secondary"></i>{{ __('Created At:') }}</strong> {{ $stage->created_at->format('Y-m-d') }}</p>
+                                                    @if($stage->expired_at)
+                                                        <p><strong><i class="fas fa-calendar-times mr-1 text-secondary"></i>{{ __('Expires At:') }}</strong> {{ $stage->expired_at->format('Y-m-d') }}</p>
+                                                    @endif
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <p><strong><i class="fas fa-money-bill mr-1 text-secondary"></i>{{ __('Price:') }}</strong> {{ number_format($stage->stage->price, 2) }}</p>
+                                                    <p><strong><i class="fas fa-coins mr-1 text-secondary"></i>{{ __('Cost:') }}</strong> {{ number_format($stage->stage->cost, 2) }}</p>
+                                                    <p><strong><i class="fas fa-wallet mr-1 text-secondary"></i>{{ __('Payment Status:') }}</strong> {{ ucfirst($stage->payment_status ?? 'Pending') }}</p>
+                                                </div>
+                                            </div>
+
+                                            {{-- Done By --}}
+                                            @if($stage->doneBy)
+                                                <p><strong><i class="fas fa-user-check mr-1 text-secondary"></i>{{ __('Done By:') }}</strong> {{ $stage->doneBy->name }}</p>
+                                            @endif
+
+                                            {{-- Stage PDF File --}}
+                                            @if($stage->stage->file)
+                                                <div class="mt-3" id="viewStageFiles">
+                                                    <a href="{{ asset( 'storage/'. $stage->stage->file) }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                                        <i class="fas fa-file-pdf mr-1"></i>{{ __('View Stage File') }}
+                                                    </a>
+                                                </div>
+                                            @endif
+
+                                            {{-- Employee Uploaded Files --}}
+                                            @if($stage->files && $stage->files->count())
+                                                <div class="mt-3">
+                                                    <strong><i class="fas fa-paperclip mr-1"></i>{{ __('Uploaded Files:') }}</strong>
+                                                    <ul class="list-unstyled ml-3">
+                                                        @foreach($stage->files as $file)
+                                                            <li>
+                                                                <a href="{{ asset($file->path) }}" target="_blank">
+                                                                    <i class="fas fa-file mr-1"></i>{{ $file->name ?? basename($file->path) }}
+                                                                </a>
+                                                            </li>
+                                                        @endforeach
+                                                    </ul>
+                                                </div>
+                                            @endif
+                                        </div>
                                     </div>
-                                    <div class="col-md-6">
-                                        <p id="iqamaDescription">{{ $employee->upcomingStage }}</p>
-                                    </div>
-                                </div>
+                                @else
+                                    <p class="text-muted">{{ __('No upcoming iqama stage found.') }}</p>
+                                @endif
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-
-
         @else
             <!-- No Employee Selected Message -->
             <div id="noEmployeeMessage" class="text-center py-5">
                 <div class="container">
                     <i class="fas fa-user-slash fa-5x text-muted mb-4"></i>
-                    <h3 class="text-muted">لم يتم اختيار أي موظف</h3>
-                    <p class="text-muted">يرجى اختيار موظف من القائمة أعلاه لعرض ملفه الشخصي</p>
+                    <h3 class="text-muted">{{ __('No employee selected') }}</h3>
+                    <p class="text-muted">{{ __('Please select an employee from the list above to view their profile') }}</p>
                 </div>
             </div>
         @endif
-    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const printBtn = document.getElementById('printReport');
+            const profileSection = document.getElementById('employeeProfile');
+
+
+
+            if (!printBtn || !profileSection) return;
+
+            printBtn.addEventListener('click', async function () {
+
+                const clone = profileSection.cloneNode(true);
+
+                const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
+                    .map(el => el.outerHTML)
+                    .join('\n');
+
+
+                const printable = document.createElement('div');
+                printable.innerHTML = `
+            <html>
+                <head>${styles}</head>
+                <body>${clone.outerHTML}</body>
+            </html>
+        `;
+
+
+                // Options for html2pdf
+                const opt = {
+                    margin: 0.3,
+                    filename: `employee-report.pdf`,
+                    image: { type: 'jpeg', quality: 0.8 }, // reduce quality a bit
+                    html2canvas: { scale: 2, useCORS: true, logging: false }, // reduce scale
+                    jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+                };
+
+                printBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Generating...';
+                printBtn.disabled = true;
+
+                try {
+                    await html2pdf().set(opt).from(printable).save();
+                } catch (err) {
+                    console.error('PDF generation failed:', err);
+                    alert('Error generating PDF. Check the console for details.');
+                } finally {
+                    printBtn.innerHTML = '<i class="fas fa-print mr-2"></i> Print Report';
+                    printBtn.disabled = false;
+                }
+            });
+        });
+    </script>
+
 
 </x-dashboard.main-layout>
+
+
+

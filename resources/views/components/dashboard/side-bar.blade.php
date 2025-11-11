@@ -496,6 +496,7 @@
                     @endcan
                     @can('employees')
                         <a class="collapse-item" href="{{ route('admins.reports.employees.report') }}">{{ __('Employees Report') }}</a>
+                        <a class="collapse-item" href="{{ route('admins.reports.employee.details') }}">{{ __('Employee Details') }}</a>
                     @endcan
                         <a class="collapse-item" href="{{ route('admins.reports.transactions.report') }}">{{ __('Transactions Report') }}</a>
                 </div>
@@ -516,6 +517,7 @@
                 <div class="py-2 bg-white rounded collapse-inner">
                     @can('eos')
                         <a class="collapse-item" href="{{ route('admins.roles.index') }}">{{ __('Manage Roles') }}</a>
+                        <a class="collapse-item" href="{{ route('admins.roles.permissions') }}">{{ __('Manage Permissions') }}</a>
                     @endcan
                 </div>
             </div>

@@ -37,6 +37,8 @@ Route::group([
     Route::controller(RolesController::class)->group(function () {
         Route::get('/roles', 'index')->name('roles.index');
         Route::post('/roles', 'store')->name('roles.store');
+        Route::get('/permissions', 'permissionsIndex')->name('roles.permissions');
+        Route::post('/permissions/update', 'updatePermissions')->name('roles.permissions.update');
         Route::post('/roles/assign', 'assignRole')->name('roles.assign');
         Route::delete('/roles/{id}', 'destroy')->name('roles.destroy');
         Route::delete('/roles/remove/{user}/{role}', 'removeRole')->name('roles.remove');

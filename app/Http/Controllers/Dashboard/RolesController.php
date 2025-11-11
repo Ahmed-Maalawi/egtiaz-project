@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers\Dashboard;
 
-use App\Models\Banner;
+
 use App\Http\Requests\StoreBannerRequest;
 use App\Http\Requests\UpdateBannerRequest;
 use App\Models\User;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 class RolesController extends Controller
@@ -76,5 +77,69 @@ class RolesController extends Controller
         $role->delete();
 
         return redirect()->back()->with('success', 'Role deleted successfully.');
+    }
+
+    public function permissionsIndex()
+    {
+        $roles = Role::with('permissions')->get();
+        $permissions = Permission::all();
+
+        // Group permissions by their 'group' field for better organization
+        $groupedPermissions = $permissions->groupBy('group');
+
+        return view('admin.Roles.permissions', compact('roles', 'groupedPermissions', 'permissions'));
+    }
+
+    public function updatePermissions(Request $request)
+    {
+        // Check if it's an AJAX request
+        if (!$request->ajax() && !$request->wantsJson()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This route only accepts AJAX requests'
+            ], 400);
+        }
+
+        try {
+            $request->validate([
+                'role_id' => 'required|exists:roles,id',
+                'permissions' => 'sometimes|array',
+                'permissions.*' => 'exists:permissions,id',
+            ]);
+
+            $role = Role::findOrFail($request->role_id);
+
+            // Get permission objects
+            $permissions = Permission::whereIn('id', $request->permissions ?? [])->get();
+
+            // Sync permissions
+            $role->syncPermissions($permissions);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Permissions updated successfully for ' . $role->name,
+                'role' => $role->name,
+                'permissions_count' => $permissions->count()
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $e->errors()
+            ], 422);
+
+        } catch (\Exception $e) {
+            \Log::error('Permission update error:', [
+                'error' => $e->getMessage(),
+                'role_id' => $request->role_id,
+                'permissions' => $request->permissions
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error updating permissions: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

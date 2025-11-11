@@ -37,7 +37,7 @@
                             <td>{{ $loop->iteration }}</td>
                             <td>{{ $transaction->transaction_id }}</td>
                             <td>{{ $transaction->fromPaymentAccount->getTranslation('name', $local) ?? 'N/A' }}</td>
-                            <td>{{ $transaction->toWallet->name ?? 'N/A' }}</td>
+                            <td>{{ $transaction->toWallet->company->getTranslation('name', app()->getLocale()) ?? 'N/A' }}</td>
                             <td>
                                 <span class="text-white badge bg-info">
                                     {{ $transaction->transactionable_type_name  }}
@@ -93,7 +93,7 @@
     <script>
         $(function () {
             $('#transactionsTable').DataTable({
-                pageLength: 3,
+                pageLength: 10,
                 scrollX: true,
                 dom: 'Blfrtip',
                 buttons: [
