@@ -498,7 +498,9 @@
                         <a class="collapse-item" href="{{ route('admins.reports.employees.report') }}">{{ __('Employees Report') }}</a>
                         <a class="collapse-item" href="{{ route('admins.reports.employee.details') }}">{{ __('Employee Details') }}</a>
                     @endcan
-                        <a class="collapse-item" href="{{ route('admins.reports.transactions.report') }}">{{ __('Transactions Report') }}</a>
+                        @hasrole('super-admin|admin')<a class="collapse-item" href="{{ route('admins.reports.transactions.report') }}">{{ __('Payment Accounts Transactions Report') }}</a>@endhasrole
+                        @hasrole('super-admin')<a class="collapse-item" href="{{ route('admins.reports.profit.report') }}">{{ __('Profit Report') }}</a>@endhasrole
+                        @hasrole('super-admin|admin')<a class="collapse-item" href="{{ route('admins.reports.wallet-transactions.report') }}">{{ __('Wallet Transactions Report') }}</a>@endhasrole
                 </div>
             </div>
         </li>

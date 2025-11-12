@@ -40,7 +40,7 @@
                             <table class="table table-sm table-borderless">
                                 <tr>
                                     <td class="font-weight-bold">{{ __('Current Balance') }}:</td>
-                                    <td><strong class="text-success">${{ number_format($paymentAccount->balance, 2) }}</strong></td>
+                                    <td><strong class="text-success">{{ __('SAR') . ' ' . number_format($paymentAccount->balance, 2) }}</strong></td>
                                 </tr>
                                 <tr>
                                     <td class="font-weight-bold">{{ __('Created At') }}:</td>
@@ -74,7 +74,7 @@
                     <div class="text-center">
                         <div class="mb-3">
                             <div class="text-primary font-weight-bold" style="font-size: 2rem;">
-                                ${{ number_format($paymentAccount->balance, 2) }}
+                                {{ __('SAR') . ' ' .  number_format($paymentAccount->balance, 2) }}
                             </div>
                             <div class="text-muted small">{{ __('Current Balance') }}</div>
                         </div>
@@ -86,7 +86,7 @@
                             <div class="text-muted small">{{ __('Total Transactions') }}</div>
                         </div>
                         <div class="col-6 mb-3">
-                            <div class="font-weight-bold text-success">${{ number_format($totalAmount, 2) }}</div>
+                            <div class="font-weight-bold text-success">{{ __('SAR') . ' ' . number_format($totalAmount, 2) }}</div>
                             <div class="text-muted small">{{ __('Total Amount') }}</div>
                         </div>
                         <div class="col-6">
@@ -129,8 +129,8 @@
                             <tr>
                                 <td>{{ $monthName }}</td>
                                 <td>{{ $month->transaction_count }}</td>
-                                <td class="text-success">${{ number_format($month->total_amount, 2) }}</td>
-                                <td class="text-info">${{ number_format($averageAmount, 2) }}</td>
+                                <td class="text-success"> {{ __('SAR') . ' ' . number_format($month->total_amount, 2) }}</td>
+                                <td class="text-info"> {{ __('SAR') . ' ' . number_format($averageAmount, 2) }}</td>
                             </tr>
                         @endforeach
                         </tbody>
@@ -140,137 +140,6 @@
         </div>
     @endif
 
-    <!-- Users Who Can Use This Payment Account -->
-    <!-- Users Table -->
-{{--    <div class="card shadow mb-4">--}}
-{{--        <div class="card-header py-3 d-flex justify-content-between align-items-center">--}}
-{{--            <h6 class="m-0 font-weight-bold text-primary">{{ __('Users Who Can Use This Account') }}</h6>--}}
-{{--            <span class="badge badge-primary">{{ $allUsers->count() }} {{ __('users') }}</span>--}}
-{{--        </div>--}}
-{{--        <div class="card-body">--}}
-{{--            @if($allUsers->count() > 0)--}}
-{{--                <div class="table-responsive">--}}
-{{--                    <table class="table table-bordered table-hover" width="100%" cellspacing="0">--}}
-{{--                        <thead class="thead-light">--}}
-{{--                        <tr>--}}
-{{--                            <th>{{ __('ID') }}</th>--}}
-{{--                            <th>{{ __('Name') }}</th>--}}
-{{--                            <th>{{ __('Email') }}</th>--}}
-{{--                            <th>{{ __('Role') }}</th>--}}
-{{--                            <th>{{ __('Status') }}</th>--}}
-{{--                            <th>{{ __('Type') }}</th>--}}
-{{--                            <th>{{ __('Transactions') }}</th>--}}
-{{--                            <th>{{ __('Total Amount') }}</th>--}}
-{{--                            <th>{{ __('Last Activity') }}</th>--}}
-{{--                        </tr>--}}
-{{--                        </thead>--}}
-{{--                        <tbody>--}}
-{{--                        @foreach($allUsers as $user)--}}
-{{--                            @php--}}
-{{--                                // Get user's transactions for this payment account--}}
-{{--                                $userTransactions = $paymentAccount->transactions->where('user_id', $user->id);--}}
-{{--                                $userTransactionCount = $userTransactions->count();--}}
-{{--                                $userTotalAmount = $userTransactions->sum('amount');--}}
-{{--                                $lastTransaction = $userTransactions->sortByDesc('created_at')->first();--}}
-
-{{--                                // Determine user type--}}
-{{--                                $isAssigned = $paymentAccount->users->contains('id', $user->id);--}}
-{{--                                $hasTransactions = $userTransactionCount > 0;--}}
-
-{{--                                if ($isAssigned && $hasTransactions) {--}}
-{{--                                    $userType = __('Assigned & Active');--}}
-{{--                                    $typeBadge = 'badge-primary';--}}
-{{--                                } elseif ($isAssigned) {--}}
-{{--                                    $userType = __('Assigned');--}}
-{{--                                    $typeBadge = 'badge-info';--}}
-{{--                                } else {--}}
-{{--                                    $userType = __('Transaction User');--}}
-{{--                                    $typeBadge = 'badge-warning';--}}
-{{--                                }--}}
-{{--                            @endphp--}}
-{{--                            <tr>--}}
-{{--                                <td>{{ $user->id }}</td>--}}
-{{--                                <td>--}}
-{{--                                    <div>--}}
-{{--                                        <strong>{{ $user->name }}</strong>--}}
-{{--                                    </div>--}}
-{{--                                </td>--}}
-{{--                                <td>{{ $user->email }}</td>--}}
-{{--                                <td>--}}
-{{--                                    @if($user->roles->count() > 0)--}}
-{{--                                        @foreach($user->roles as $role)--}}
-{{--                                            <span class="badge badge-secondary">{{ $role->name }}</span>--}}
-{{--                                        @endforeach--}}
-{{--                                    @else--}}
-{{--                                        <span class="text-muted">-</span>--}}
-{{--                                    @endif--}}
-{{--                                </td>--}}
-{{--                                <td>--}}
-{{--                                    @if($user->status === 'active')--}}
-{{--                                        <span class="badge badge-success">{{ __('Active') }}</span>--}}
-{{--                                    @else--}}
-{{--                                        <span class="badge badge-secondary">{{ __('Inactive') }}</span>--}}
-{{--                                    @endif--}}
-{{--                                </td>--}}
-{{--                                <td>--}}
-{{--                                    <span class="badge {{ $typeBadge }}">{{ $userType }}</span>--}}
-{{--                                </td>--}}
-{{--                                <td>--}}
-{{--                                    @if($userTransactionCount > 0)--}}
-{{--                                        <span class="badge badge-info">{{ $userTransactionCount }}</span>--}}
-{{--                                    @else--}}
-{{--                                        <span class="text-muted">0</span>--}}
-{{--                                    @endif--}}
-{{--                                </td>--}}
-{{--                                <td>--}}
-{{--                                    @if($userTotalAmount > 0)--}}
-{{--                                        <strong class="text-success">${{ number_format($userTotalAmount, 2) }}</strong>--}}
-{{--                                    @else--}}
-{{--                                        <span class="text-muted">-</span>--}}
-{{--                                    @endif--}}
-{{--                                </td>--}}
-{{--                                <td>--}}
-{{--                                    @if($lastTransaction)--}}
-{{--                                        <small>{{ $lastTransaction->created_at->format('Y-m-d H:i') }}</small>--}}
-{{--                                        <br>--}}
-{{--                                        <small class="text-muted">--}}
-{{--                                            @switch($lastTransaction->type)--}}
-{{--                                                @case('stage_payment')--}}
-{{--                                                    {{ __('Stage Payment') }}--}}
-{{--                                                    @break--}}
-{{--                                                @case('salary_payment')--}}
-{{--                                                    {{ __('Salary Payment') }}--}}
-{{--                                                    @break--}}
-{{--                                                @case('refund')--}}
-{{--                                                    {{ __('Refund') }}--}}
-{{--                                                    @break--}}
-{{--                                                @case('charge')--}}
-{{--                                                    {{ __('Charge') }}--}}
-{{--                                                    @break--}}
-{{--                                                @default--}}
-{{--                                                    {{ $lastTransaction->type }}--}}
-{{--                                            @endswitch--}}
-{{--                                        </small>--}}
-{{--                                    @else--}}
-{{--                                        <span class="text-muted">-</span>--}}
-{{--                                    @endif--}}
-{{--                                </td>--}}
-{{--                            </tr>--}}
-{{--                        @endforeach--}}
-{{--                        </tbody>--}}
-{{--                    </table>--}}
-{{--                </div>--}}
-{{--            @else--}}
-{{--                <div class="text-center py-4">--}}
-{{--                    <i class="fas fa-users fa-3x text-gray-300 mb-3"></i>--}}
-{{--                    <h5 class="text-gray-500">{{ __('No users found') }}</h5>--}}
-{{--                    <p class="text-muted">{{ __('No users are associated with this payment account yet.') }}</p>--}}
-{{--                </div>--}}
-{{--            @endif--}}
-{{--        </div>--}}
-{{--    </div>--}}
-
-{{--    <!-- Users Who Created Transactions -->--}}
     <!-- Assigned Users Table -->
     @if($paymentAccount->users->count() > 0)
         <div class="card shadow mb-4">
@@ -332,7 +201,7 @@
                                 </td>
                                 <td>
                                     @if($userTotalAmount > 0)
-                                        <strong class="text-success">${{ number_format($userTotalAmount, 2) }}</strong>
+                                        <strong class="text-success">{{ __('SAR') . ' ' . number_format($userTotalAmount, 2) }}</strong>
                                     @else
                                         <span class="text-muted">-</span>
                                     @endif
@@ -475,24 +344,24 @@
                                     <small class="text-muted">{{ Str::limit($transaction->transaction_id, 8) }}</small>
                                 </td>
                                 <td>
-                                        <span class="badge badge-info">
-                                            @switch($transaction->type)
-                                                @case('stage_payment')
-                                                    {{ __('Stage Payment') }}
+                                    <span class="badge badge-info">
+                                        @switch($transaction->type)
+                                            @case('stage_payment')
+                                                {{ __('Stage Payment') }}
                                                     @break
-                                                @case('salary_payment')
-                                                    {{ __('Salary Payment') }}
+                                            @case('salary_payment')
+                                                {{ __('Salary Payment') }}
                                                     @break
-                                                @case('refund')
-                                                    {{ __('Refund') }}
+                                            @case('refund')
+                                                {{ __('Refund') }}
                                                     @break
-                                                @case('charge')
-                                                    {{ __('Charge') }}
+                                            @case('charge')
+                                                {{ __('Charge') }}
                                                     @break
-                                                @default
-                                                    {{ $transaction->type }}
+                                            @default
+                                                {{ $transaction->type }}
                                             @endswitch
-                                        </span>
+                                    </span>
                                 </td>
                                 <td>
                                     @if($transaction->user)

@@ -17,7 +17,7 @@
                 {{ __('End of Service List') }}
             </div>
             <div class="card-body table-responsive">
-                <table class="table table-hover align-middle text-center">
+                <table id="eosTable" class="table table-hover align-middle text-center">
                     <thead class="table-light">
                     <tr>
                         <th>#</th>
@@ -93,12 +93,14 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        $('.table').DataTable({
+        $('#eosTable').DataTable({
             paging: true,
             searching: true,
             info: false,
             lengthChange: true,
-            ordering: false,
+            ordering: true,
+            responsive: true,
+            autoWidth: false,
             language: {
                 search: "{{ __('Search:') }}",
                 lengthMenu: "{{ __('Show _MENU_ records per page') }}",

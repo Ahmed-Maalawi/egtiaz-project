@@ -65,7 +65,7 @@ class PaymentAccountController extends Controller
             'transactions' => function($query) {
                 $query->latest()->with(['user', 'createdBy']);
             },
-            'users.roles', // Load users with their roles
+            'users.roles',
             'transactions.user.roles',
             'transactions.createdBy.roles'
         ]);

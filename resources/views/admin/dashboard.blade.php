@@ -251,19 +251,19 @@
                     <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
-                                <div class="text-xs text-warning mb-1">{{ __('Staging Types') }}</div>
+                                <div class="text-xs text-warning mb-1">{{ __('Total Stages Profit') }}</div>
                                 <div class="metric-value">
-                                    {{ $data['total_staging_types'] ?? '0' }}
+                                    {{ $data['total_profit'] ?? '0' }}
                                 </div>
                                 <div class="mt-2">
                                     <small class="text-warning me-2">
-                                        <i class="fas fa-tags"></i> Categories
+                                        <i class="fas fa-dollar"></i>
                                     </small>
                                 </div>
                             </div>
                             <div class="col-auto">
                                 <div class="stats-icon bg-warning">
-                                    <i class="fas fa-tags"></i>
+                                    <i class="fas fa-dollar"></i>
                                 </div>
                             </div>
                         </div>
@@ -548,7 +548,7 @@
                                                 @elseif($stage->status == 'cancelled')
                                                     <span class="badge bg-danger">{{ __('Cancelled') }}</span>
                                                 @else
-                                                    <span class="badge bg-secondary">{{ ucfirst($stage->status ?? 'Unknown') }}</span>
+                                                    <span class="badge bg-success">{{ ucfirst($stage->status ?? 'Unknown') }}</span>
                                                 @endif
                                             </td>
                                         </tr>

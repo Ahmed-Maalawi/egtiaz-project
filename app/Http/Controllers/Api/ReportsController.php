@@ -10,6 +10,7 @@ use App\Http\Resources\UserResource;
 use App\Http\Resources\WalletResource;
 use App\Models\Company;
 use App\Models\Employee;
+use App\Models\EmployeeStage;
 use App\Models\User;
 use App\Models\Wallet;
 use Exception;

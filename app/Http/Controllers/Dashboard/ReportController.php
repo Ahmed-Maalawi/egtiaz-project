@@ -15,6 +15,7 @@ use App\Models\Salary;
 use App\Models\Stage;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Models\WalletTransaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
@@ -223,5 +224,45 @@ class ReportController extends Controller
 
 
         return view('admin.reports.employee-details', compact('employee', 'employees'));
+    }
+
+    public function getProfitReport(Request $request)
+    {
+        $filters = $request->validate([
+            'employee_id'    => 'nullable|integer|exists:employees,id',
+            'company_id'     => 'nullable|integer|exists:companies,id',
+            'from_date'      => 'nullable|date|date_format:Y-m-d',
+            'to_date'        => 'nullable|date|date_format:Y-m-d|after_or_equal:from_date'
+        ]);
+
+        $employeeStages = EmployeeStage::with(['stage', 'employee'])
+            ->where('status', 'completed')
+            ->ProfitReport($filters)
+            ->get();
+
+        $totalProfit = collect($employeeStages)->sum(fn($stage) => $stage->profit);
+
+        $employees = Employee::all();
+        $companies = Company::all();
+
+        return view('admin.reports.profit-report', compact('employeeStages', 'totalProfit', 'employees', 'companies'));
+    }
+
+
+    public function getWalletTransactionReport(Request $request)
+    {
+        $filters = $request->only(['user_id', 'status', 'from_date', 'to_date']);
+
+        $transactions = WalletTransaction::with('user')
+            ->filter($filters)
+            ->latest()
+            ->get();
+
+        $users = User::all();
+        $totalAmount = $transactions->sum('amount');
+
+        $users = User::all();
+
+        return view('admin.reports.wallets-transactions-report', compact('transactions', 'users', 'totalAmount'));
     }
 }

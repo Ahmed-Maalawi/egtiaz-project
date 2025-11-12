@@ -22,6 +22,8 @@ class EmployeeStage extends Model
         'amount_paid',
     ];
 
+    protected $appends = ['profit'];
+
     protected $casts = [
         'options' => 'array',
         'completed_at' => 'datetime',
@@ -89,6 +91,21 @@ class EmployeeStage extends Model
         return $this->stage->cost ?? 0;
     }
 
+    public function getProfitAttribute()
+    {
+        // Make sure the related stage is loaded
+        if (!$this->relationLoaded('stage')) {
+            $this->load('stage');
+        }
+
+        $stage = $this->stage;
+
+        if (!$stage || !isset($stage->price) || !isset($stage->cost)) {
+            return 0;
+        }
+
+        return (float) $stage->price - (float) $stage->cost;
+    }
     // Scopes
     public function scopePaid($query)
     {
@@ -98,5 +115,32 @@ class EmployeeStage extends Model
     public function scopePendingPayment($query)
     {
         return $query->where('payment_status', 'pending');
+    }
+
+    public function scopeProfitReport($query, array $filters)
+    {
+
+        if (!empty($filters['company_id'])) {
+            $query->whereHas('employee', function ($q) use ($filters) {
+                $q->where('company_id', $filters['company_id']);
+            });
+        }
+
+
+        if (!empty($filters['employee_id'])) {
+            $query->where('employee_id', $filters['employee_id']);
+        }
+
+
+        if (!empty($filters['from_date'])) {
+            dd('tes');
+            $query->whereDate('completed_at', '>=', $filters['from_date']);
+        }
+
+        if (!empty($filters['to_date'])) {
+            $query->whereDate('completed_at', '<=', $filters['to_date']);
+        }
+
+        return $query->orderByDesc('completed_at');
     }
 }

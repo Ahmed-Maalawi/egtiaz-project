@@ -15,23 +15,31 @@ class DashboardController extends Controller
 {
     public function index()
     {
-//        $isSuperAdmin = Auth::user()->hasRole('super-admin');
+        $isSuperAdmin = Auth::user()->hasRole('super-admin');
 
         $data = [];
 
-        $data['total_users'] = User::all()->except(Auth::id())->count();
-        $data['total_employee'] = Employee::all()->count();
-        $data['total_stages'] = Stage::all()->count();
-        $data['total_employee_stages'] = EmployeeStage::all()->count();
-        $data['total_leaves'] = OfficialLeave::all()->count();
-        $data['total_eos'] = EndOfService::all()->count();
+        if ($isSuperAdmin) {
+            $data['total_users'] = User::all()->except(Auth::id())->count();
+        }
 
+        $data['total_employee'] = Employee::all()->count();
+
+        $data['total_stages'] = Stage::all()->count();
+
+        $data['total_employee_stages'] = EmployeeStage::all()->count();
+
+        $data['total_leaves'] = OfficialLeave::all()->count();
+
+        $data['total_eos'] = EndOfService::all()->count();
 
         $data['latest_eos'] = EndOfService::with('user')->latest()->take(10)->get();
 
         $data['latest_leaves'] = OfficialLeave::with(['user', 'approver'])->latest()->take(10)->get();
 
         $data['latest_paid_stages'] = EmployeeStage::with(['employee', 'stage'])->latest()->take(10)->get();
+
+        $data['total_profit'] = EmployeeStage::where('status', 'completed')->get()->sum('profit');
 
         return view('admin.dashboard', compact('data'));
     }
