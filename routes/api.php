@@ -51,6 +51,7 @@ Route::group([
 
 //    Route::apiResource('companies', CompaniesController::class)->only(['index', 'show']);
     Route::get('companies/profile', [CompaniesController::class, 'getCompanyProfile']);
+    Route::get('companies/getCompanyData', [CompaniesController::class, 'getCompanyData']);
 //        ->middleware('role:super-admin|admin');
     Route::apiResource('employees', EmployeeController::class)->only(['index', 'show']);
     Route::apiResource('leaves', LeaveController::class)->only(['index', 'show']);

@@ -92,7 +92,6 @@ class CompaniesController extends Controller
             ];
         });
 
-// Merge them
         $allTransactions = $normalizedDbTransactions
             ->merge($normalizedCrTransactions)
             ->sortByDesc('created_at')
@@ -107,6 +106,30 @@ class CompaniesController extends Controller
             'success' => true,
             'message' => 'get company profile',
             'data' => $data,
+        ]);
+    }
+
+    public function getCompanyData(Request $request)
+    {
+        $user = auth()->user();
+
+        $company = Company::with(['moderators', 'employees', 'wallet'])->findOrFail($user?->moderator_company_id);
+
+        if (!$company) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Company not found',
+            ]);
+        }
+
+        $data['employees_count'] = count($company->employees);
+        $data['moderators_count'] = count($company->moderators);
+        $data['wallet'] = $company->wallet;
+
+
+        return response()->json([
+            'success' => true,
+            'data' => $data
         ]);
     }
 }

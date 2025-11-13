@@ -70,7 +70,7 @@ class CompanyModeratorsController extends Controller
             ]);
 
             if ($request->has('paymentAccounts')) {
-                dd($request->paymentAccounts);
+//                dd($request->paymentAccounts);
                 $moderator->paymentAccounts()->attach($request->paymentAccounts);
             }
 

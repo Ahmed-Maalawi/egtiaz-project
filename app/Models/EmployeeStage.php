@@ -133,7 +133,6 @@ class EmployeeStage extends Model
 
 
         if (!empty($filters['from_date'])) {
-            dd('tes');
             $query->whereDate('completed_at', '>=', $filters['from_date']);
         }
 

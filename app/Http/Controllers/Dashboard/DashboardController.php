@@ -30,6 +30,7 @@ class DashboardController extends Controller
         $data['total_employee_stages'] = EmployeeStage::all()->count();
 
         $data['total_leaves'] = OfficialLeave::all()->count();
+        $data['total_leaves_approved'] = OfficialLeave::where('status', 'approved')->count();
 
         $data['total_eos'] = EndOfService::all()->count();
 

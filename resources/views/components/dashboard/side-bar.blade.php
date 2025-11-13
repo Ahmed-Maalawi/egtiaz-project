@@ -60,7 +60,7 @@
         </li>
     @endcan
 
-    @can('iqamaType')
+    @can('iqamaTypes')
         <li class="nav-item {{ Route::is('admins.types.*') ? 'active' : '' }}"
             style="{{ Route::is('admins.types.*') ? 'background-color: #ccad75;' : '' }}">
             <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsetypes"
