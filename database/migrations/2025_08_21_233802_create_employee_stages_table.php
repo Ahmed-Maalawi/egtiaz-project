@@ -21,9 +21,10 @@ return new class extends Migration
             $table->timestamp('expired_at')->nullable();
             $table->json('options')->nullable();
             $table->boolean('currently_type')->default(true);
-            $table->enum('payment_status', ['pending', 'paid'])->default('pending')->after('status');
-            $table->timestamp('paid_at')->nullable()->after('payment_status');
-            $table->decimal('amount_paid', 10, 2)->nullable()->after('paid_at');
+//            $table->enum('payment_status', ['pending', 'paid'])->default('pending')->after('status');
+//            $table->timestamp('paid_at')->nullable()->after('payment_status');
+            $table->decimal('price_amount', 10, 2)->nullable()->after('completed_at');
+            $table->decimal('amount_cost', 10, 2)->nullable()->after('amount_paid');
             $table->timestamps();
         });
     }

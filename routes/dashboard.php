@@ -148,7 +148,7 @@ Route::group([
             'update'    =>'paymentAccounts.update',
             'destroy'   =>'paymentAccounts.destroy',
         ]);
-
+    Route::post('payment-accounts/{id}/charge', [PaymentAccountController::class, 'charge'])->name('paymentAccounts.charge');
     //------------------------------------------------------------
 
     Route::resource('admins',AdminController::class)->except('show')

@@ -51,16 +51,16 @@
                 </select>
             </div>
 
-            <div class="form-group">
-                <label for="paymentAccounts">{{ __('Payment Accounts') }}</label>
-                <select name="paymentAccounts[]" class="form-control select2" id="paymentAccounts" multiple>
-                    @foreach ($paymentAccounts as $account)
-                        <option dir="rtl" value="{{ $account->id }}" @selected(in_array($account->id, old('paymentAccounts', $moderator->paymentAccounts->pluck('id')->toArray())))>
-                            {{ $account->getTranslation('name', app()->getLocale()) }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
+{{--            <div class="form-group">--}}
+{{--                <label for="paymentAccounts">{{ __('Payment Accounts') }}</label>--}}
+{{--                <select name="paymentAccounts[]" class="form-control select2" id="paymentAccounts" multiple>--}}
+{{--                    @foreach ($paymentAccounts as $account)--}}
+{{--                        <option dir="rtl" value="{{ $account->id }}" @selected(in_array($account->id, old('paymentAccounts', $moderator->paymentAccounts->pluck('id')->toArray())))>--}}
+{{--                            {{ $account->getTranslation('name', app()->getLocale()) }}--}}
+{{--                        </option>--}}
+{{--                    @endforeach--}}
+{{--                </select>--}}
+{{--            </div>--}}
 
 
             <div class="form-group">
@@ -78,32 +78,31 @@
 
             <button type="submit" class="btn btn-success btn-block mb_40">{{ __('Update') }}</button>
         </form>
-
-        <script>
-            $(document).ready(function() {
-                $('#select_company').select2({
-                    placeholder: "{{ __('Type A Company Name') }}",
-                    ajax: {
-                        url: "{{ route('admins.companies.search') }}",
-                        dataType: 'json',
-                        delay: 500,
-                        data: function(params) {
-                            return {
-                                q: params.term
-                            };
-                        },
-                        processResults: function(data) {
-                            return {
-                                results: data.map(company => ({
-                                    id: company.id,
-                                    text: company.name,
-                                }))
-                            };
-                        },
-                        cache: true,
-                    }
-                });
-            });
-        </script>
-
+    </div>
 </x-dashboard.main-layout>
+<script>
+    $(document).ready(function() {
+        $('#select_company').select2({
+            placeholder: "{{ __('Type A Company Name') }}",
+            ajax: {
+                url: "{{ route('admins.companies.search') }}",
+                dataType: 'json',
+                delay: 500,
+                data: function(params) {
+                    return {
+                        q: params.term
+                    };
+                },
+                processResults: function(data) {
+                    return {
+                        results: data.map(company => ({
+                            id: company.id,
+                            text: company.name,
+                        }))
+                    };
+                },
+                cache: true,
+            }
+        });
+    });
+</script>

@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Dashboard;
 use App\Models\PaymentAccount;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class PaymentAccountController extends Controller
 {
@@ -48,7 +51,6 @@ class PaymentAccountController extends Controller
                 'ar'    => $request->description_ar,
                 'en'    => $request->description_en,
             ],
-            'balance' => $request->balance,
         ]);
 
         return redirect()->route('admins.paymentAccounts.index')
@@ -120,7 +122,6 @@ class PaymentAccountController extends Controller
             'name_ar'                       => 'required|string',
             'name_en'                       => 'required|string',
             'name_en'                       => 'required|string',
-            'balance'           => 'required|numeric',
             'description_ar'                => 'nullable|required_with:description_en|string',
             'description_en'                => 'nullable|required_with:description_ar|string',
         ]);
@@ -134,7 +135,6 @@ class PaymentAccountController extends Controller
                 'ar'                        => $request->description_ar,
                 'en'                        => $request->description_en,
             ],
-            'balance' => $request->balance,
         ]);
 
         return redirect()->route('admins.paymentAccounts.index')
@@ -155,5 +155,39 @@ class PaymentAccountController extends Controller
 
         return redirect()->route('admins.paymentAccounts.index')
             ->with('success', __('Payment Account Deleted Successfully'));
+    }
+
+    public function charge(Request $request, int $id)
+    {
+        $validatedData = $request->validate(['amount' => 'required|numeric|min:0']);
+
+        $paymentAccount = PaymentAccount::findOrFail($id);
+
+        try {
+            DB::transaction(function () use ($paymentAccount, $validatedData) {
+
+                $transaction = $paymentAccount->transactions()->create([
+                    'transaction_id' => Str::uuid(),
+                    'type' => 'charge',
+                    'status' => 'completed',
+                    'method_type' => 'credit',
+                    'description' => 'Charge account: ' . $paymentAccount->name . ' at ' . $paymentAccount->created_at . 'with amount ' . $validatedData['amount'],
+                    'processed_at' => now(),
+                    'created_by' => Auth::id(),
+                    'amount' => $validatedData['amount'],
+                    'from_balance_before' => $paymentAccount->balance,
+                    'from_balance_after' => $paymentAccount->balance + $validatedData['amount'],
+                ]);
+
+
+                $paymentAccount->balance += $validatedData['amount'];
+                $paymentAccount->save();
+
+            });
+
+            return redirect()->route('admins.paymentAccounts.index')->with('success', __('Payment Account Charged Successfully'));
+        } catch (\Exception $e) {
+            return redirect()->route('admins.paymentAccounts.index')->with('error', $e->getMessage());
+        }
     }
 }

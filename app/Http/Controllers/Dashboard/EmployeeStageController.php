@@ -102,6 +102,7 @@ class EmployeeStageController extends Controller
                 'employee_stage_id'     => 'required|exists:employee_stages,id',
                 'payment_account_id'    => 'required|exists:payment_accounts,id',
                 'description'           => 'nullable|string|max:255',
+                'stage_price'           => 'required|numeric|min:0',
             ]);
 
             $employeeStage = EmployeeStage::with(['stage', 'employee'])->find($request->employee_stage_id);
@@ -130,16 +131,18 @@ class EmployeeStageController extends Controller
             }
 
 
-            $amount = $employeeStage->stage->price ?? $employeeStage->stage->cost;
+        $cost_amount = $employeeStage->stage->cost ?? 0;
 
 
-            if (!$amount || $amount <= 0) {
-                return back()->with('error', __('Invalid stage amount. Please check stage price or cost.'));
+            if (!$cost_amount || $cost_amount <= 0) {
+                return back()->with('error', __('Invalid stage amount. Please check stage price.'));
             }
 
-            if ($paymentAccount->balance < $amount) {
-                return back()->with('error', __('Insufficient balance in the payment account.'));
-            }
+//            if ($paymentAccount->balance < $amount) {
+//                return back()->with('error', __('Insufficient balance in the payment account.'));
+//            }
+
+
 
             $moderator = User::with('companyOfModeration.wallet')->find(Auth::id());
 
@@ -147,7 +150,9 @@ class EmployeeStageController extends Controller
                 return back()->with('error', __('Moderator company not found.'));
             }
 
-            $company = Company::with('wallet')->find($moderator->moderator_company_id);
+
+            $company = Company::with('wallet')->find($employeeStage->employee->company->id);
+//            $company = Company::with('wallet')->find($moderator->moderator_company_id);
 
             if (!$company) {
                 return back()->with('error', __('Company not found.'));
@@ -158,31 +163,32 @@ class EmployeeStageController extends Controller
             }
 
             // Check company wallet balance
-            if ($company->wallet->balance < $amount) {
-                return back()->with('error', __('Insufficient balance in company wallet.'));
-            }
+//            if ($company->wallet->balance < $amount) {
+//                return back()->with('error', __('Insufficient balance in company wallet.'));
+//            }
+            $stage_price = $request['stage_price'];
 
-            DB::transaction(function () use ($request, $company, $employeeStage, $paymentAccount, $amount) {
+            DB::transaction(function () use ($request, $company, $employeeStage, $paymentAccount, $cost_amount, $stage_price) {
 
-                $newPaymentAccountBalance = $paymentAccount->balance - $amount;
-                $newCompanyBalance = $company->wallet->balance - $amount;
+                $newPaymentAccountBalance = $paymentAccount->balance - $cost_amount;
+                $wallet = $company->wallet;
+
+                $newCompanyBalance = $wallet->balance - $stage_price;
 
 
                 $transaction = Transaction::create([
                     'created_by'                => Auth::id(),
                     'transaction_id'            => Str::uuid(),
-                    'to_wallet_id'              => $company->wallet->id,
-                    'from_payment_account_id'   => $paymentAccount->id,
-//                    'employee_id'               => $employeeStage->employee->id,
                     'payment_account_id'        => $paymentAccount->id,
-                    'user_id'                   => Auth::id(),
-                    'amount'                    => $amount,
+                    'user_id'                   => null,
+                    'amount'                    => $cost_amount,
                     'transactionable_id'        => $employeeStage->id,
                     'transactionable_type'      => EmployeeStage::class,
                     'from_balance_before'       => $paymentAccount->balance,
                     'from_balance_after'        => $newPaymentAccountBalance,
                     'status'                    => 'completed',
                     'type'                      => 'stage_payment',
+                    'method_type'               => 'debit',
                     'description'               => $request->description ?? "Stage payment for {$employeeStage->stage->name} - Employee: {$employeeStage->employee->name}",
                     'processed_at'              => now(),
                 ]);
@@ -192,21 +198,38 @@ class EmployeeStageController extends Controller
                 ]);
 
 
-                $company->wallet->update([
-                    'balance' => $newCompanyBalance
+
+                $wallet->walletTransactions()->create([
+                    'user_id' => Auth::id(),
+                    'payment_id' => Str::uuid(),
+                    'merchant_transaction_id' => Str::uuid(),
+                    'amount' => $stage_price,
+                    'currency' => 'SAR',
+                    'status' => 'completed',
+                    'payment_link' => null,
+                    'qr_code' => null,
+                    'ndc' => null,
+                    'gateway_response' => null,
+                    'completed_at' => now(),
+                ]);
+
+                $wallet->update([
+                    'balance' => $newCompanyBalance,
                 ]);
 
                 $employeeStage->update([
                     'status'        => 'completed',
                     'completed_at'  => now(),
                     'done_by'       => Auth::id(),
+                    'price_amount'  => $stage_price,
+                    'amount_cost'   => $cost_amount,
                 ]);
 
                 Log::info("Stage payment completed", [
                     'transaction_id' => $transaction->id,
                     'employee_stage_id' => $employeeStage->id,
                     'employee_id' => $employeeStage->employee_id,
-                    'amount' => $amount,
+                    'amount' => $cost_amount,
                     'payment_account_id' => $paymentAccount->id,
                     'user_id' => Auth::id()
                 ]);

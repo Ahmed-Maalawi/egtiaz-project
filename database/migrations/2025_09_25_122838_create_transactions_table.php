@@ -21,40 +21,35 @@ return new class extends Migration
                 $table->id();
                 $table->uuid('transaction_id')->unique();
 
-                // Payment accounts
-                $table->foreignId('from_payment_account_id')->constrained('payment_accounts')->onDelete('cascade');
-                $table->foreignId('to_wallet_id')->nullable()->constrained('wallets')->onDelete('cascade');
-
-                // Transaction type determination
                 $table->enum('type', ['stage_payment', 'salary_payment', 'refund', 'charge'])->default('stage_payment');
+                $table->enum('method_type', ['debit', 'credit'])->default('stage_payment');
 
-                // Polymorphic relationships (only one will be set)
-                $table->morphs('transactionable');
+                $table->nullableMorphs('transactionable');
 
+                $table->foreignIdFor(User::class, 'user_id')
+                    ->nullable()->constrained('users')->nullOnDelete();
 
-                // Employee and user references
-                $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-                $table->foreignId('payment_account_id')->constrained('payment_accounts')->onDelete('cascade');
-                $table->foreignId('created_by')->constrained('users')->onDelete('cascade');
+                $table->foreignId('payment_account_id')
+                    ->constrained('payment_accounts')->onDelete('cascade');
 
-                // Transaction amounts and balances
+                $table->foreignId('created_by')
+                    ->constrained('users')->onDelete('cascade');
+
                 $table->decimal('amount', 8, 2);
                 $table->decimal('from_balance_before', 8, 2);
                 $table->decimal('from_balance_after', 8, 2);
 
-                // Transaction metadata
-                $table->enum('status', ['pending', 'completed', 'failed', 'refund', 'canceled'])->default('pending');
+                $table->enum('status', ['pending', 'completed', 'failed', 'refund', 'canceled'])
+                    ->default('pending');
+
                 $table->string('description')->nullable();
 
-                // Soft delete & timestamps
                 $table->softDeletes();
                 $table->timestamp('processed_at')->nullable();
                 $table->timestamps();
 
-                // Indexing for performance
-                $table->index(['transactionable_id', 'transactionable_type']);
+                // Useful indexes
                 $table->index(['type', 'status']);
-                $table->index(['employee_id', 'status']);
                 $table->index(['user_id', 'created_at']);
                 $table->index('transaction_id');
                 $table->index('created_at');

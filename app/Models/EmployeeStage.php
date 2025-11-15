@@ -20,6 +20,7 @@ class EmployeeStage extends Model
         'payment_status',
         'paid_at',
         'amount_paid',
+        'amount_cost',
     ];
 
     protected $appends = ['profit'];
@@ -93,18 +94,18 @@ class EmployeeStage extends Model
 
     public function getProfitAttribute()
     {
-        // Make sure the related stage is loaded
-        if (!$this->relationLoaded('stage')) {
-            $this->load('stage');
-        }
+//        // Make sure the related stage is loaded
+//        if (!$this->relationLoaded('stage')) {
+//            $this->load('stage');
+//        }
+//
+//        $stage = $this->stage;
+//
+//        if (!$stage || !isset($stage->price) || !isset($stage->cost)) {
+//            return 0;
+//        }
 
-        $stage = $this->stage;
-
-        if (!$stage || !isset($stage->price) || !isset($stage->cost)) {
-            return 0;
-        }
-
-        return (float) $stage->price - (float) $stage->cost;
+        return (float) $this->amont_paid - (float) $this->amount_cost;
     }
     // Scopes
     public function scopePaid($query)

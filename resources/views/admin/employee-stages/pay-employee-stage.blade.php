@@ -95,7 +95,24 @@
                             </tr>
                             <tr>
                                 <th>{{ __('Price') }}</th>
-                                <td>{{ $stagePrice }}</td>
+                                <td>
+                                    <input
+                                        type="number"
+                                        name="stage_price"
+                                        id="stage_price"
+                                        value="{{ $stagePrice }}"
+                                        min="{{ $employeeStage->stage->cost }}"
+                                        step="0.01"
+                                        required
+                                    >
+                                    <small class="text-muted">
+                                        {{ __('Minimum price is') }} {{ $employeeStage->stage->cost }}
+                                    </small>
+
+                                    <div id="priceWarning" class="text-danger small mt-1" style="display:none;">
+                                        {{ __('Price cannot be less than stage cost') }}
+                                    </div>
+                                </td>
                             </tr>
                             <tr>
                                 <th>{{ __('Cost') }}</th>
@@ -118,10 +135,10 @@
             const afterBalance = document.getElementById("afterBalance");
             const submitBtn = document.getElementById("submitBtn");
 
-            const stagePrice = parseFloat(@json($stagePrice)) || 0;
+            const cost = parseFloat(@json($employeeStage->stage->cost)) || 0; // use cost, not price
+            const priceInput = document.getElementById('stage_price');
 
             function updateBalances() {
-                // no account selected
                 if (!accountSelect.value) {
                     currentBalance.textContent = "--";
                     afterBalance.textContent = "--";
@@ -131,14 +148,13 @@
                 }
 
                 const selected = accountSelect.selectedOptions[0];
-                // dataset.balance is the value from data-balance attribute
                 const balance = parseFloat(selected?.dataset?.balance) || 0;
 
                 currentBalance.textContent = balance.toFixed(2);
-                const after = balance - stagePrice;
+
+                const after = balance - cost; // subtract cost, not price
                 afterBalance.textContent = after.toFixed(2);
 
-                // disable submit if insufficient funds (optional behavior)
                 if (after < 0) {
                     submitBtn.disabled = true;
                     afterBalance.classList.add('text-danger');
@@ -148,9 +164,23 @@
                 }
             }
 
+            // Validate price input (cannot be less than cost)
+            priceInput.addEventListener('input', function () {
+                const value = parseFloat(priceInput.value) || 0;
+
+                if (value < cost) {
+                    priceInput.classList.add('is-invalid');
+                    submitBtn.disabled = true;
+                } else {
+                    priceInput.classList.remove('is-invalid');
+                    submitBtn.disabled = false;
+                }
+            });
+
             accountSelect.addEventListener("change", updateBalances);
 
             updateBalances();
         });
+
     </script>
 </x-dashboard.main-layout>

@@ -36,16 +36,16 @@
                 </select>
             </div>
 
-            <div class="form-group">
-                <label for="paymentAccounts">{{ __('Payment Accounts') }}</label>
-                <select name="paymentAccounts[]" class="form-control select2" id="paymentAccounts" multiple >
-                    @foreach ($paymentAccounts as $account)
-                        <option dir="rtl" value="{{ $account['id'] }}" @selected(in_array($account['id'], old('paymentAccounts', [])))>
-                            {{ $account['name'] }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
+{{--            <div class="form-group">--}}
+{{--                <label for="paymentAccounts">{{ __('Payment Accounts') }}</label>--}}
+{{--                <select name="paymentAccounts[]" class="form-control select2" id="paymentAccounts" multiple >--}}
+{{--                    @foreach ($paymentAccounts as $account)--}}
+{{--                        <option dir="rtl" value="{{ $account['id'] }}" @selected(in_array($account['id'], old('paymentAccounts', [])))>--}}
+{{--                            {{ $account['name'] }}--}}
+{{--                        </option>--}}
+{{--                    @endforeach--}}
+{{--                </select>--}}
+{{--            </div>--}}
 
             <div class="form-group">
                 <label for="company_id">{{ __('Company') }}</label>

@@ -277,7 +277,7 @@
                                     <span class="badge badge-info">{{ $userTransactionCount }}</span>
                                 </td>
                                 <td>
-                                    <strong class="text-success">${{ number_format($userTotalAmount, 2) }}</strong>
+                                    <strong class="text-success">{{ __('SAR') .  number_format($userTotalAmount, 2) }}</strong>
                                 </td>
                                 <td>
                                     @if($lastTransaction)
@@ -328,7 +328,8 @@
                             <th>{{ __('ID') }}</th>
                             <th>{{ __('Transaction ID') }}</th>
                             <th>{{ __('Type') }}</th>
-                            <th>{{ __('User') }}</th>
+                            <th>{{ __('Payment Type') }}</th>
+{{--                            <th>{{ __('User') }}</th>--}}
                             <th>{{ __('Create By') }}</th>
                             <th>{{ __('Amount') }}</th>
                             <th>{{ __('Status') }}</th>
@@ -363,17 +364,18 @@
                                             @endswitch
                                     </span>
                                 </td>
-                                <td>
-                                    @if($transaction->user)
-                                        <div>
-                                            <strong>{{ $transaction->user->name }}</strong>
-                                            <br>
-                                            <small class="text-muted">{{ $transaction->user->email }}</small>
-                                        </div>
-                                    @else
-                                        <span class="text-muted">-</span>
-                                    @endif
-                                </td>
+                                <td>{{ $transaction->method_type ?? __('N/A') }}</td>
+{{--                                <td>--}}
+{{--                                    @if($transaction->user)--}}
+{{--                                        <div>--}}
+{{--                                            <strong>{{ $transaction->user->name }}</strong>--}}
+{{--                                            <br>--}}
+{{--                                            <small class="text-muted">{{ $transaction->user->email }}</small>--}}
+{{--                                        </div>--}}
+{{--                                    @else--}}
+{{--                                        <span class="text-muted">-</span>--}}
+{{--                                    @endif--}}
+{{--                                </td>--}}
                                 <td>
                                     @if($transaction->createdBy)
                                         <div>
@@ -386,7 +388,7 @@
                                     @endif
                                 </td>
                                 <td>
-                                    <strong class="text-success">${{ number_format($transaction->amount, 2) }}</strong>
+                                    <strong class="text-success">{{ __('SAR') . number_format($transaction->amount, 2) }}</strong>
                                 </td>
                                 <td>
                                     @switch($transaction->status)
