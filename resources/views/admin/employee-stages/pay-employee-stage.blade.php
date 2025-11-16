@@ -135,7 +135,7 @@
             const afterBalance = document.getElementById("afterBalance");
             const submitBtn = document.getElementById("submitBtn");
 
-            const cost = parseFloat(@json($employeeStage->stage->cost)) || 0; // use cost, not price
+            const cost = parseFloat(@json($employeeStage->stage->cost)) || 0;
             const priceInput = document.getElementById('stage_price');
 
             function updateBalances() {
@@ -152,19 +152,21 @@
 
                 currentBalance.textContent = balance.toFixed(2);
 
-                const after = balance - cost; // subtract cost, not price
+                const after = balance - cost;
                 afterBalance.textContent = after.toFixed(2);
 
+                // ❗ Allow negative balance – just mark it red
                 if (after < 0) {
-                    submitBtn.disabled = true;
                     afterBalance.classList.add('text-danger');
                 } else {
-                    submitBtn.disabled = false;
                     afterBalance.classList.remove('text-danger');
                 }
+
+                // NEVER disable the button due to negative balance
+                submitBtn.disabled = false;
             }
 
-            // Validate price input (cannot be less than cost)
+            // Validate price >= cost
             priceInput.addEventListener('input', function () {
                 const value = parseFloat(priceInput.value) || 0;
 
@@ -178,9 +180,8 @@
             });
 
             accountSelect.addEventListener("change", updateBalances);
-
             updateBalances();
         });
-
     </script>
+
 </x-dashboard.main-layout>

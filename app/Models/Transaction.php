@@ -17,6 +17,7 @@ class Transaction extends Model
 
     protected $casts = [
         'amount'        => 'float',
+        'metadata' => 'array',
         'processed_at'  => 'datetime',
     ];
 
@@ -53,6 +54,27 @@ class Transaction extends Model
     public function transactionable()
     {
         return $this->morphTo();
+    }
+
+    /**
+     * Get related wallet transaction for stage payments
+     */
+    public function relatedWalletTransaction()
+    {
+        if ($this->type === 'stage_payment' && $this->employee_stage_id) {
+            return WalletTransaction::where('employee_stage_id', $this->employee_stage_id)
+                ->where('type', 'stage_payment')
+                ->first();
+        }
+        return null;
+    }
+
+    /**
+     * Scope for stage payments
+     */
+    public function scopeStagePayments($query)
+    {
+        return $query->where('type', 'stage_payment')->whereNotNull('employee_stage_id');
     }
 
     public function getTransactionableTypeNameAttribute()

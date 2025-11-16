@@ -67,6 +67,8 @@
                                         data-id = "{{ $company->id }}" data-offstyle="danger">
                                 </td>
                                 <td class="d-flex justify-content-center">
+                                    <a href="{{ route('admins.companies.show', $company->id) }}"
+                                       class="mx-1 btn btn-primary btn-sm"><i class="fas fa-eye"></i></a>
                                     <a href="{{ route('admins.companies.edit', $company->id) }}"
                                         class="mx-1 btn btn-primary btn-sm"><i class="fas fa-edit"></i></a>
                                     <form id="delete-form-{{ $company->id }}"

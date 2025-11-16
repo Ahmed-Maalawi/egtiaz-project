@@ -95,6 +95,48 @@ class Employee extends Model
         return $this->hasMany(Salary::class);
     }
 
+    /**
+     * Get pending stages
+     */
+    public function pendingStages()
+    {
+        return $this->stages()->pending();
+    }
+
+    /**
+     * Check if all papers are completed
+     */
+    public function checkAllPapersCompleted()
+    {
+        $totalStages = $this->stages()->count();
+        $completedStages = $this->completedStages()->count();
+
+        return $totalStages > 0 && $totalStages === $completedStages;
+    }
+
+    /**
+     * Get total cost spent on this employee
+     */
+    public function getTotalCostAttribute()
+    {
+        return $this->completedStages()->sum('amount_cost');
+    }
+
+    /**
+     * Get total price charged for this employee
+     */
+    public function getTotalPriceAttribute()
+    {
+        return $this->completedStages()->sum('price_amount');
+    }
+
+    /**
+     * Get total profit from this employee
+     */
+    public function getTotalProfitAttribute()
+    {
+        return $this->total_price - $this->total_cost;
+    }
     public function scopeActive($query)
     {
         return $query->whereStatus('active');
@@ -123,11 +165,24 @@ class Employee extends Model
         return round($totalSize / pow($k, $i), 2) . ' ' . $sizes[$i];
     }
 
-    public function getCurrentMonthSalaryAttribute()
+//    public function getCurrentMonthSalaryAttribute()
+//    {
+//        return $this->salaries()
+//            ->where('month', now()->format('Y-m'))
+//            ->first();
+//    }
+
+    public function stages()
     {
-        return $this->salaries()
-            ->where('month', now()->format('Y-m'))
-            ->first();
+        return $this->hasMany(EmployeeStage::class);
+    }
+
+    /**
+     * Get completed stages
+     */
+    public function completedStages()
+    {
+        return $this->stages()->completed();
     }
 
     public function scopeFilter($query, array $filters)

@@ -67,6 +67,7 @@ Route::group([
             'index'     => 'companies.index',
             'create'    => 'companies.create',
             'store'     => 'companies.store',
+            'show'      => 'companies.show',
             'edit'      => 'companies.edit',
             'update'    => 'companies.update',
             'destroy'   => 'companies.destroy',
@@ -76,6 +77,22 @@ Route::group([
 
     Route::get('companies/company/search', [CompanyController::class, 'search'])
         ->name('companies.search');
+
+    // Get transaction details via AJAX
+    Route::get('/admin/transactions/{type}/{id}/details', [CompanyController::class, 'getTransactionDetails'])
+        ->name('transactions.details');
+
+    // Download invoice
+    Route::get('/invoice/download/{transaction}', [CompanyController::class, 'downloadInvoice'])
+        ->name('invoice.download');
+
+    // Export transactions
+    Route::get('/companies/{company}/export-transactions', [CompanyController::class, 'exportTransactions'])
+        ->name('companies.export-transactions');
+
+    // Profit report
+    Route::get('/companies/{company}/profit-report', [CompanyController::class, 'profitReport'])
+        ->name('companies.profit-report');
 
     //------------------------------------------------------------
 

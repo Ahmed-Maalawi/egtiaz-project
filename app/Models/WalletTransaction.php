@@ -28,6 +28,26 @@ class WalletTransaction extends Model
         return $this->belongsTo(Wallet::class);
     }
 
+    public function employeeStage()
+    {
+        return $this->belongsTo(EmployeeStage::class);
+    }
+
+    /**
+     * Scope to get stage payments only
+     */
+    public function scopeStagePayments($query)
+    {
+        return $query->where('type', 'stage_payment')->whereNotNull('employee_stage_id');
+    }
+
+    /**
+     * Scope to filter by date range
+     */
+    public function scopeDateRange($query, $fromDate, $toDate)
+    {
+        return $query->whereBetween('completed_at', [$fromDate, $toDate]);
+    }
 
     /**
      * Scope to apply filters dynamically.

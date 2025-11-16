@@ -61,6 +61,13 @@ class Company extends Model
         return $this->banner_image ? asset('storage/'.$this->banner_image) : null;
     }
 
+    /**
+     * Get active moderators with emails
+     */
+    public function getActiveModeratorsWithEmailAttribute()
+    {
+        return $this->moderators()->whereNotNull('email')->get();
+    }
 
     public function scopeFilter($query, $filters)
     {

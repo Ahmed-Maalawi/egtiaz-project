@@ -107,6 +107,26 @@ class EmployeeStage extends Model
 
         return (float) $this->amont_paid - (float) $this->amount_cost;
     }
+
+    /**
+     * Get the wallet transaction (price)
+     */
+    public function walletTransaction()
+    {
+        return $this->belongsTo(WalletTransaction::class, 'wallet_transaction_id');
+    }
+
+    /**
+     * Get both transactions
+     */
+    public function allTransactions()
+    {
+        return [
+            'cost_transaction' => $this->transaction,
+            'price_transaction' => $this->walletTransaction,
+            'profit' => $this->price_amount - $this->amount_cost,
+        ];
+    }
     // Scopes
     public function scopePaid($query)
     {
@@ -116,6 +136,22 @@ class EmployeeStage extends Model
     public function scopePendingPayment($query)
     {
         return $query->where('payment_status', 'pending');
+    }
+
+    /**
+     * Scope for completed stages
+     */
+    public function scopeCompleted($query)
+    {
+        return $query->where('status', 'completed');
+    }
+
+    /**
+     * Scope for pending stages
+     */
+    public function scopePending($query)
+    {
+        return $query->where('status', '!=', 'completed');
     }
 
     public function scopeProfitReport($query, array $filters)
