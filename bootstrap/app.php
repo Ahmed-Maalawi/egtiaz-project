@@ -6,6 +6,7 @@ use App\Http\Middleware\CheckUserStatusMiddleware;
 use App\Http\Middleware\PhoneVerifiedInMobileMiddleware;
 use App\Http\Middleware\RoleOrPermissionMiddleware;
 use App\Http\Middleware\SetLocaleMiddleware;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -18,6 +19,9 @@ return Application::configure(basePath: dirname(__DIR__))
         channels: __DIR__ . '/../routes/channels.php',
         health: '/up',
     )
+    ->withSchedule(function (Schedule $schedule) {
+        $schedule->command('check:passport-expiry')->dailyAt('09:00');
+    })
     ->withMiddleware(function (Middleware $middleware) {
 
         $middleware->web(append: [

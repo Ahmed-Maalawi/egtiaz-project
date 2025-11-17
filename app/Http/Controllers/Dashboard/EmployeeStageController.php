@@ -146,13 +146,13 @@ class EmployeeStageController extends Controller
                     'method_type'               => 'debit',
                     'description'               => $validated['description'] ??
                         "Stage payment cost for {$employeeStage->stage->name} - Employee: {$employeeStage->employee->name}",
-                    'metadata'                  => json_encode([
+                    'metadata'                  => [
                         'cost' => $cost_amount,
                         'price' => $stage_price,
                         'profit' => $profit,
                         'company_id' => $wallet->company_id,
                         'employee_id' => $employeeStage->employee_id,
-                    ]),
+                    ],
                     'processed_at'              => now(),
                 ]);
 

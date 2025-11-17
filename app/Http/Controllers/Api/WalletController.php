@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\WalletResource;
+use App\Mail\WalletChargeSuccessMail;
 use App\Models\Wallet;
 use App\Models\WalletTransaction;
 use App\Services\PaymentGatewayService;
@@ -12,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 
 class WalletController extends Controller
@@ -188,7 +190,7 @@ class WalletController extends Controller
      */
     public function handleShopperResult(Request $request)
     {
-        // The callback might send either 'id' or the full resourcePath
+
         $paymentId = $request->input('id');
         $resourcePath = $request->input('resourcePath');
 
@@ -202,7 +204,7 @@ class WalletController extends Controller
             return $this->redirectToApp($request, 'failed', 'Invalid payment callback');
         }
 
-        // Find transaction
+
         $transaction = WalletTransaction::where('payment_id', $paymentId)->first();
 
         if (!$transaction) {
@@ -210,11 +212,11 @@ class WalletController extends Controller
             return $this->redirectToApp($request, 'failed', 'Transaction not found');
         }
 
-        // If we have resourcePath, use it to get payment status
+
         if ($resourcePath) {
             $paymentStatus = $this->getPaymentStatusFromResourcePath($resourcePath);
         } else {
-            // Otherwise try the Pay by Link endpoint
+
             $paymentStatus = $this->paymentService->getPaymentStatus($paymentId);
         }
 
@@ -224,10 +226,9 @@ class WalletController extends Controller
 
         $resultCode = $paymentStatus['result']['code'];
 
-        // Check if payment was successful
         if ($this->paymentService->isSuccessfulPayment($resultCode)) {
 
-            // Prevent double processing
+
             if ($transaction->status === 'completed') {
                 return $this->redirectToApp($request, 'success', 'Payment already processed', [
                     'transaction_id' => $transaction->id,
@@ -235,19 +236,29 @@ class WalletController extends Controller
                 ]);
             }
 
-            // Update transaction
             $transaction->update([
                 'status' => 'completed',
                 'gateway_response' => $paymentStatus,
                 'completed_at' => now()
             ]);
 
-            // Update user wallet balance
+
             $user = $transaction->user;
 
             $transaction->wallet->update([
                 'balance' => $transaction->wallet->balance + $transaction->amount
             ]);
+
+
+            // send email to moderators
+            try {
+                $this->sendPaymentSuccessEmailToModerator($transaction);
+            } catch (\Exception $e) {
+                Log::error('Failed to send payment success email to moderator', [
+                    'transaction_id' => $transaction->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
 
             Log::info('Wallet charged successfully', [
                 'user_id' => $user->id,
@@ -497,5 +508,42 @@ class WalletController extends Controller
         ]);
 
         return response()->json(['status' => 'failed'], 200);
+    }
+
+    /**
+     * Send payment success email to moderator
+     */
+    private function sendPaymentSuccessEmailToModerator(WalletTransaction $transaction)
+    {
+        $company = $transaction->wallet->company;
+
+        if (!$company) {
+            Log::warning('Company not found for transaction', ['transaction_id' => $transaction->id]);
+            return;
+        }
+
+        $moderators = $company->moderators()->where('status', 'active')->get();
+
+        if ($moderators->isEmpty()) {
+            Log::warning('No active moderators found for company', ['company_id' => $company->id]);
+            return;
+        }
+
+        foreach ($moderators as $moderator) {
+            try {
+                Mail::to($moderator->email)->queue(new WalletChargeSuccessMail($moderator, $transaction, $company));
+                Log::info('Payment success email sent to moderator', [
+                    'moderator_id' => $moderator->id,
+                    'moderator_email' => $moderator->email,
+                    'transaction_id' => $transaction->id
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Failed to send email to moderator', [
+                    'moderator_id' => $moderator->id,
+                    'moderator_email' => $moderator->email,
+                    'error' => $e->getMessage()
+                ]);
+            }
+        }
     }
 }
