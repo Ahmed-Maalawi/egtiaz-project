@@ -506,25 +506,25 @@
         </li>
     @endcanany
 
-    @can('roles')
-        <li class="nav-item {{ Route::is('admins.roles.*') ? 'active' : '' }}"
-            style="{{ Route::is('admins.roles.*') ? 'background-color: #ccad75;' : '' }}">
-            <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseRoles"
-               aria-expanded="true" aria-controls="collapseRoles">
-                <i class="far fa-caret-square-right"></i>
-                <span>{{ __('Roles Section') }}</span>
-            </a>
-            <div id="collapseRoles" class="collapse {{ Route::is('admins.roles.*') ? 'show' : '' }}"
-                 aria-labelledby="headingPages" data-parent="#accordionSidebar">
-                <div class="py-2 bg-white rounded collapse-inner">
-                    @can('eos')
-                        <a class="collapse-item" href="{{ route('admins.roles.index') }}">{{ __('Manage Roles') }}</a>
-                        <a class="collapse-item" href="{{ route('admins.roles.permissions') }}">{{ __('Manage Permissions') }}</a>
-                    @endcan
-                </div>
-            </div>
-        </li>
-    @endcan
+{{--    @can('roles')--}}
+{{--        <li class="nav-item {{ Route::is('admins.roles.*') ? 'active' : '' }}"--}}
+{{--            style="{{ Route::is('admins.roles.*') ? 'background-color: #ccad75;' : '' }}">--}}
+{{--            <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseRoles"--}}
+{{--               aria-expanded="true" aria-controls="collapseRoles">--}}
+{{--                <i class="far fa-caret-square-right"></i>--}}
+{{--                <span>{{ __('Roles Section') }}</span>--}}
+{{--            </a>--}}
+{{--            <div id="collapseRoles" class="collapse {{ Route::is('admins.roles.*') ? 'show' : '' }}"--}}
+{{--                 aria-labelledby="headingPages" data-parent="#accordionSidebar">--}}
+{{--                <div class="py-2 bg-white rounded collapse-inner">--}}
+{{--                    @can('eos')--}}
+{{--                        <a class="collapse-item" href="{{ route('admins.roles.index') }}">{{ __('Manage Roles') }}</a>--}}
+{{--                        <a class="collapse-item" href="{{ route('admins.roles.permissions') }}">{{ __('Manage Permissions') }}</a>--}}
+{{--                    @endcan--}}
+{{--                </div>--}}
+{{--            </div>--}}
+{{--        </li>--}}
+{{--    @endcan--}}
     <hr class="sidebar-divider">
 
     <!-- Sidebar Toggler (Sidebar) -->

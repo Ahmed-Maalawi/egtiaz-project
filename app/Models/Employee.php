@@ -95,6 +95,11 @@ class Employee extends Model
         return $this->hasMany(Salary::class);
     }
 
+    public function walletTransactions()
+    {
+        return $this->hasMany(WalletTransaction::class, 'employee_id');
+    }
+
     /**
      * Get pending stages
      */

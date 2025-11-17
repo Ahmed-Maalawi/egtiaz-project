@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Dashboard;
 
 use App\Models\Employee;
 use App\Models\EmployeeFile;
+use Exception;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\Company;
@@ -12,8 +13,10 @@ use App\Models\IqamaType;
 use App\Models\Stage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Mpdf\Mpdf;
 
 class EmployeeController extends Controller
 {
@@ -25,7 +28,7 @@ class EmployeeController extends Controller
         $employees = Employee::with([
             'company',
             'iqamaType',
-        ])->get();
+        ])->latest()->get();
 
         return view('admin.employees.index', compact('employees'));
     }
@@ -375,9 +378,82 @@ class EmployeeController extends Controller
             return redirect()->route('admins.employees.files', $employee->id)
                 ->with('success', __('File uploaded successfully'));
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return redirect()->route('admins.employees.files', $employee->id)
                 ->with('error', __('Failed to upload file: ') . $e->getMessage());
         }
+    }
+
+
+    public function exportEmployeeProfileDetailsAsPDF(int $id)
+    {
+        try {
+            $employee = Employee::with([
+                'company',
+                'iqamaType',
+                'files',
+                'employeeStages.stage',
+                'employeeStages.files',
+                'employeeStages',
+                'employeeStages.transactions',
+                'employeeStages.walletTransaction',
+            ])->findOrFail($id);
+
+
+            $employee->total_paid = $employee->employeeStages->sum('price_amount');
+            $employee->total_due = $employee->total_price - $employee->total_paid;
+
+
+            foreach ($employee->employeeStages as $stage) {
+                $stage->payment_data = $this->getStagePaymentData($stage);
+            }
+
+            $mpdf = new Mpdf([
+                'mode' => 'utf-8',
+                'format' => 'A4',
+                'default_font' => 'xbriyaz',
+                'direction' => 'rtl',
+                'margin_top' => 15,
+                'margin_bottom' => 15,
+                'margin_left' => 10,
+                'margin_right' => 10,
+            ]);
+
+            $mpdf->SetTitle('Detailed Employee Report - ' . $employee->name);
+            $mpdf->SetAuthor(config('app.name'));
+
+            $html = View::make('admins.employees.pdf.employee-details', compact('employee'))->render();
+            $mpdf->WriteHTML($html);
+
+            return response($mpdf->Output('employee-detailed-report-' . $employee->id . '.pdf', 'I'))
+                ->header('Content-Type', 'application/pdf');
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to generate PDF: ' . $e->getMessage());
+        }
+    }
+
+    private function getStagePaymentData($employeeStage)
+    {
+        if ($employeeStage->walletTransaction) {
+            $walletTransaction = $employeeStage->walletTransaction;
+            return [
+                'amount' => $walletTransaction->amount,
+                'status' => $walletTransaction->status,
+                'paid_at' => $walletTransaction->completed_at,
+                'payment_method' => $walletTransaction->payment_method ?? 'wallet',
+                'reference_number' => $walletTransaction->payment_id,
+                'notes' => $walletTransaction->description
+            ];
+        }
+
+        return [
+            'amount' => $employeeStage->price_amount ?? 0,
+            'status' => $employeeStage->payment_status ?? 'pending',
+            'paid_at' => $employeeStage->paid_at,
+            'payment_method' => 'direct',
+            'reference_number' => null,
+            'notes' => null
+        ];
     }
 }

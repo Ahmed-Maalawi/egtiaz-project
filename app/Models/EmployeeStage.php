@@ -19,8 +19,11 @@ class EmployeeStage extends Model
         'currently_type',
         'payment_status',
         'paid_at',
-        'amount_paid',
+//        'amount_paid',
         'amount_cost',
+        'price_amount',
+        'transaction_id',
+        'wallet_transaction_id'
     ];
 
     protected $appends = ['profit'];
@@ -30,7 +33,7 @@ class EmployeeStage extends Model
         'completed_at' => 'datetime',
         'expired_at' => 'datetime',
         'paid_at' => 'datetime',
-        'amount_paid' => 'decimal:2'
+        'price_amount' => 'decimal:2'
     ];
 
     protected $with = 'files';
@@ -82,7 +85,7 @@ class EmployeeStage extends Model
     {
         $this->update([
             'payment_status' => 'paid',
-            'amount_paid' => $amount,
+            'price_amount' => $amount,
             'paid_at' => now()
         ]);
     }

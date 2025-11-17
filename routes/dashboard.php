@@ -122,6 +122,8 @@ Route::group([
         ->name('employees.toggle');
     Route::get('employees/employee/search', [EmployeeController::class, 'search'])
         ->name('employees.search');
+    Route::get('/employees/{id}/download-pdf', [EmployeeController::class, 'exportEmployeeProfileDetailsAsPDF'])
+        ->name('employees.download-pdf');
 
     //------------------------------------------------------------
 

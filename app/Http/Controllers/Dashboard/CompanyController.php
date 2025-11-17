@@ -3,8 +3,14 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Models\Company;
+use App\Models\Transaction;
+use App\Models\WalletTransaction;
+use Dompdf\Dompdf;
+use Dompdf\Options;
+use Mpdf\Mpdf;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\View;
 
 class CompanyController extends Controller
 {
@@ -85,24 +91,24 @@ class CompanyController extends Controller
             'moderators'
         ])->findOrFail($id);
 
-        // Get all wallet transactions with employee details
+
         $walletTransactions = $company->wallet->walletTransactions()
             ->with(['employeeStage.employee', 'employeeStage.stage', 'user'])
             ->latest()
             ->paginate(20);
 
-        // Get all payment account transactions related to this company's employees
-        $paymentTransactions = \App\Models\Transaction::whereHas('employeeStage.employee', function($query) use ($company) {
+
+        $paymentTransactions = Transaction::whereHas('employeeStage.employee', function($query) use ($company) {
             $query->where('company_id', $company->id);
         })
             ->with(['employeeStage.employee', 'employeeStage.stage', 'paymentAccount', 'createdBy'])
             ->latest()
             ->paginate(20);
 
-        // Calculate summary statistics
+
         $summary = $this->calculateCompanySummary($company);
 
-        // Get profit report by employee
+
         $employeeProfits = $this->getEmployeeProfitReport($company);
 
         return view('admin.companies.show', compact(
@@ -201,14 +207,14 @@ class CompanyController extends Controller
         $company->save();
 
         return response()->json([
-            'message'               => __('company status updated')
+            'message'   => __('company status updated')
         ]);
     }
 
     public function search(Request $request)
     {
         $request->validate([
-            'q'                 =>'nullable|string',
+            'q' =>'nullable|string',
         ]);
 
         $locale = app()->getLocale();
@@ -220,8 +226,8 @@ class CompanyController extends Controller
         return response()->json(
             $companies->map(function($company) use ($locale){
                 return [
-                    'id'                =>$company->id,
-                    'name'              =>$company->getTranslation('name',$locale),
+                    'id'    =>$company->id,
+                    'name'  =>$company->getTranslation('name',$locale),
                 ];
             })
         );
@@ -230,20 +236,20 @@ class CompanyController extends Controller
 
     private function calculateCompanySummary($company)
     {
-        // Get all completed stages for this company's employees
+
         $completedStages = \App\Models\EmployeeStage::whereHas('employee', function($query) use ($company) {
             $query->where('company_id', $company->id);
         })
             ->where('status', 'completed')
             ->get();
 
-        // Wallet transactions (what company paid us)
+
         $totalWalletCharges = $company->wallet->walletTransactions()
             ->where('type', 'stage_payment')
             ->sum('amount');
 
-        // Payment transactions (what we paid for processing)
-        $totalCosts = \App\Models\Transaction::whereHas('employeeStage.employee', function($query) use ($company) {
+
+        $totalCosts = Transaction::whereHas('employeeStage.employee', function($query) use ($company) {
             $query->where('company_id', $company->id);
         })
             ->where('type', 'stage_payment')
@@ -275,7 +281,7 @@ class CompanyController extends Controller
             ->map(function($employee) {
                 $completedStages = $employee->stages->where('status', 'completed');
                 $totalCost = $completedStages->sum('amount_cost');
-                $totalPrice = $completedStages->sum('amount_paid');
+                $totalPrice = $completedStages->sum('price_amount');
 
                 return [
                     'employee' => $employee,
@@ -292,15 +298,30 @@ class CompanyController extends Controller
 
     public function downloadInvoice($transactionId)
     {
-        $transaction = \App\Models\WalletTransaction::with([
+        $transaction = WalletTransaction::with([
             'employeeStage.employee.company',
             'employeeStage.stage'
         ])->findOrFail($transactionId);
 
-        // Generate PDF invoice
-        $pdf = \PDF::loadView('invoices.wallet-transaction', compact('transaction'));
+        // Configure mPDF for Arabic/RTL support
+        $mpdf = new Mpdf([
+            'mode' => 'utf-8',
+            'format' => 'A4',
+            'default_font' => 'xbriyaz', // Arabic font
+            'direction' => 'rtl', // Right-to-left for Arabic
+            'margin_top' => 20,
+            'margin_bottom' => 20,
+            'margin_left' => 15,
+            'margin_right' => 15
+        ]);
 
-        return $pdf->download('invoice-' . $transaction->id . '.pdf');
+        // Load your existing Blade view
+        $html = View::make('admin.invoices.wallet-transaction', compact('transaction'))->render();
+
+        $mpdf->WriteHTML($html);
+
+        return response($mpdf->Output('invoice-' . $transactionId . '.pdf', 'S'))
+            ->header('Content-Type', 'application/pdf');
     }
 
 
@@ -310,7 +331,7 @@ class CompanyController extends Controller
     public function getTransactionDetails($type, $id)
     {
         if ($type === 'wallet') {
-            $transaction = \App\Models\WalletTransaction::with([
+            $transaction = WalletTransaction::with([
                 'employeeStage.employee',
                 'employeeStage.stage',
                 'wallet'
@@ -319,7 +340,7 @@ class CompanyController extends Controller
             // Find related payment transaction
             $paymentTransaction = null;
             if ($transaction->employeeStage_id) {
-                $paymentTransaction = \App\Models\Transaction::where('employee_stage_id', $transaction->employee_stage_id)
+                $paymentTransaction = Transaction::where('employee_stage_id', $transaction->employee_stage_id)
                     ->where('type', 'stage_payment')
                     ->with('paymentAccount')
                     ->first();

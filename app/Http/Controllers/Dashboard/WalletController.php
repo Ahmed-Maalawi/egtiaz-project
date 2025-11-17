@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Dashboard;
 
 use App\Models\Wallet;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 
 class WalletController extends Controller
 {

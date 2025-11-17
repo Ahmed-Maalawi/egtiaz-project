@@ -2,8 +2,7 @@
 
 namespace App\Http\Controllers\Dashboard;
 
-use App\Mail\EmployeePapersCompletedMail;
-use App\Models\Company;
+use App\Jobs\SendEmployeeCompletionEmail;
 use App\Models\EmployeeStage;
 use App\Models\PaymentAccount;
 use App\Models\Transaction;
@@ -15,7 +14,6 @@ use App\Models\Employee;
 use App\Models\IqamaType;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Log;
 
@@ -99,8 +97,8 @@ class EmployeeStageController extends Controller
 
     public function PayEmployeeStage(Request $request)
     {
-//        try {
-            // Validation
+        try {
+
             $validated = $request->validate([
                 'employee_stage_id'     => 'required|exists:employee_stages,id',
                 'payment_account_id'    => 'required|exists:payment_accounts,id',
@@ -108,7 +106,6 @@ class EmployeeStageController extends Controller
                 'stage_price'           => 'required|numeric|min:0',
             ]);
 
-            // Load relationships
             $employeeStage = EmployeeStage::with([
                 'stage',
                 'employee.company.wallet',
@@ -117,7 +114,7 @@ class EmployeeStageController extends Controller
 
             $paymentAccount = PaymentAccount::findOrFail($validated['payment_account_id']);
 
-            // Validations
+
             $this->validateStagePayment($employeeStage, $paymentAccount, $validated['stage_price']);
 
             $cost_amount = $employeeStage->stage->cost;
@@ -125,29 +122,14 @@ class EmployeeStageController extends Controller
             $company = $employeeStage->employee->company;
             $wallet = $company->wallet;
 
-            // Check balances
-//            if ($paymentAccount->balance < $cost_amount) {
-//                return back()->with('error', __('Insufficient balance in payment account. Required: :amount, Available: :balance', [
-//                    'amount' => number_format($cost_amount, 2),
-//                    'balance' => number_format($paymentAccount->balance, 2)
-//                ]));
-//            }
 
-//            if ($wallet->balance < $stage_price) {
-//                return back()->with('error', __('Insufficient balance in company wallet. Required: :amount, Available: :balance', [
-//                    'amount' => number_format($stage_price, 2),
-//                    'balance' => number_format($wallet->balance, 2)
-//                ]));
-//            }
-
-            // Process payment in transaction
             DB::transaction(function () use ($employeeStage, $paymentAccount, $wallet, $cost_amount, $stage_price, $validated) {
 
                 $newPaymentAccountBalance = $paymentAccount->balance - $cost_amount;
                 $newWalletBalance = $wallet->balance - $stage_price;
                 $profit = $stage_price - $cost_amount;
 
-                // Transaction 1: Payment Account (Cost - what we pay for the paper)
+
                 $transaction = Transaction::create([
                     'created_by'                => Auth::id(),
                     'transaction_id'            => Str::uuid(),
@@ -174,10 +156,10 @@ class EmployeeStageController extends Controller
                     'processed_at'              => now(),
                 ]);
 
-                // Update payment account balance
+
                 $paymentAccount->update(['balance' => $newPaymentAccountBalance]);
 
-                // Transaction 2: Wallet Transaction (Price - what company pays us)
+
                 $walletTransaction = $wallet->walletTransactions()->create([
                     'user_id'                   => Auth::id(),
                     'employee_stage_id'         => $employeeStage->id, // Link to employee stage
@@ -191,19 +173,19 @@ class EmployeeStageController extends Controller
                     'payment_link'              => null,
                     'qr_code'                   => null,
                     'ndc'                       => null,
-                    'gateway_response'          => [
+                    'gateway_response'          => json_encode([
                         'transaction_id' => $transaction->id,
                         'cost' => $cost_amount,
                         'price' => $stage_price,
                         'profit' => $profit,
-                    ],
+                    ]),
                     'completed_at'              => now(),
                 ]);
 
-                // Update wallet balance
+
                 $wallet->update(['balance' => $newWalletBalance]);
 
-                // Update employee stage
+
                 $employeeStage->update([
                     'status'                    => 'completed',
                     'completed_at'              => now(),
@@ -228,7 +210,7 @@ class EmployeeStageController extends Controller
                 ]);
             });
 
-            // Check if all employee papers are completed
+
             $this->checkAndNotifyIfAllPapersCompleted($employeeStage->employee);
 
             return redirect()
@@ -237,22 +219,22 @@ class EmployeeStageController extends Controller
                     'profit' => number_format($stage_price - $cost_amount, 2)
                 ]));
 
-//        } catch (\Illuminate\Validation\ValidationException $e) {
-//            return back()->withErrors($e->validator)->withInput();
-//
-//        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-//            Log::error('Model not found in PayEmployeeStage: ' . $e->getMessage());
-//            return back()->with('error', __('One of the required records was not found.'));
-//
-//        } catch (\Exception $e) {
-//            Log::error('Stage payment error: ' . $e->getMessage(), [
-//                'trace' => $e->getTraceAsString(),
-//                'request' => $request->all()
-//            ]);
-//            return back()->with('error', __('An error occurred while processing the stage payment: :error', [
-//                'error' => $e->getMessage()
-//            ]));
-//        }
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()->withErrors($e->validator)->withInput();
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            Log::error('Model not found in PayEmployeeStage: ' . $e->getMessage());
+            return back()->with('error', __('One of the required records was not found.'));
+
+        } catch (\Exception $e) {
+            Log::error('Stage payment error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'request' => $request->all()
+            ]);
+            return back()->with('error', __('An error occurred while processing the stage payment: :error', [
+                'error' => $e->getMessage()
+            ]));
+        }
     }
 
     /**
@@ -303,16 +285,17 @@ class EmployeeStageController extends Controller
      */
     private function checkAndNotifyIfAllPapersCompleted($employee)
     {
-        // Reload employee with all stages
         $employee->load('stages');
 
-        // Check if all stages are completed
-        $allCompleted = $employee->stages->every(function ($stage) {
-            return $stage->status === 'completed';
-        });
-
+        $allCompleted = $employee->stages->every(fn($stage) => $stage->status === 'completed');
 
         if ($allCompleted && $employee->stages->count() > 0) {
+
+            $employee->update([
+                'all_papers_completed' => true,
+                'papers_completed_at' => now(),
+            ]);
+
 
             $moderators = User::role('moderator')
                 ->where('moderator_company_id', $employee->company_id)
@@ -320,35 +303,11 @@ class EmployeeStageController extends Controller
                 ->whereNotNull('email')
                 ->get();
 
-            // Send email to each moderator
+
             foreach ($moderators as $moderator) {
-                try {
-                    Mail::to($moderator->email)->queue(
-                        new EmployeePapersCompletedMail($employee, $moderator)
-                    );
-
-                    Log::info("Email sent to moderator for completed employee papers", [
-                        'employee_id' => $employee->id,
-                        'employee_name' => $employee->name,
-                        'moderator_id' => $moderator->id,
-                        'moderator_email' => $moderator->email,
-                        'company_id' => $employee->company_id,
-                    ]);
-
-                } catch (\Exception $e) {
-                    Log::error("Failed to send email to moderator", [
-                        'employee_id' => $employee->id,
-                        'moderator_id' => $moderator->id,
-                        'error' => $e->getMessage()
-                    ]);
-                }
+                SendEmployeeCompletionEmail::dispatch($employee, $moderator);
+                Log::info("Email queued for moderator: {$moderator->email}");
             }
-
-            // Update employee status
-            $employee->update([
-                'all_papers_completed' => true,
-                'papers_completed_at' => now(),
-            ]);
 
             Log::info("All papers completed for employee", [
                 'employee_id' => $employee->id,
@@ -369,7 +328,7 @@ class EmployeeStageController extends Controller
             'employee.company'
         ])->findOrFail($employeeStageId);
 
-        // Get both transactions
+
         $transaction = Transaction::where('employee_stage_id', $employeeStageId)
             ->where('transactionable_type', EmployeeStage::class)
             ->first();

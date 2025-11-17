@@ -312,7 +312,7 @@
                                         <tr>
                                             <th>{{ __('Stage Name') }}</th>
                                             <th>{{ __('Status') }}</th>
-                                            <th>{{ __('Payment Status') }}</th>
+{{--                                            <th>{{ __('Payment Status') }}</th>--}}
                                             <th>{{ __('Amount Paid') }}</th>
                                             <th>{{ __('Cost') }}</th>
                                             <th>{{ __('Profit') }}</th>
@@ -329,13 +329,6 @@
                                                         <span class="badge badge-success">{{ __('Completed') }}</span>
                                                     @else
                                                         <span class="badge badge-warning">{{ __('Pending') }}</span>
-                                                    @endif
-                                                </td>
-                                                <td>
-                                                    @if($employeeStage->payment_status == 'paid')
-                                                        <span class="badge badge-success">{{ __('Paid') }}</span>
-                                                    @else
-                                                        <span class="badge badge-danger">{{ __('Pending') }}</span>
                                                     @endif
                                                 </td>
                                                 <td>
@@ -403,19 +396,19 @@
                                                 <tr>
                                                     <td class="font-weight-bold">{{ __('Total Cost') }}</td>
                                                     <td class="text-danger font-weight-bold">
-                                                        {{ number_format($employee->total_cost, 2) }} SAR
+                                                        {{ number_format($employee->total_cost, 2) . __('SAR') }}
                                                     </td>
                                                 </tr>
                                                 <tr>
                                                     <td class="font-weight-bold">{{ __('Total Price') }}</td>
                                                     <td class="text-success font-weight-bold">
-                                                        {{ number_format($employee->total_price, 2) }} SAR
+                                                        {{ number_format($employee->total_price, 2) . __('SAR') }}
                                                     </td>
                                                 </tr>
                                                 <tr>
                                                     <td class="font-weight-bold">{{ __('Total Profit') }}</td>
                                                     <td class="{{ $employee->total_profit >= 0 ? 'text-success' : 'text-danger' }} font-weight-bold">
-                                                        {{ number_format($employee->total_profit, 2) }} SAR
+                                                        {{ number_format($employee->total_profit, 2) . __('SAR')}}
                                                     </td>
                                                 </tr>
                                             </table>
@@ -510,16 +503,16 @@
                                 </a>
                             @endif
 
-                            @if($employee->employeeStages->count() > 0)
+{{--                            @if($employee->employeeStages->count() > 0)--}}
 {{--                                {{ route('admins.employee-stages.s', $employee->id) }}--}}
-                                <a href="" class="btn btn-secondary ml-2">
-                                    <i class="fas fa-tasks"></i> {{ __('Manage Stages') }}
-                                </a>
-                            @endif
+{{--                                <a href="" class="btn btn-secondary ml-2">--}}
+{{--                                    <i class="fas fa-tasks"></i> {{ __('Manage Stages') }}--}}
+{{--                                </a>--}}
+{{--                            @endif--}}
 
-                            <button type="button" class="btn btn-success ml-2" onclick="window.print()">
+                            <a type="button" class="btn btn-success ml-2" href="{{ route('admins.employees.download-pdf', $employee->id) }}">
                                 <i class="fas fa-print"></i> {{ __('Print') }}
-                            </button>
+                            </a>
                         </div>
                     </div>
                 </div>
