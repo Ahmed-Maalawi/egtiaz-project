@@ -531,7 +531,7 @@ class WalletController extends Controller
 
         foreach ($moderators as $moderator) {
             try {
-                Mail::to($moderator->email)->queue(new WalletChargeSuccessMail($moderator, $transaction, $company));
+                Mail::to($moderator->email)->sendNow(new WalletChargeSuccessMail($moderator, $transaction, $company));
                 Log::info('Payment success email sent to moderator', [
                     'moderator_id' => $moderator->id,
                     'moderator_email' => $moderator->email,

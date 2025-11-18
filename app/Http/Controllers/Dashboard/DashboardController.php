@@ -15,13 +15,13 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $isSuperAdmin = Auth::user()->hasRole('super-admin');
+//        $isSuperAdmin = Auth::user()->hasRole('super-admin');
 
         $data = [];
 
-        if ($isSuperAdmin) {
+//        if ($isSuperAdmin) {
             $data['total_users'] = User::all()->except(Auth::id())->count();
-        }
+//        }
 
         $data['total_employee'] = Employee::all()->count();
 
@@ -41,6 +41,14 @@ class DashboardController extends Controller
         $data['latest_paid_stages'] = EmployeeStage::with(['employee', 'stage'])->latest()->take(10)->get();
 
         $data['total_profit'] = EmployeeStage::where('status', 'completed')->get()->sum('profit');
+
+        $data['employees_have_expired_documents'] = Employee::where('expired_date', '<', now())->get()->take(10);
+
+        $data['employees_will_have_documents_expiration'] = Employee::whereBetween('expired_date', [
+            now(),
+            now()->addMonth()
+        ])->get()->take(10);
+
 
         return view('admin.dashboard', compact('data'));
     }

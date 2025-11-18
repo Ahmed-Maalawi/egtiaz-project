@@ -333,7 +333,7 @@
                                                 </td>
                                                 <td>
                                                     @if($employeeStage->amount_paid)
-                                                        {{ number_format($employeeStage->amount_paid, 2) }} SAR
+                                                        {{ number_format($employeeStage->amount_paid, 2) . ' ' . __('SAR')}}
                                                     @else
                                                         {{ __('N/A') }}
                                                     @endif
@@ -415,78 +415,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
-{{--                                    <div class="card bg-light">--}}
-{{--                                        <div class="card-header">--}}
-{{--                                            <h6 class="mb-0 font-weight-bold">{{ __('Salary Information') }}</h6>--}}
-{{--                                        </div>--}}
-{{--                                        <div class="card-body">--}}
-{{--                                            <table class="table table-sm">--}}
-{{--                                                <tr>--}}
-{{--                                                    <td class="font-weight-bold">{{ __('Monthly Salary') }}</td>--}}
-{{--                                                    <td>--}}
-{{--                                                        @if($employee->salary)--}}
-{{--                                                            {{ number_format($employee->salary, 2) }} SAR--}}
-{{--                                                        @else--}}
-{{--                                                            {{ __('N/A') }}--}}
-{{--                                                        @endif--}}
-{{--                                                    </td>--}}
-{{--                                                </tr>--}}
-{{--                                                <tr>--}}
-{{--                                                    <td class="font-weight-bold">{{ __('Current Month') }}</td>--}}
-{{--                                                    <td>--}}
-{{--                                                        @if($employee->current_month_salary)--}}
-{{--                                                            <span class="badge badge-success">{{ __('Paid') }}</span>--}}
-{{--                                                        @else--}}
-{{--                                                            <span class="badge badge-warning">{{ __('Pending') }}</span>--}}
-{{--                                                        @endif--}}
-{{--                                                    </td>--}}
-{{--                                                </tr>--}}
-{{--                                            </table>--}}
-{{--                                        </div>--}}
-{{--                                    </div>--}}
-                                </div>
                             </div>
-
-{{--                            @if($employee->salaries->count() > 0)--}}
-{{--                                <div class="mt-4">--}}
-{{--                                    <h6 class="font-weight-bold mb-3">{{ __('Salary History') }}</h6>--}}
-{{--                                    <div class="table-responsive">--}}
-{{--                                        <table class="table table-bordered table-sm">--}}
-{{--                                            <thead>--}}
-{{--                                            <tr>--}}
-{{--                                                <th>{{ __('Month') }}</th>--}}
-{{--                                                <th>{{ __('Amount') }}</th>--}}
-{{--                                                <th>{{ __('Payment Date') }}</th>--}}
-{{--                                                <th>{{ __('Status') }}</th>--}}
-{{--                                            </tr>--}}
-{{--                                            </thead>--}}
-{{--                                            <tbody>--}}
-{{--                                            @foreach($employee->salaries->sortByDesc('month') as $salary)--}}
-{{--                                                <tr>--}}
-{{--                                                    <td>{{ \Carbon\Carbon::parse($salary->month)->format('M Y') }}</td>--}}
-{{--                                                    <td>{{ number_format($salary->amount, 2) }} SAR</td>--}}
-{{--                                                    <td>--}}
-{{--                                                        @if($salary->paid_at)--}}
-{{--                                                            {{ \Carbon\Carbon::parse($salary->paid_at)->format('d M, Y') }}--}}
-{{--                                                        @else--}}
-{{--                                                            {{ __('N/A') }}--}}
-{{--                                                        @endif--}}
-{{--                                                    </td>--}}
-{{--                                                    <td>--}}
-{{--                                                        @if($salary->is_paid)--}}
-{{--                                                            <span class="badge badge-success">{{ __('Paid') }}</span>--}}
-{{--                                                        @else--}}
-{{--                                                            <span class="badge badge-warning">{{ __('Pending') }}</span>--}}
-{{--                                                        @endif--}}
-{{--                                                    </td>--}}
-{{--                                                </tr>--}}
-{{--                                            @endforeach--}}
-{{--                                            </tbody>--}}
-{{--                                        </table>--}}
-{{--                                    </div>--}}
-{{--                                </div>--}}
-{{--                            @endif--}}
                         </div>
                     </div>
 
@@ -502,13 +431,6 @@
                                     <i class="fas fa-folder-open"></i> {{ __('View Files') }} ({{ $employee->files->count() }})
                                 </a>
                             @endif
-
-{{--                            @if($employee->employeeStages->count() > 0)--}}
-{{--                                {{ route('admins.employee-stages.s', $employee->id) }}--}}
-{{--                                <a href="" class="btn btn-secondary ml-2">--}}
-{{--                                    <i class="fas fa-tasks"></i> {{ __('Manage Stages') }}--}}
-{{--                                </a>--}}
-{{--                            @endif--}}
 
                             <a type="button" class="btn btn-success ml-2" href="{{ route('admins.employees.download-pdf', $employee->id) }}">
                                 <i class="fas fa-print"></i> {{ __('Print') }}

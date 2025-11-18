@@ -9,7 +9,7 @@
                     alt="">
             </div>
             <!-- <div class="right">
-               {{ env('APP_NAME') }}
+               {{ env('APP_NAME', 'Ijtaize') }}
             </div> -->
         </div>
     </a>

@@ -196,10 +196,9 @@ class SalariesController extends Controller
 
                 $newPaymentAccountBalance = $paymentAccount->balance - $amount;
 
-                $transaction =  Transaction::create([
+                $transaction = Transaction::create([
                     'transaction_id'            => Str::uuid(),
-                    'from_payment_account_id'   => $paymentAccount->id,
-                    'user_id'               => $salary->user->id,
+                    'user_id'                   => $salary->user->id,
                     'payment_account_id'        => $paymentAccount->id,
                     'created_by'                => $user->id,
                     'amount'                    => $amount,

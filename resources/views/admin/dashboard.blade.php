@@ -362,9 +362,9 @@
                             <div class="stats-icon bg-warning mx-auto mb-3">
                                 <i class="fas fa-chart-bar"></i>
                             </div>
-                            <h6 class="card-title">{{ __('View Reports') }}</h6>
-                            <a href="{{ route('admins.stages.index') }}" class="btn btn-warning btn-sm">
-                                <i class="fas fa-chart-line"></i> {{ __('Reports') }}
+                            <h6 class="card-title">{{ __('View End Of Service') }}</h6>
+                            <a href="{{ route('admins.eos.index') }}" class="btn btn-warning btn-sm">
+                                <i class="fas fa-chart-line"></i> {{ __('End Of Service') }}
                             </a>
                         </div>
                     </div>
@@ -491,6 +491,101 @@
                         </div>
                     </div>
                 </div>
+            @endcan
+
+            @can('employees')
+                    <div class="col-lg-6 mb-4">
+                        <div class="card dashboard-card">
+                            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                <h6 class="m-0 font-weight-bold text-warning">{{ __('Employees Documents will expire soon') }}</h6>
+                            </div>
+                            <div class="card-body">
+                                @if(isset($data['employees_will_have_documents_expiration']) && count($data['employees_will_have_documents_expiration']) > 0)
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-hover">
+                                            <thead class="table-light">
+                                            <tr>
+                                                <th>{{ __('Employee') }}</th>
+                                                <th>{{ __('Passport Number') }}</th>
+                                                <th>{{ __('Expire At') }}</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            @foreach($data['employees_will_have_documents_expiration'] as $employee)
+                                                <tr>
+                                                    <td>
+                                                        <div class="d-flex align-items-center">
+                                                            <div>
+                                                                <div class="fw-bold">{{ $employee->name ?? 'N/A' }}</div>
+                                                                <small class="text-muted">{{ $employee->user_id ?? '' }}</small>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td>{{ $employee->passport_number }}</td>
+                                                    <td>
+                                                        <span class="badge bg-info text-white">{{ \Carbon\Carbon::parse($employee->expired_date)->format('Y-m-d') ?? 'N/A' }}</span>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                @else
+                                    <div class="text-center py-4">
+                                        <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                                        <p class="text-muted">{{ __('No recent leaves found') }}</p>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="col-lg-6 mb-4">
+                        <div class="card dashboard-card">
+                            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                <h6 class="m-0 font-weight-bold text-danger">{{ __('Employees Documents Expired') }}</h6>
+                            </div>
+                            <div class="card-body">
+                                @if(isset($data['employees_have_expired_documents']) && count($data['employees_have_expired_documents']) > 0)
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-hover">
+                                            <thead class="table-light">
+                                            <tr>
+                                                <th>{{ __('Employee') }}</th>
+                                                <th>{{ __('Passport Number') }}</th>
+                                                <th>{{ __('Expire At') }}</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            @foreach($data['employees_have_expired_documents'] as $employee)
+                                                <tr>
+                                                    <td>
+                                                        <div class="d-flex align-items-center">
+                                                            <div>
+                                                                <div class="fw-bold">{{ $employee->name ?? 'N/A' }}</div>
+                                                                <small class="text-muted">{{ $employee->user_id ?? '' }}</small>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td>{{ $employee->passport_number }}</td>
+                                                    <td>
+                                                        <span class="badge bg-info text-white">{{ \Carbon\Carbon::parse($employee->expired_date)->format('Y-m-d') ?? 'N/A' }}</span>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                @else
+                                    <div class="text-center py-4">
+                                        <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                                        <p class="text-muted">{{ __('No recent leaves found') }}</p>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
             @endcan
         </div>
     @endcan

@@ -257,9 +257,9 @@
                                         </td>
 
                                         <td>
-                                            <button class="btn btn-sm btn-info" onclick="viewTransactionDetails({{ $transaction->id }}, 'wallet')">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
+{{--                                            <button class="btn btn-sm btn-info" onclick="viewTransactionDetails({{ $transaction->id }}, 'wallet')">--}}
+{{--                                                <i class="fas fa-eye"></i>--}}
+{{--                                            </button>--}}
                                             <a href="{{ route('admins.invoice.download', $transaction->id) }}" class="btn btn-sm btn-primary" target="_blank">
                                                 <i class="fas fa-download"></i>
                                             </a>

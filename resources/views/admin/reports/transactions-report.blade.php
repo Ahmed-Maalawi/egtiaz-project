@@ -18,8 +18,8 @@
                     <tr>
                         <th>#</th>
                         <th>{{ __('Transaction ID') }}</th>
-                        <th>{{ __('From Account') }}</th>
-                        <th>{{ __('To Wallet') }}</th>
+{{--                        <th>{{ __('From Account') }}</th>--}}
+{{--                        <th>{{ __('To Wallet') }}</th>--}}
                         <th>{{ __('Type') }}</th>
                         <th>{{ __('User') }}</th>
                         <th>{{ __('Amount') }}</th>
@@ -36,8 +36,8 @@
                         <tr>
                             <td>{{ $loop->iteration }}</td>
                             <td>{{ $transaction->transaction_id }}</td>
-                            <td>{{ $transaction->fromPaymentAccount->getTranslation('name', $local) ?? 'N/A' }}</td>
-                            <td>{{ $transaction->toWallet->company->getTranslation('name', app()->getLocale()) ?? 'N/A' }}</td>
+{{--                            <td>{{ $transaction->fromPaymentAccount->getTranslation('name', $local) ?? 'N/A' }}</td>--}}
+{{--                            <td>{{ $transaction->toWallet->company->getTranslation('name', app()->getLocale()) ?? 'N/A' }}</td>--}}
                             <td>
                                 <span class="text-white badge bg-info">
                                     {{ $transaction->transactionable_type_name  }}

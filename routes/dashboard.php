@@ -50,7 +50,7 @@ Route::group([
     //---------------------------------------------------
 
     Route::resource('banners', BannerController::class)->except('show')
-        // ->middleware('role-or-permission:super-admin,banners')
+         ->middleware('role-or-permission:super-admin,banners')
         ->names([
             'index'    => 'banners.index',
             'create'   => 'banners.create',
@@ -63,6 +63,7 @@ Route::group([
     //----------------------------------------------------------------
 
     Route::resource('companies', CompanyController::class)
+        ->middleware('role-or-permission:super-admin,companies')
         ->names([
             'index'     => 'companies.index',
             'create'    => 'companies.create',
@@ -73,25 +74,31 @@ Route::group([
             'destroy'   => 'companies.destroy',
         ]);
     Route::put('companies/{id}/toggle', [CompanyController::class, 'toggleStatus'])
+        ->middleware('role-or-permission:super-admin,companies')
         ->name('companies.toggle');
 
     Route::get('companies/company/search', [CompanyController::class, 'search'])
+        ->middleware('role-or-permission:super-admin,companies')
         ->name('companies.search');
 
     // Get transaction details via AJAX
     Route::get('/admin/transactions/{type}/{id}/details', [CompanyController::class, 'getTransactionDetails'])
+        ->middleware('role-or-permission:super-admin,companies')
         ->name('transactions.details');
 
     // Download invoice
     Route::get('/invoice/download/{transaction}', [CompanyController::class, 'downloadInvoice'])
+        ->middleware('role-or-permission:super-admin,companies')
         ->name('invoice.download');
 
     // Export transactions
     Route::get('/companies/{company}/export-transactions', [CompanyController::class, 'exportTransactions'])
+        ->middleware('role-or-permission:super-admin,companies')
         ->name('companies.export-transactions');
 
     // Profit report
     Route::get('/companies/{company}/profit-report', [CompanyController::class, 'profitReport'])
+        ->middleware('role-or-permission:super-admin,companies')
         ->name('companies.profit-report');
 
     //------------------------------------------------------------
