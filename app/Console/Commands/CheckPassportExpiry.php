@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Mail\PassportExpiryMail;
 use App\Models\Employee;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -17,10 +18,10 @@ class CheckPassportExpiry extends Command
     {
         $this->info('Checking passport expiry dates...');
 
-        // Get passports expiring in exactly 1 month
+
         $oneMonthFromNow = Carbon::now()->addMonth();
 
-        $expiringEmployees = Employee::whereDate('passport_expiry_date', '=', $oneMonthFromNow->toDateString())
+        $expiringEmployees = Employee::whereDate('expired_date', '=', $oneMonthFromNow->toDateString())
             ->with(['company', 'company.moderators' => function($query) {
                 $query->where('status', 'active');
             }])
@@ -66,13 +67,13 @@ class CheckPassportExpiry extends Command
         foreach ($moderators as $moderator) {
             try {
                 Mail::to($moderator->email)
-                    ->queue(new \App\Mail\PassportExpiryMail($moderator, $employee));
+                    ->sendNow(new PassportExpiryMail($moderator, $employee));
 
                 Log::info('Passport expiry notification queued for moderator', [
                     'moderator_id' => $moderator->id,
                     'moderator_email' => $moderator->email,
                     'employee_id' => $employee->id,
-                    'expiry_date' => $employee->passport_expiry_date
+                    'expiry_date' => $employee->expired_date
                 ]);
             } catch (\Exception $e) {
                 Log::error('Failed to queue passport expiry email for moderator', [

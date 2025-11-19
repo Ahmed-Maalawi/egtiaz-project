@@ -22,7 +22,7 @@ class PassportExpiryMail extends Mailable implements ShouldQueue
     {
         $this->moderator = $moderator;
         $this->employee = $employee;
-        $this->daysUntilExpiry = Carbon::now()->diffInDays(Carbon::parse($employee->passport_expiry_date));
+        $this->daysUntilExpiry = Carbon::now()->diffInDays(Carbon::parse($employee->expired_date));
     }
 
     public function build()
@@ -33,7 +33,7 @@ class PassportExpiryMail extends Mailable implements ShouldQueue
                 'moderatorName' => $this->moderator->name,
                 'employeeName' => $this->employee->name,
                 'passportNumber' => $this->employee->passport_number,
-                'expiryDate' => Carbon::parse($this->employee->passport_expiry_date)->format('F j, Y'),
+                'expiryDate' => Carbon::parse($this->employee->expired_date)->format('F j, Y'),
                 'daysUntilExpiry' => $this->daysUntilExpiry,
                 'companyName' => $this->employee->company->name,
             ]);

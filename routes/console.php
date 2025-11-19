@@ -10,3 +10,5 @@ Artisan::command('inspire', function () {
 
 
 Schedule::command('app:cancel-pending-orders')->everySixHours();
+
+Schedule::command('check:passport-expiry')->dailyAt('09:00');
