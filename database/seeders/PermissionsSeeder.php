@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Models\PaymentAccount;
 use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
@@ -51,6 +51,11 @@ class PermissionsSeeder extends Seeder
             'eos',
             'reports',
             'roles',
+            'chargeWallets',
+            'chargePaymentAccounts',
+            'paySalaries',
+            'payStages',
+            'payEOS',
         ];
 
 
@@ -61,17 +66,25 @@ class PermissionsSeeder extends Seeder
         $allPermissions = Permission::all();
 
         $superAdminRole = Role::where('name', 'super-admin')->first();
-        $adminRole = Role::where('name', 'admin')->first();
+//        $adminRole = Role::where('name', 'admin')->first();
 
         $superAdminRole->syncPermissions($allPermissions);
-        $adminRole->syncPermissions($allPermissions);
+//        $adminRole->syncPermissions($allPermissions);
 
         // Optional: assign limited permissions to moderator
-        $moderatorRole = Role::where('name', 'moderator')->first();
-        $moderatorRole->givePermissionTo(['reports', 'iqamaTypes', 'employees', 'stages']);
+//        $moderatorRole = Role::where('name', 'moderator')->first();
+//        $moderatorRole->givePermissionTo(['reports', 'iqamaTypes', 'employees', 'stages']);
 
         $admin = User::where('name', 'Super Admin')->first();
 
         $admin->assignRole('super-admin');
+
+
+
+//        --------------------  > assign all payment accounts for super-admin <  ----------------
+
+        $allAccounts = PaymentAccount::all()->pluck('id');
+
+        $admin->paymentAccounts()->sync($allAccounts);
     }
 }

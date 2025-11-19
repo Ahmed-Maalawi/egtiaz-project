@@ -21,7 +21,7 @@ return new class extends Migration
                 $table->id();
                 $table->uuid('transaction_id')->unique();
 
-                $table->enum('type', ['stage_payment', 'salary_payment', 'refund', 'charge'])->default('stage_payment');
+                $table->enum('type', ['stage_payment', 'salary_payment', 'eos_payment', 'refund', 'charge'])->default('stage_payment');
                 $table->enum('method_type', ['debit', 'credit'])->default('stage_payment');
 
                 $table->nullableMorphs('transactionable');

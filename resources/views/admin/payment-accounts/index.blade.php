@@ -36,11 +36,13 @@
                                 <td>{{ $payment_account->balance }}</td>
                                 <td class="d-flex justify-content-center">
 
-                                    <button type="button"
-                                            class="mx-1 btn btn-warning btn-sm charge-btn"
-                                            data-id="{{ $payment_account->id }}">
-                                        <i class="fas fa-bolt"></i>
-                                    </button>
+                                    @can('chargePaymentAccounts')
+                                        <button type="button"
+                                                class="mx-1 btn btn-warning btn-sm charge-btn"
+                                                data-id="{{ $payment_account->id }}">
+                                            <i class="fas fa-bolt"></i>
+                                        </button>
+                                    @endcan
 
 
                                     <a href="{{ route('admins.paymentAccounts.show', $payment_account->id) }}"
@@ -68,7 +70,6 @@
                     <div class="modal fade" id="chargeModal" tabindex="-1">
                         <div class="modal-dialog modal-dialog-centered">
                             <div class="modal-content">
-
                                 <div class="modal-header">
                                     <h5 class="modal-title">{{ __('Charge Wallet') }}</h5>
                                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -77,18 +78,16 @@
                                 <form id="chargeForm" action="" method="POST">
                                     @csrf
                                     @method('POST')
-
                                     <div class="modal-body">
                                         <label class="form-label">{{ __('Enter Charge Amount') }}</label>
                                         <input type="number" name="amount" step="0.01" class="form-control" required>
                                     </div>
 
                                     <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Close') }}</button>
+                                        <button type="button" class="btn btn-secondary" id="close-btn" data-bs-dismiss="modal">{{ __('Close') }}</button>
                                         <button type="submit" class="btn btn-warning">{{ __('Charge') }}</button>
                                     </div>
                                 </form>
-
                             </div>
                         </div>
                     </div>
@@ -114,20 +113,21 @@
             });
         }
 
+        const chargeModalEl = document.getElementById('chargeModal');
+        const chargeModal = new bootstrap.Modal(chargeModalEl);
 
-        // recharge the wallet
         document.querySelectorAll('.charge-btn').forEach(btn => {
             btn.addEventListener('click', function () {
-
                 const id = this.dataset.id;
-
                 const form = document.getElementById('chargeForm');
                 form.action = `/admin/payment-accounts/${id}/charge`;
-
-                let modal = new bootstrap.Modal(document.getElementById('chargeModal'));
-                modal.show();
+                chargeModal.show();
             });
         });
+
+        document.getElementById('close-btn').addEventListener('click', function (e) {
+            chargeModal.hide();
+        })
 
     </script>
 

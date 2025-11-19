@@ -25,7 +25,7 @@
                 </div>
 
                 <div class="text-right">
-                    <a href="{{ route('admins.companies.profit-report', $company->id) }}" class="btn btn-primary">
+                    <a href="{{ route('admins.companies.download-report', $company->id) }}" class="btn btn-primary">
                         <i class="fas fa-chart-line"></i> {{ __('Detailed Report') }}
                     </a>
                 </div>
@@ -260,9 +260,11 @@
 {{--                                            <button class="btn btn-sm btn-info" onclick="viewTransactionDetails({{ $transaction->id }}, 'wallet')">--}}
 {{--                                                <i class="fas fa-eye"></i>--}}
 {{--                                            </button>--}}
-                                            <a href="{{ route('admins.invoice.download', $transaction->id) }}" class="btn btn-sm btn-primary" target="_blank">
-                                                <i class="fas fa-download"></i>
-                                            </a>
+                                            @if($transaction->status === 'completed')
+                                                <a href="{{ route('admins.invoice.download', $transaction->id) }}" class="btn btn-sm btn-primary" target="_blank">
+                                                    <i class="fas fa-download"></i>
+                                                </a>
+                                            @endif
                                         </td>
                                     </tr>
                                 @empty

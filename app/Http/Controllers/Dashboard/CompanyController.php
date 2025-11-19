@@ -7,6 +7,7 @@ use App\Models\Transaction;
 use App\Models\WalletTransaction;
 use Dompdf\Dompdf;
 use Dompdf\Options;
+use Illuminate\Support\Facades\DB;
 use Mpdf\Mpdf;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
@@ -280,7 +281,7 @@ class CompanyController extends Controller
             ->get()
             ->map(function($employee) {
                 $completedStages = $employee->stages->where('status', 'completed');
-                $totalCost = $completedStages->sum('amount_cost');
+                    $totalCost = $completedStages->sum('amount_cost');
                 $totalPrice = $completedStages->sum('price_amount');
 
                 return [
@@ -380,4 +381,252 @@ class CompanyController extends Controller
 //            'company-' . $company->id . '-transactions.xlsx'
 //        );
 //    }
+
+    /**
+     * Get all company report data in one function
+     */
+    private function getCompanyReportData($id, $forPdf = false)
+    {
+        $company = Company::with([
+            'employees',
+            'employees.stages.stage',
+            'wallet',
+            'wallet.walletTransactions',
+            'employees.stages' => function($query) {
+                $query->with('stage');
+            }
+        ])->findOrFail($id);
+
+        // Summary Data
+        $summary = $this->calculateSummary($company);
+
+        // Wallet Transactions (with or without pagination)
+        $walletTransactions = $this->getWalletTransactions($company, $forPdf);
+
+        // Payment Transactions (with or without pagination)
+        $paymentTransactions = $this->getPaymentTransactions($company, $forPdf);
+
+        // Employee Profits
+        $employeeProfits = $this->getEmployeeProfits($company);
+
+        return [
+            'company' => $company,
+            'summary' => $summary,
+            'walletTransactions' => $walletTransactions,
+            'paymentTransactions' => $paymentTransactions,
+            'employeeProfits' => $employeeProfits,
+            'date' => now()->format('F j, Y'),
+        ];
+    }
+
+
+    /**
+     * Get wallet transactions (paginated for web, all for PDF)
+     */
+    private function getWalletTransactions($company, $forPdf = false)
+    {
+        $query = WalletTransaction::with([
+            'employeeStage.employee.user',
+            'employeeStage.stage',
+            'user'
+        ])
+            ->where(function($query) use ($company) {
+                $query->whereHas('employeeStage.employee', function($q) use ($company) {
+                    $q->where('company_id', $company->id);
+                })
+                    ->orWhere('wallet_id', $company->wallet->id ?? 0);
+            })
+            ->orderBy('created_at', 'desc');
+
+        return $forPdf ? $query->get() : $query->paginate(10);
+    }
+
+    /**
+     * Get payment transactions (paginated for web, all for PDF)
+     */
+    private function getPaymentTransactions($company, $forPdf = false)
+    {
+        $query = Transaction::with([
+            'employeeStage.employee.user',
+            'employeeStage.stage',
+            'paymentAccount',
+            'createdBy'
+        ])
+            ->whereHas('employeeStage.employee', function($query) use ($company) {
+                $query->where('company_id', $company->id);
+            })
+            ->orderBy('created_at', 'desc');
+
+        return $forPdf ? $query->get() : $query->paginate(10);
+    }
+
+    /**
+     * Get employee profits data
+     */
+    private function getEmployeeProfits($company)
+    {
+        return $company->employees->map(function($employee) {
+            $completedStages = $employee->stages->where('status', 'completed');
+
+            $totalCost = $completedStages->sum('amount_cost'); // Use amount_cost instead of amount_cost
+            $totalPrice = $completedStages->sum(function($stage) {
+                return $stage->walletTransaction->amount ?? 0;
+            });
+            $totalProfit = $totalPrice - $totalCost;
+
+            return [
+                'employee' => $employee,
+                'completed_stages' => $completedStages->count(),
+                'total_cost' => $totalCost,
+                'total_price' => $totalPrice,
+                'total_profit' => $totalProfit,
+            ];
+        })->filter(function($item) {
+            return $item['completed_stages'] > 0;
+        });
+    }
+
+    /**
+     * Generate PDF report
+     */
+    public function generateCompanyReport($companyId)
+    {
+//        try {
+            // Load all necessary data
+            $company = Company::with([
+                'wallet.walletTransactions.employeeStage.employee',
+                'wallet.walletTransactions.employeeStage.stage',
+                'wallet.walletTransactions.user',
+                'employees.stages.stage',
+                'employees.stages.transactions',
+                'moderators'
+            ])->findOrFail($companyId);
+
+            // Get all transactions without pagination for PDF
+            $walletTransactions = $company->wallet->walletTransactions()
+                ->with(['employeeStage.employee', 'employeeStage.stage', 'user'])
+                ->latest()
+                ->get();
+
+            $paymentTransactions = Transaction::whereHas('employeeStage.employee', function($query) use ($company) {
+                $query->where('company_id', $company->id);
+            })
+                ->with(['employeeStage.employee', 'employeeStage.stage', 'paymentAccount', 'createdBy'])
+                ->latest()
+                ->get();
+
+            // Calculate summary
+            $summary = $this->calculateCompanySummary($company);
+
+            // Get employee profits
+            $employeeProfits = $this->getEmployeeProfitReport($company);
+
+            // Configure mPDF with better settings
+            $mpdf = new Mpdf([
+                'mode' => 'utf-8',
+                'format' => 'A4-L', // Landscape for better table display
+                'default_font' => app()->getLocale() === 'ar' ? 'xbriyaz' : 'dejavusans',
+                'direction' => app()->getLocale() === 'ar' ? 'rtl' : 'ltr',
+                'margin_top' => 15,
+                'margin_bottom' => 15,
+                'margin_left' => 10,
+                'margin_right' => 10,
+                'margin_header' => 5,
+                'margin_footer' => 5,
+                'tempDir' => storage_path('app/tmp'),
+            ]);
+
+            // Generate HTML from Blade view
+            $html = View::make('admin.companies.reports.company-details', [
+                'company' => $company,
+                'summary' => $summary,
+                'walletTransactions' => $walletTransactions,
+                'paymentTransactions' => $paymentTransactions,
+                'employeeProfits' => $employeeProfits,
+                'generatedDate' => now()->format('Y-m-d H:i:s'),
+            ])->render();
+
+            // Write HTML to PDF
+            $mpdf->WriteHTML($html);
+
+            $filename = 'company-report-' . $company->id . '-' . now()->format('Y-m-d') . '.pdf';
+
+            // Return PDF as download
+            return response($mpdf->Output($filename, 'D'))
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+
+//        } catch (\Exception $e) {
+//            \Log::error('PDF Generation Error: ' . $e->getMessage(), [
+//                'trace' => $e->getTraceAsString(),
+//                'company_id' => $companyId
+//            ]);
+//
+//            return back()->with('error', __('Failed to generate PDF report. Please try again.'));
+//        }
+    }
+
+    /**
+     * Download PDF report (route handler)
+     */
+    public function downloadReport($companyId)
+    {
+        return $this->generateCompanyReport($companyId);
+    }
+
+    private function calculateSummary($company)
+    {
+        // Total employees
+        $totalEmployees = $company->employees->count();
+
+        try {
+            // Get wallet transactions stats with proper joins
+            $walletStats = WalletTransaction::join('employee_stages', 'wallet_transactions.employee_stage_id', '=', 'employee_stages.id')
+                ->join('employees', 'employee_stages.employee_id', '=', 'employees.id')
+                ->where('employees.company_id', $company->id)
+                ->select(
+                    DB::raw('COALESCE(SUM(wallet_transactions.amount), 0) as total_price'),
+                    DB::raw('COALESCE(SUM(employee_stages.amount_cost), 0) as total_cost')
+                )
+                ->first();
+
+            $totalPrice = $walletStats->total_price ?? 0;
+            $totalCost = $walletStats->total_cost ?? 0;
+
+        } catch (\Exception $e) {
+            \Log::error('Error calculating wallet stats: ' . $e->getMessage());
+            $totalPrice = 0;
+            $totalCost = 0;
+        }
+
+        $totalProfit = $totalPrice - $totalCost;
+        $profitMargin = $totalPrice > 0 ? ($totalProfit / $totalPrice) * 100 : 0;
+
+        // Current wallet balance
+        $currentWalletBalance = $company->wallet->balance ?? 0;
+
+        // Total wallet charges (transactions where employee_stage_id is null)
+        $totalWalletCharges = WalletTransaction::where('wallet_id', $company->wallet->id ?? 0)
+            ->whereNull('employee_stage_id')
+            ->where('status', 'completed')
+            ->sum('amount');
+
+        // Total stages completed
+        $totalStagesCompleted = DB::table('employee_stages')
+            ->join('employees', 'employee_stages.employee_id', '=', 'employees.id')
+            ->where('employees.company_id', $company->id)
+            ->where('employee_stages.status', 'completed')
+            ->count();
+
+        return [
+            'total_employees' => $totalEmployees,
+            'total_cost' => $totalCost,
+            'total_price' => $totalPrice,
+            'total_profit' => $totalProfit,
+            'profit_margin' => $profitMargin,
+            'current_wallet_balance' => $currentWalletBalance,
+            'total_wallet_charges' => $totalWalletCharges,
+            'total_stages_completed' => $totalStagesCompleted,
+        ];
+    }
 }

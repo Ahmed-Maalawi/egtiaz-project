@@ -53,11 +53,19 @@
                                         </td>
                                         <td>{{ $employee?->upcomingStage?->stage->price }}</td>
                                         <td>{{ $employee?->upcomingStage?->stage->cost }}</td>
+                                        <per>
+{{--                                            @php--}}
+{{--                                                dump($employee->upcomingStage);--}}
+{{--                                                // Or if it's a collection--}}
+{{--                                                // dump($employees->first());--}}
+{{--                                            @endphp--}}
+                                        </per>
                                         <td>
-                                            <div class="d-flex">
-                                                {{-- //TODO: Add actions after creating payment account --}}
-                                                <button type="button" class="btn btn-warning">{{ __('Update') }}</button>
-                                            </div>
+                                           @can('payStages')
+                                                <div class="d-flex">
+                                                    <a href="{{ route('admins.employee-stages.get-pay-page', $employee->upcomingStage['id']) }}" class="btn btn-warning">{{ __('Pay') }}</a>
+                                                </div>
+                                           @endcan
                                         </td>
                                     </tr>
                                 @endforeach

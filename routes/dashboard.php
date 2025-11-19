@@ -91,6 +91,10 @@ Route::group([
         ->middleware('role-or-permission:super-admin,companies')
         ->name('invoice.download');
 
+
+    Route::get('/admin/companies/{company}/download-report', [CompanyController::class, 'generateCompanyReport'])
+        ->name('companies.download-report');
+
     // Export transactions
     Route::get('/companies/{company}/export-transactions', [CompanyController::class, 'exportTransactions'])
         ->middleware('role-or-permission:super-admin,companies')
@@ -165,6 +169,7 @@ Route::group([
     //------------------------------------------------------------
 
     Route::resource('payment-accounts',PaymentAccountController::class)
+        ->middleware('role-or-permission:super-admin,paymentAccounts')
         ->names([
             'index'     =>'paymentAccounts.index',
             'create'    =>'paymentAccounts.create',
@@ -174,7 +179,10 @@ Route::group([
             'update'    =>'paymentAccounts.update',
             'destroy'   =>'paymentAccounts.destroy',
         ]);
-    Route::post('payment-accounts/{id}/charge', [PaymentAccountController::class, 'charge'])->name('paymentAccounts.charge');
+
+    Route::post('payment-accounts/{id}/charge', [PaymentAccountController::class, 'charge'])
+        ->middleware('role-or-permission:super-admin,chargePaymentAccounts')
+        ->name('paymentAccounts.charge');
     //------------------------------------------------------------
 
     Route::resource('admins',AdminController::class)->except('show')

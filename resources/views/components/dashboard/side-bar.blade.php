@@ -8,9 +8,6 @@
                 <img width="80%" class="py-2 my-2" style="border-radius: 10px" src="{{ asset(config('app.logo')) }}"
                     alt="">
             </div>
-            <!-- <div class="right">
-               {{ env('APP_NAME', 'Ijtaize') }}
-            </div> -->
         </div>
     </a>
 
@@ -24,22 +21,6 @@
             <span> {{ __('Dashboard') }} </span>
         </a>
     </li>
-
-{{--    <li class="nav-item {{ Route::is('admins.banners.*') ? 'active' : '' }}"--}}
-{{--        style="{{ Route::is('admins.banners.*') ? 'background-color: #ccad75;' : '' }}">--}}
-{{--        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsebanners"--}}
-{{--            aria-expanded="true" aria-controls="collapsebanners">--}}
-{{--            <i class="far fa-caret-square-right"></i>--}}
-{{--            <span>{{ __('Banners Section') }}</span>--}}
-{{--        </a>--}}
-{{--        <div id="collapsebanners" class="collapse {{ Route::is('admins.banners.*') ? 'show' : '' }}"--}}
-{{--            aria-labelledby="headingPages" data-parent="#accordionSidebar">--}}
-{{--            <div class="py-2 bg-white rounded collapse-inner">--}}
-{{--                <a class="collapse-item" href="{{ route('admins.banners.index') }}">{{ __('All Banners') }}</a>--}}
-{{--                <a class="collapse-item" href="{{ route('admins.banners.create') }}">{{ __('Create New Banner') }}</a>--}}
-{{--            </div>--}}
-{{--        </div>--}}
-{{--    </li>--}}
 
     @can('companies')
         <li class="nav-item {{ Route::is('admins.companies.*') ? 'active' : '' }}"
@@ -189,258 +170,10 @@
         </li>
     @endcan
 
-    {{-- @hasrole('admin|super-admin')
-        @can('categories')
-            <li class="nav-item {{ Route::is('admins.categories.*') || Route::is('admins.main-categories.*') ? 'active' : '' }}"
-                style="{{ Route::is('admins.categories.*') || Route::is('admins.main-categories.*') ? 'background-color: #ccad75;' : '' }}">
-                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsecategories"
-                    aria-expanded="true" aria-controls="collapsecategories">
-                    <i class="far fa-caret-square-right"></i>
-                    <span>{{ __('Categories Section') }}</span>
-                </a>
-                <div id="collapsecategories"
-                    class="collapse {{ Route::is('admins.categories.*') || Route::is('admins.main-categories.*') ? 'show' : '' }}"
-                    aria-labelledby="headingPages" data-parent="#accordionSidebar">
-                    <div class="py-2 bg-white rounded collapse-inner">
-                        <a class="collapse-item"
-                            href="{{ route('admins.main-categories.index') }}">{{ __('Main Categories') }}</a>
-                        <a class="collapse-item" href="{{ route('admins.categories.index') }}">{{ __('Sub Categories') }}</a>
-                        <a class="collapse-item"
-                            href="{{ route('admins.main-categories.create') }}">{{ __('Create Main Category') }}</a>
-                        <a class="collapse-item"
-                            href="{{ route('admins.categories.create') }}">{{ __('Create Sub Category') }}</a>
-                    </div>
-                </div>
-            </li>
-        @endcan
-
-        @can('providers')
-
-
-            <li class="nav-item {{ Route::is('admins.branches.*') ? 'active' : '' }}"
-                style="{{ Route::is('admins.branches.*') ? 'background-color: #ccad75;' : '' }}">
-                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsebranches"
-                    aria-expanded="true" aria-controls="collapsebranches">
-                    <i class="far fa-caret-square-right"></i>
-                    <span>{{ __('Branches Section') }}</span>
-                </a>
-                <div id="collapsebranches" class="collapse {{ Route::is('admins.branches.*') ? 'show' : '' }}"
-                    aria-labelledby="headingPages" data-parent="#accordionSidebar">
-                    <div class="py-2 bg-white rounded collapse-inner">
-                        <a class="collapse-item" href="{{ route('admins.branches.index') }}">{{ __('Provider branches') }}</a>
-                        <a class="collapse-item"
-                            href="{{ route('admins.branches.create') }}">{{ __('Create Provider Branch') }}</a>
-                    </div>
-                </div>
-            </li>
-        @endcan
-
-        @can('users')
-            <li class="nav-item {{ Route::is('admins.users.*') ? 'active' : '' }}"
-                style="{{ Route::is('admins.users.*') ? 'background-color: #ccad75;' : '' }}">
-                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseusers"
-                    aria-expanded="true" aria-controls="collapseusers">
-                    <i class="far fa-caret-square-right"></i>
-                    <span>{{ __('Users Section') }}</span>
-                </a>
-                <div id="collapseusers" class="collapse {{ Route::is('admins.users.*') ? 'show' : '' }}"
-                    aria-labelledby="headingPages" data-parent="#accordionSidebar">
-                    <div class="py-2 bg-white rounded collapse-inner">
-                        <a class="collapse-item" href="{{ route('admins.users.index') }}">{{ __('All Users') }}</a>
-                    </div>
-                </div>
-            </li>
-        @endcan
-
-        @can('cities')
-            <li class="nav-item {{ Route::is('admins.cities.*') ? 'active' : '' }}"
-                style="{{ Route::is('admins.cities.*') ? 'background-color: #ccad75;' : '' }}">
-                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsecities"
-                    aria-expanded="true" aria-controls="collapsecities">
-                    <i class="far fa-caret-square-right"></i>
-                    <span>{{ __('Cities Section') }}</span>
-                </a>
-                <div id="collapsecities" class="collapse {{ Route::is('admins.cities.*') ? 'show' : '' }}"
-                    aria-labelledby="headingPages" data-parent="#accordionSidebar">
-                    <div class="py-2 bg-white rounded collapse-inner">
-                        <a class="collapse-item" href="{{ route('admins.cities.index') }}">{{ __('All Cities') }}</a>
-                        <a class="collapse-item" href="{{ route('admins.cities.create') }}">{{ __('Create New City') }}</a>
-                    </div>
-                </div>
-            </li>
-        @endcan
-
-
-        @can('cashiers')
-            <li class="nav-item {{ Route::is('admins.cashier.*') ? 'active' : '' }}"
-                style="{{ Route::is('admins.cashier.*') ? 'background-color: #ccad75;' : '' }}">
-                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsecashier"
-                    aria-expanded="true" aria-controls="collapsecashier">
-                    <i class="far fa-caret-square-right"></i>
-                    <span>{{ __('Cashier Section') }}</span>
-                </a>
-                <div id="collapsecashier" class="collapse {{ Route::is('admins.cashier.*') ? 'show' : '' }}"
-                    aria-labelledby="headingPages" data-parent="#accordionSidebar">
-                    <div class="py-2 bg-white rounded collapse-inner">
-                        <a class="collapse-item" href="{{ route('admins.cashiers.index') }}">{{ __('All Cashiers') }}</a>
-                        <a class="collapse-item"
-                            href="{{ route('admins.cashiers.create') }}">{{ __('Create New Cashier') }}</a>
-                    </div>
-                </div>
-            </li>
-        @endcan
-
-        @can('cards')
-            <li class="nav-item {{ Route::is('admins.cards.*') ? 'active' : '' }}"
-                style="{{ Route::is('admins.cards.*') ? 'background-color: #ccad75;' : '' }}">
-                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsecards"
-                    aria-expanded="true" aria-controls="collapsecards">
-                    <i class="far fa-caret-square-right"></i>
-                    <span>{{ __('Cards Section') }}</span>
-                </a>
-                <div id="collapsecards" class="collapse {{ Route::is('admins.cards.*') ? 'show' : '' }}"
-                    aria-labelledby="headingPages" data-parent="#accordionSidebar">
-                    <div class="py-2 bg-white rounded collapse-inner">
-                        <a class="collapse-item" href="{{ route('admins.cards.index') }}">{{ __('All Cards') }}</a>
-                        <a class="collapse-item" href="{{ route('admins.cards.edit') }}">{{ __('Edit Cards') }}</a>
-                    </div>
-                </div>
-            </li>
-        @endcan
-
-        @can('orders')
-            <li class="nav-item {{ Route::is('admins.orders.*') ? 'active' : '' }}"
-                style="{{ Route::is('admins.orders.*') ? 'background-color: #ccad75;' : '' }}">
-                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseOrders"
-                    aria-expanded="true" aria-controls="collapseOrders">
-                    <i class="far fa-caret-square-right"></i>
-                    <span>{{ __('Orders Section') }}</span>
-                </a>
-                <div id="collapseOrders" class="collapse {{ Route::is('admins.orders.*') ? 'show' : '' }}"
-                    aria-labelledby="headingPages" data-parent="#accordionSidebar">
-                    <div class="py-2 bg-white rounded collapse-inner">
-                        <a class="collapse-item" href="{{ route('admins.orders.index') }}">{{ __('All Orders') }}</a>
-                        <a class="collapse-item" href="{{ route('admins.orders.export') }}">{{ __('Export Orders') }}</a>
-                    </div>
-                </div>
-            </li>
-        @endcan
-
-        @can('services')
-            <li class="li nav-item {{ Route::is('admins.services.*') ? 'active' : '' }} "
-                style="{{ Route::is('admins.services.*') ? 'background-color: #ccad75;' : '' }}">
-                <a class="nav-link" href="{{ route('admins.services.index') }}">
-                    <i class="far fa-caret-square-right"></i>
-                    <span> {{ __('Services') }} </span>
-                </a>
-            </li>
-        @endcan
-
-        @can('notifications')
-            <li class="nav-item {{ Route::is('admins.notifications.*') ? 'active' : '' }}"
-                style="{{ Route::is('admins.notifications.*') ? 'background-color: #ccad75;' : '' }}">
-                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseNotifications"
-                    aria-expanded="true" aria-controls="collapseNotifications">
-                    <i class="far fa-caret-square-right"></i>
-                    <span>{{ __('Notifications Section') }}</span>
-                </a>
-                <div id="collapseNotifications" class="collapse {{ Route::is('admins.notifications.*') ? 'show' : '' }}"
-                    aria-labelledby="headingPages" data-parent="#accordionSidebar">
-                    <div class="py-2 bg-white rounded collapse-inner">
-                        <a class="collapse-item"
-                            href="{{ route('admins.notifications.user') }}">{{ __('Users Notifications') }}</a>
-                        <a class="collapse-item"
-                            href="{{ route('admins.notifications.cashier') }}">{{ __('Providers Notifications') }}</a>
-                    </div>
-                </div>
-            </li>
-        @endcan
-
-        @role('super-admin')
-
-        @endrole
-    @endhasrole
-
-    @hasrole('provider-moderator')
-        <li class="li nav-item {{ Route::is('moderators.provider.details') ? 'active' : '' }} "
-            style="{{ Route::is('moderators.provider.details') ? 'background-color: #ccad75;' : '' }}">
-            <a class="nav-link" href="{{ route('moderators.provider.details') }}">
-                <i class="far fa-caret-square-right"></i>
-                <span> {{ __('Company Profile') }} </span>
-            </a>
-        </li>
-        <li class="li nav-item {{ Route::is('moderators.orders.index') ? 'active' : '' }} "
-            style="{{ Route::is('moderators.orders.index') ? 'background-color: #ccad75;' : '' }}">
-            <a class="nav-link" href="{{ route('moderators.orders.index') }}">
-                <i class="far fa-caret-square-right"></i>
-                <span> {{ __('Latest Orders') }} </span>
-            </a>
-        </li>
-        <li class="li nav-item {{ Route::is('moderators.orders.export') ? 'active' : '' }} "
-            style="{{ Route::is('moderators.orders.export') ? 'background-color: #ccad75;' : '' }}">
-            <a class="nav-link" href="{{ route('moderators.orders.export') }}">
-                <i class="far fa-caret-square-right"></i>
-                <span> {{ __('Export Orders') }} </span>
-            </a>
-        </li>
-        <li class="li nav-item {{ Route::is('moderators.provider.cashiers') ? 'active' : '' }} "
-            style="{{ Route::is('moderators.provider.cashiers') ? 'background-color: #ccad75;' : '' }}">
-            <a class="nav-link" href="{{ route('moderators.provider.cashiers') }}">
-                <i class="far fa-caret-square-right"></i>
-                <span> {{ __('Cashiers') }} </span>
-            </a>
-        </li>
-        <li class="li nav-item {{ Route::is('moderators.provider.branches') ? 'active' : '' }} "
-            style="{{ Route::is('moderators.provider.branches') ? 'background-color: #ccad75;' : '' }}">
-            <a class="nav-link" href="{{ route('moderators.provider.branches') }}">
-                <i class="far fa-caret-square-right"></i>
-                <span> {{ __('Branches') }} </span>
-            </a>
-        </li>
-
-    @endhasrole
-
-        <li class="li nav-item {{ Route::is('cashiers.orders.index') ? 'active' : '' }} "
-            style="{{ Route::is('cashiers.orders.index') ? 'background-color: #ccad75;' : '' }}">
-            <a class="nav-link" href="{{ route('cashiers.orders.index') }}">
-                <i class="far fa-caret-square-right"></i>
-                <span> {{ __('Latest Orders') }} </span>
-            </a>
-        </li>
-        <li class="li nav-item {{ Route::is('cashiers.orders.create') ? 'active' : '' }} "
-            style="{{ Route::is('cashiers.orders.create') ? 'background-color: #ccad75;' : '' }}">
-            <a class="nav-link" href="{{ route('cashiers.orders.create') }}">
-                <i class="far fa-caret-square-right"></i>
-                <span> {{ __('Create Order') }} </span>
-            </a>
-        </li>
-        {{-- <li class="li nav-item {{ Route::is('moderators.orders.export') ? 'active' : '' }} "
-            style="{{ Route::is('moderators.orders.export') ? 'background-color: #ccad75;' : '' }}">
-            <a class="nav-link" href="{{ route('moderators.orders.export') }}">
-                <i class="far fa-caret-square-right"></i>
-                <span> {{ __('Export Orders') }} </span>
-            </a>
-        </li>
-        <li class="li nav-item {{ Route::is('moderators.provider.cashiers') ? 'active' : '' }} "
-            style="{{ Route::is('moderators.provider.cashiers') ? 'background-color: #ccad75;' : '' }}">
-            <a class="nav-link" href="{{ route('moderators.provider.cashiers') }}">
-                <i class="far fa-caret-square-right"></i>
-                <span> {{ __('Cashiers') }} </span>
-            </a>
-        </li>
-        <li class="li nav-item {{ Route::is('moderators.provider.branches') ? 'active' : '' }} "
-            style="{{ Route::is('moderators.provider.branches') ? 'background-color: #ccad75;' : '' }}">
-            <a class="nav-link" href="{{ route('moderators.provider.branches') }}">
-                <i class="far fa-caret-square-right"></i>
-                <span> {{ __('Branches') }} </span>
-            </a>
-        </li> --}}
-
-
     <!-- Divider -->
     @can('leaves')
-        <li class="nav-item {{ Route::is('admins.hr.*') ? 'active' : '' }}"
-            style="{{ Route::is('admins.hr.*') ? 'background-color: #ccad75;' : '' }}">
+        <li class="nav-item {{ Route::is('admins.hr.leaves.*') ? 'active' : '' }}"
+            style="{{ Route::is('admins.hr.leaves.*') ? 'background-color: #ccad75;' : '' }}">
             <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseHR"
                aria-expanded="true" aria-controls="collapseHR">
                 <i class="far fa-caret-square-right"></i>
@@ -451,6 +184,22 @@
                 <div class="py-2 bg-white rounded collapse-inner">
                     <a class="collapse-item" href="{{ route('admins.hr.leaves.index') }}">{{ __('All Leaves') }}</a>
                     <a class="collapse-item" href="{{ route('admins.hr.leaves.create') }}">{{ __('Create New Leave') }}</a>
+                </div>
+            </div>
+        </li>
+    @endcan
+
+    @can('paySalaries')
+        <li class="nav-item {{ Route::is('admins.hr.salaries.*') ? 'active' : '' }}"
+            style="{{ Route::is('admins.hr.salaries.*') ? 'background-color: #ccad75;' : '' }}">
+            <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseSalaries"
+               aria-expanded="true" aria-controls="collapseSalaries">
+                <i class="far fa-caret-square-right"></i>
+                <span>{{ __('Salaries Section') }}</span>
+            </a>
+            <div id="collapseSalaries" class="collapse {{ Route::is('admins.hr.salaries.*') ? 'show' : '' }}"
+                 aria-labelledby="headingPages" data-parent="#accordionSidebar">
+                <div class="py-2 bg-white rounded collapse-inner">
                     <a class="collapse-item" href="{{ route('admins.hr.salaries.index') }}">{{ __('All Salaries ') }}</a>
                 </div>
             </div>
@@ -477,7 +226,7 @@
 
 
 
-    @canany(['eos', 'leaves', 'employee'])
+    @canany(['eos', 'leaves', 'employees'])
         <li class="nav-item {{ Route::is('admins.reports.*') ? 'active' : '' }}"
             style="{{ Route::is('admins.reports.*') ? 'background-color: #ccad75;' : '' }}">
             <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseReports"
@@ -499,7 +248,7 @@
                         <a class="collapse-item" href="{{ route('admins.reports.employee.details') }}">{{ __('Employee Details') }}</a>
                     @endcan
                         @hasrole('super-admin|admin')<a class="collapse-item" href="{{ route('admins.reports.transactions.report') }}">{{ __('Payment Accounts Transactions Report') }}</a>@endhasrole
-                        @hasrole('super-admin')<a class="collapse-item" href="{{ route('admins.reports.profit.report') }}">{{ __('Profit Report') }}</a>@endhasrole
+                        @hasrole('super-admin|admin')<a class="collapse-item" href="{{ route('admins.reports.profit.report') }}">{{ __('Profit Report') }}</a>@endhasrole
                         @hasrole('super-admin|admin')<a class="collapse-item" href="{{ route('admins.reports.wallet-transactions.report') }}">{{ __('Wallet Transactions Report') }}</a>@endhasrole
                 </div>
             </div>

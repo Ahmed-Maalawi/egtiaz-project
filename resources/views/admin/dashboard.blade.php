@@ -102,7 +102,7 @@
             <h4 class="section-title">{{ __('User & Employee Overview') }}</h4>
         </div>
 
-        @role('super-admin|admin')
+        @can('users')
             <div class="col-xl-3 col-md-6 mb-4">
                 <div class="card dashboard-card border-left-primary h-100 py-2">
                     <div class="card-body">
@@ -122,7 +122,7 @@
                     </div>
                 </div>
             </div>
-        @endrole
+        @endcan
         @can('employees')
             <div class="col-xl-3 col-md-6 mb-4">
                 <div class="card dashboard-card border-left-success h-100 py-2">
@@ -190,9 +190,9 @@
 
     <!-- Leave Management Metrics -->
     <div class="row mb-4">
-        <div class="col-12">
-            <h4 class="section-title">{{ __('Leave Management') }}</h4>
-        </div>
+{{--        <div class="col-12">--}}
+{{--            <h4 class="section-title">{{ __('Leave Management') }}</h4>--}}
+{{--        </div>--}}
         @can('leaves')
             <div class="col-xl-3 col-md-6 mb-4">
                 <div class="card dashboard-card border-left-info h-100 py-2">
@@ -245,7 +245,7 @@
             </div>
         @endcan
 
-        @hasrole('super-admin|admin')
+        @can('stages')
             <div class="col-xl-3 col-md-6 mb-4">
                 <div class="card dashboard-card border-left-warning h-100 py-2">
                     <div class="card-body">
@@ -270,7 +270,7 @@
                     </div>
                 </div>
             </div>
-        @endhasrole
+        @endcan
 
         @can('eos')
             <div class="col-xl-3 col-md-6 mb-4">
@@ -610,7 +610,9 @@
                                         <th>{{ __('Employee') }}</th>
                                         <th>{{ __('Stage') }}</th>
                                         <th>{{ __('Stage Type') }}</th>
-                                        <th>{{ __('Amount') }}</th>
+                                        <th>{{ __('Cost') }}</th>
+                                        <th>{{ __('Profit') }}</th>
+                                        <th>{{ __('Price') }}</th>
                                         <th>{{ __('Payment Date') }}</th>
                                         <th>{{ __('Status') }}</th>
                                     </tr>
@@ -631,7 +633,17 @@
                                             <td>{{ $stage->stage->iqamaType->getTranslation('name', app()->getLocale()) ?? 'N/A' }}</td>
                                             <td>
                                                 <span class="fw-bold text-success">
-                                                    {{ number_format($stage->stage->price ?? 0, 2) }} {{ __('SAR') }}
+                                                    {{ number_format($stage->amount_cost ?? 0, 2) }} {{ __('SAR') }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="fw-bold text-success">
+                                                    {{ number_format($stage->price_amount ?? 0, 2) }} {{ __('SAR') }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="fw-bold text-success">
+                                                    {{ number_format($stage->price_amount - $stage->amount_cost ?? 0, 2) }} {{ __('SAR') }}
                                                 </span>
                                             </td>
                                             <td>{{ $stage->completed_at ? \Carbon\Carbon::parse($stage->completed_at)->format('M d, Y') : 'N/A' }}</td>

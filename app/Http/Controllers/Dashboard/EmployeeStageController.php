@@ -34,7 +34,7 @@ class EmployeeStageController extends Controller
         $companyIds = $moderator->companyOfModeration()->pluck('id')->toArray();
 
         $employees = Employee::with(['upcomingStage.stage','company','iqamaType'])
-            ->whereIn('company_id', $companyIds)
+            ->whereHas('upcomingStage', function ($query) use ($companyIds) {})
             ->get();
 
         return view('admin.employee-stages.upcoming', [
@@ -173,12 +173,12 @@ class EmployeeStageController extends Controller
                     'payment_link'              => null,
                     'qr_code'                   => null,
                     'ndc'                       => null,
-                    'gateway_response'          => json_encode([
+                    'gateway_response'          => [
                         'transaction_id' => $transaction->id,
                         'cost' => $cost_amount,
                         'price' => $stage_price,
                         'profit' => $profit,
-                    ]),
+                    ],
                     'completed_at'              => now(),
                 ]);
 

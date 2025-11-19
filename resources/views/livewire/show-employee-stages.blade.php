@@ -179,12 +179,14 @@
                     <td>
                         <div class="d-flex">
 {{--                            <button type="button" class="btn btn-warning">{{ __('Update') }}</button>--}}
-                            @if($employeeStage && $employeeStage->status !== 'completed')
-                                <a type="button" class="btn btn-primary text-white mx-1"
-                                   href="{{ route('admins.employee-stages.get-pay-page', ['id' => $employeeStage->id]) }}">
-                                    {{ __('Pay') }}
-                                </a>
-                            @endif
+                            @can('payStages')
+                                @if($employeeStage && $employeeStage->status !== 'completed')
+                                    <a type="button" class="btn btn-primary text-white mx-1"
+                                       href="{{ route('admins.employee-stages.get-pay-page', ['id' => $employeeStage->id]) }}">
+                                        {{ __('Pay') }}
+                                    </a>
+                                @endif
+                            @endcan
                         </div>
                     </td>
                 </tr>

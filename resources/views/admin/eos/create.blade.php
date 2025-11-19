@@ -3,7 +3,6 @@
     <div class="container">
         <h3>{{ __('Create End of Service Record') }}</h3>
 
-        {{-- ✅ Display global validation errors --}}
         @if ($errors->any())
             <div class="alert alert-danger">
                 <strong>{{ __('Please fix the errors below before submitting.') }}</strong>
@@ -18,15 +17,31 @@
                 {{-- Employee --}}
                 <div class="col-md-6 mb-3">
                     <label>{{ __('Employee') }}</label>
-                    <select name="user_id" class="form-control @error('user_id') is-invalid @enderror">
+                    <select id="selectUser" name="user_id" class="form-control @error('user_id') is-invalid @enderror">
                         <option value="">{{ __('Select User') }}</option>
                         @foreach($users as $user)
-                            <option value="{{ $user->id }}" {{ old('user_id') == $user->id ? 'selected' : '' }}>
+                            <option data-salary="{{$user->salary}}" value="{{ $user->id }}" {{ old('user_id') == $user->id ? 'selected' : '' }}>
                                 {{ $user->name }}
                             </option>
                         @endforeach
                     </select>
                     @error('user_id')
+                    <div class="alert alert-danger mt-2 py-1 px-2">{{ $message }}</div>
+                    @enderror
+                </div>
+
+                {{-- Payment Accounts --}}
+                <div class="col-md-6 mb-3">
+                    <label>{{ __('Payment Accounts') }}</label>
+                    <select name="payment_account_id" class="form-control @error('payment_account_id') is-invalid @enderror">
+                        <option value="">{{ __('Select Payment Account') }}</option>
+                        @foreach($paymentAccounts as $account)
+                            <option value="{{ $account->id }}" {{ old('payment_account_id') == $account->id ? 'selected' : '' }}>
+                                {{ $account->getTranslation('name', app()->getLocale()) . ' - ('. $account->balance . ') ' . __('SAR')}}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('payment_account_id')
                     <div class="alert alert-danger mt-2 py-1 px-2">{{ $message }}</div>
                     @enderror
                 </div>
@@ -54,7 +69,7 @@
                 {{-- Basic Salary --}}
                 <div class="col-md-3 mb-3">
                     <label>{{ __('Basic Salary') }}</label>
-                    <input type="number" step="0.01" name="basic_salary" class="form-control @error('basic_salary') is-invalid @enderror"
+                    <input type="number" step="0.01" id="basic_salary" name="basic_salary" class="form-control @error('basic_salary') is-invalid @enderror"
                            value="{{ old('basic_salary') }}">
                     @error('basic_salary')
                     <div class="alert alert-danger mt-2 py-1 px-2">{{ $message }}</div>
@@ -208,5 +223,20 @@
                 document.getElementById('net_pay_input').value = result.net_pay;
             })
             .catch(err => alert('Error: ' + err));
+    });
+
+    const userDroopDown = document.getElementById('selectUser');
+    const salaryInput = document.getElementById('basic_salary');
+
+    userDroopDown.addEventListener('change', function () {
+        const selectedOption = this.options[this.selectedIndex];
+        const salary = selectedOption.getAttribute('data-salary') || 0;
+
+        const salaryNumber = Number(salary);
+
+        salaryInput.value = salaryNumber;
+
+
+        salaryInput.value = salary;
     });
 </script>
