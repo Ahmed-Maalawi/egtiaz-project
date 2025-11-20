@@ -5,8 +5,6 @@ namespace App\Http\Controllers\Dashboard;
 use App\Models\Company;
 use App\Models\Transaction;
 use App\Models\WalletTransaction;
-use Dompdf\Dompdf;
-use Dompdf\Options;
 use Illuminate\Support\Facades\DB;
 use Mpdf\Mpdf;
 use Illuminate\Http\Request;
@@ -96,7 +94,8 @@ class CompanyController extends Controller
         $walletTransactions = $company->wallet->walletTransactions()
             ->with(['employeeStage.employee', 'employeeStage.stage', 'user'])
             ->latest()
-            ->paginate(20);
+            ->get();
+
 
 
         $paymentTransactions = Transaction::whereHas('employeeStage.employee', function($query) use ($company) {
@@ -104,8 +103,19 @@ class CompanyController extends Controller
         })
             ->with(['employeeStage.employee', 'employeeStage.stage', 'paymentAccount', 'createdBy'])
             ->latest()
-            ->paginate(20);
+            ->get();
 
+        $debitTransactions = $company->wallet->walletTransactions()
+            ->with(['employeeStage.employee', 'employeeStage.stage', 'user'])
+            ->whereNotNull('created_at')
+            ->where('type', 'stage_payment')
+            ->get();
+
+        $creditTransactions = $company->wallet->walletTransactions()
+            ->with(['employeeStage.employee', 'employeeStage.stage', 'user'])
+            ->whereNotNull('created_at')
+            ->whereNull('type')
+            ->get();
 
         $summary = $this->calculateCompanySummary($company);
 
@@ -117,7 +127,9 @@ class CompanyController extends Controller
             'walletTransactions',
             'paymentTransactions',
             'summary',
-            'employeeProfits'
+            'employeeProfits',
+            'debitTransactions',
+            'creditTransactions'
         ));
     }
 

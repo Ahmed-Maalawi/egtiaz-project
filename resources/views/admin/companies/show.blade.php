@@ -134,13 +134,13 @@
             <li class="nav-item">
                 <a class="nav-link active" data-toggle="tab" href="#wallet-transactions">
                     <i class="fas fa-receipt"></i> {{ __('Wallet Transactions') }}
-                    <span class="badge badge-primary">{{ $walletTransactions->total() }}</span>
+                    <span class="badge badge-primary">{{ count($walletTransactions) }}</span>
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link" data-toggle="tab" href="#payment-transactions">
                     <i class="fas fa-exchange-alt"></i> {{ __('Payment Account Transactions') }}
-                    <span class="badge badge-info">{{ $paymentTransactions->total() }}</span>
+                    <span class="badge badge-info">{{ count($paymentTransactions) }}</span>
                 </a>
             </li>
             <li class="nav-item">
@@ -155,6 +155,18 @@
                     <span class="badge badge-secondary">{{ $company->employees->count() }}</span>
                 </a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link" data-toggle="tab" href="#wallet-debit">
+                    <i class="fas fa-arrow-down"></i> {{ __('Wallet Debit') }}
+                    <span class="badge badge-danger">{{ $debitTransactions->count() }}</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-toggle="tab" href="#wallet-credit">
+                    <i class="fas fa-arrow-up"></i> {{ __('Wallet Credit') }}
+                    <span class="badge badge-success">{{ $creditTransactions->count() }}</span>
+                </a>
+            </li>
         </ul>
 
         {{-- Tab Content --}}
@@ -165,9 +177,9 @@
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">{{ __('Wallet Transactions (Company Payments)') }}</h5>
-                        <button class="btn btn-sm btn-outline-primary" onclick="exportWalletTransactions()">
-                            <i class="fas fa-download"></i> {{ __('Export') }}
-                        </button>
+{{--                        <button class="btn btn-sm btn-outline-primary" onclick="exportWalletTransactions()">--}}
+{{--                            <i class="fas fa-download"></i> {{ __('Export') }}--}}
+{{--                        </button>--}}
                     </div>
 
                     <div class="card-body">
@@ -296,9 +308,9 @@
                             </table>
                         </div>
 
-                        <div class="mt-3">
-                            {{ $walletTransactions->links() }}
-                        </div>
+{{--                        <div class="mt-3">--}}
+{{--                            {{ $walletTransactions->links() }}--}}
+{{--                        </div>--}}
                     </div>
                 </div>
             </div>
@@ -398,9 +410,9 @@
                             </table>
                         </div>
 
-                        <div class="mt-3">
-                            {{ $paymentTransactions->links() }}
-                        </div>
+{{--                        <div class="mt-3">--}}
+{{--                            {{ $paymentTransactions->links() }}--}}
+{{--                        </div>--}}
                     </div>
                 </div>
             </div>
@@ -523,6 +535,94 @@
                                         <td colspan="7" class="text-center text-muted">
                                             {{ __('No employees found for this company.') }}
                                         </td>
+                                    </tr>
+                                @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="wallet-debit">
+                <div class="card">
+                    <div class="card-header bg-danger text-white">
+                        <h5 class="mb-0">{{ __('Wallet Debit Transactions') }}</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover">
+                                <thead>
+                                <tr>
+                                    <th>{{ __('ID') }}</th>
+                                    <th>{{ __('Date') }}</th>
+                                    <th>{{ __('Employee') }}</th>
+                                    <th>{{ __('Stage') }}</th>
+                                    <th>{{ __('Amount') }}</th>
+                                    <th>{{ __('Cost') }}</th>
+                                    <th>{{ __('Profit') }}</th>
+                                    <th>{{ __('Status') }}</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                @forelse($debitTransactions as $t)
+                                    @php
+                                        $cost = $t->employeeStage->amount_cost ?? 0;
+                                        $profit = $t->amount - $cost;
+                                    @endphp
+                                    <tr>
+                                        <td>#{{ $t->id }}</td>
+                                        <td>{{ $t->completed_at ?? $t->created_at }}</td>
+                                        <td>{{ $t->employeeStage->employee->name ?? __('Wallet Charge') }}</td>
+                                        <td>{{ $t->employeeStage->stage->name ?? '—' }}</td>
+                                        <td>{{ number_format($t->amount, 2) }} SAR</td>
+                                        <td>{{ $cost ? number_format($cost, 2) : '—' }} SAR</td>
+                                        <td>{{ $profit ? number_format($profit, 2) : '—' }} SAR</td>
+                                        <td>{{ ucfirst($t->status) }}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="8" class="text-center">{{ __('No debit transactions') }}</td>
+                                    </tr>
+                                @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="wallet-credit">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">{{ __('Wallet Credit Transactions') }}</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover">
+                                <thead>
+                                <tr>
+                                    <th>{{ __('ID') }}</th>
+                                    <th>{{ __('Date') }}</th>
+                                    <th>{{ __('Employee') }}</th>
+                                    <th>{{ __('Stage') }}</th>
+                                    <th>{{ __('Amount') }}</th>
+                                    <th>{{ __('Status') }}</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                @forelse($creditTransactions as $t)
+                                    <tr>
+                                        <td>#{{ $t->id }}</td>
+                                        <td>{{ $t->completed_at ?? $t->created_at }}</td>
+                                        <td>{{ $t->employeeStage->employee->name ?? __('Wallet Top-up') }}</td>
+                                        <td>{{ $t->employeeStage->stage->name ?? '—' }}</td>
+                                        <td>{{ number_format($t->amount, 2) }} SAR</td>
+                                        <td>{{ ucfirst($t->status) }}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="6" class="text-center">{{ __('No credit transactions') }}</td>
                                     </tr>
                                 @endforelse
                                 </tbody>

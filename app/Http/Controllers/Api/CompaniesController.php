@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\CompanyResource;
 use App\Models\Company;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class CompaniesController extends Controller
 {
@@ -54,59 +55,84 @@ class CompaniesController extends Controller
 
     public function getCompanyProfile(Request $request)
     {
-        $user = auth()->user();
+//        $user = auth()->user();
+//
+//        $company = Company::withCount(['moderators', 'employees.'])->findOrFail($user->moderator_company_id);
+//        $creditTransactions= $company->wallet->walletTransactions()->with('user')->latest()->limit(5)->get();
+//        $debitTransactions =  $company->wallet->paymentTransactions()->with(['createdBy', 'user', 'transactionable'])->latest()->limit(5)->get();
+//
+//
+//        // Normalize both collections
+//        $normalizedDbTransactions = collect($debitTransactions)->map(function ($t) {
+//            return [
+//                'transaction_type' => 'debit',
+//                'transaction_id' => $t['transaction_id'],
+//                'wallet_id' => $t['to_wallet_id'],
+//                'amount' => (float)$t['amount'],
+//                'status' => $t['status'],
+//                'description' => $t['payment_link'] ?? null,
+//                'created_by' => $t['createdBy'] ?? null,
+//                'created_at' => $t['created_at'],
+//                'updated_at' => $t['updated_at'],
+//                'extra' => $t, // keep full data if needed
+//            ];
+//        });
+//
+//        $normalizedCrTransactions = collect($creditTransactions)->map(function ($t) {
+//            return [
+//                'transaction_type' => 'credit',
+//                'transaction_id' => $t['payment_id'],
+//                'wallet_id' => $t['wallet_id'],
+//                'amount' => (float)$t['amount'],
+//                'status' => $t['status'],
+//                'description' => $t['description'] ?? null,
+//                'created_by' => $t['user'] ?? null,
+//                'created_at' => $t['created_at'],
+//                'updated_at' => $t['updated_at'],
+//                'extra' => $t, // keep full data if needed
+//            ];
+//        });
+//
+//        $allTransactions = $normalizedDbTransactions
+//            ->merge($normalizedCrTransactions)
+//            ->sortByDesc('created_at')
+//            ->values();
+//
+//        $data['employees_count'] = $company->employees_count;
+//        $data['moderators_count'] = $company->moderators_count;
+//        $data['company'] = new CompanyResource($company);
+//        $data['transactions'] = $allTransactions;
+//
+//        return response()->json([
+//            'success' => true,
+//            'message' => 'get company profile',
+//            'data' => $data,
+//        ]);
 
-        $company = Company::withCount(['moderators', 'employees'])->findOrFail($user->moderator_company_id);
-        $creditTransactions= $company->wallet->walletTransactions()->with('user')->latest()->limit(5)->get();
-        $debitTransactions =  $company->wallet->paymentTransactions()->with(['createdBy', 'user', 'transactionable'])->latest()->limit(5)->get();
+        $user = Auth::user();
 
+        $company = $user->companyOfModeration;
 
-        // Normalize both collections
-        $normalizedDbTransactions = collect($debitTransactions)->map(function ($t) {
-            return [
-                'transaction_type' => 'debit',
-                'transaction_id' => $t['transaction_id'],
-                'wallet_id' => $t['to_wallet_id'],
-                'amount' => (float)$t['amount'],
-                'status' => $t['status'],
-                'description' => $t['payment_link'] ?? null,
-                'created_by' => $t['createdBy'] ?? null,
-                'created_at' => $t['created_at'],
-                'updated_at' => $t['updated_at'],
-                'extra' => $t, // keep full data if needed
-            ];
-        });
+        $company->load([
+            'moderators',
+            'employees',
+            'wallet',
+            'wallet.walletTransactions',
+            'wallet.walletTransactions.employeeStage',
+        ]);
 
-        $normalizedCrTransactions = collect($creditTransactions)->map(function ($t) {
-            return [
-                'transaction_type' => 'credit',
-                'transaction_id' => $t['payment_id'],
-                'wallet_id' => $t['wallet_id'],
-                'amount' => (float)$t['amount'],
-                'status' => $t['status'],
-                'description' => $t['description'] ?? null,
-                'created_by' => $t['user'] ?? null,
-                'created_at' => $t['created_at'],
-                'updated_at' => $t['updated_at'],
-                'extra' => $t, // keep full data if needed
-            ];
-        });
+        $data = [];
 
-        $allTransactions = $normalizedDbTransactions
-            ->merge($normalizedCrTransactions)
-            ->sortByDesc('created_at')
-            ->values();
-
-        $data['employees_count'] = $company->employees_count;
-        $data['moderators_count'] = $company->moderators_count;
-        $data['company'] = new CompanyResource($company);
-        $data['transactions'] = $allTransactions;
+        $data['company'] = $company;
+        $data['walletTransactions'] = $company->wallet->walletTransactions;
 
         return response()->json([
             'success' => true,
             'message' => 'get company profile',
-            'data' => $data,
+            'data' => $data
         ]);
+
+
     }
 
     public function getCompanyData(Request $request)

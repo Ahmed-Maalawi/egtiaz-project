@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>{{ __('Company Report') }} - {{ $company->name }}</title>
+{{--    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" integrity="sha384-xOolHFLEh07PJGoPkLv1IbcEPTNtaed2xpHsD9ESMhqIYd0nLMwNLD69Npy4HI+N" crossorigin="anonymous">--}}
     <style>
         * {
             margin: 0;
@@ -72,14 +73,14 @@
         }
 
         .summary-cards {
-            display: table;
             width: 100%;
             margin-bottom: 20px;
-            border-spacing: 10px;
         }
 
         .summary-row {
-            display: table-row;
+            display: table;
+            width: 100%;
+            table-layout: fixed;
         }
 
         .summary-card {
@@ -87,9 +88,9 @@
             background: #fff;
             border: 2px solid #e0e0e0;
             border-radius: 5px;
-            padding: 15px;
+            padding: 12px;
             text-align: center;
-            width: 25%;
+            vertical-align: top;
         }
 
         .summary-card.primary { border-color: #4CAF50; }
@@ -274,6 +275,7 @@
     </div>
 </div>
 
+
 {{-- Additional Summary Info --}}
 <div class="summary-cards">
     <div class="summary-row">
@@ -296,6 +298,7 @@
         </div>
     </div>
 </div>
+
 
 {{-- Wallet Transactions Section --}}
 <div class="section">
