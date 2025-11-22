@@ -19,11 +19,11 @@ class EmployeeStage extends Model
         'currently_type',
         'payment_status',
         'paid_at',
-//        'amount_paid',
+        //        'amount_paid',
         'amount_cost',
         'price_amount',
         'transaction_id',
-        'wallet_transaction_id'
+        'wallet_transaction_id',
     ];
 
     protected $appends = ['profit'];
@@ -33,16 +33,16 @@ class EmployeeStage extends Model
         'completed_at' => 'datetime',
         'expired_at' => 'datetime',
         'paid_at' => 'datetime',
-        'price_amount' => 'decimal:2'
+        'price_amount' => 'decimal:2',
     ];
 
     protected $with = 'files';
 
     protected static function booted()
     {
-        static::deleted(function($employeeStage){
-            if($employeeStage->files()){
-                foreach($employeeStage->files as $file){
+        static::deleted(function ($employeeStage) {
+            if ($employeeStage->files()) {
+                foreach ($employeeStage->files as $file) {
                     Controller::deleteFile($file->path);
                 }
             }
@@ -51,8 +51,8 @@ class EmployeeStage extends Model
 
     public function doneBy()
     {
-        return $this->belongsTo(User::class , 'done_by')->withDefault([
-            'name'  => __('User Deleted'),
+        return $this->belongsTo(User::class, 'done_by')->withDefault([
+            'name' => __('User Deleted'),
         ]);
     }
 
@@ -68,7 +68,7 @@ class EmployeeStage extends Model
 
     public function scopeCurrent(Builder $builder)
     {
-        return $builder->where('currently_type',1);
+        return $builder->where('currently_type', 1);
     }
 
     public function files()
@@ -78,7 +78,7 @@ class EmployeeStage extends Model
 
     public function transactions()
     {
-        return $this->morphMany(Transaction::class, 'transactionable');
+        return $this->morphOne(Transaction::class, 'transactionable');
     }
 
     public function markAsPaid($amount): void
@@ -86,7 +86,7 @@ class EmployeeStage extends Model
         $this->update([
             'payment_status' => 'paid',
             'price_amount' => $amount,
-            'paid_at' => now()
+            'paid_at' => now(),
         ]);
     }
 
@@ -97,16 +97,16 @@ class EmployeeStage extends Model
 
     public function getProfitAttribute()
     {
-//        // Make sure the related stage is loaded
-//        if (!$this->relationLoaded('stage')) {
-//            $this->load('stage');
-//        }
-//
-//        $stage = $this->stage;
-//
-//        if (!$stage || !isset($stage->price) || !isset($stage->cost)) {
-//            return 0;
-//        }
+        //        // Make sure the related stage is loaded
+        //        if (!$this->relationLoaded('stage')) {
+        //            $this->load('stage');
+        //        }
+        //
+        //        $stage = $this->stage;
+        //
+        //        if (!$stage || !isset($stage->price) || !isset($stage->cost)) {
+        //            return 0;
+        //        }
 
         return (float) $this->amont_paid - (float) $this->amount_cost;
     }
@@ -130,6 +130,7 @@ class EmployeeStage extends Model
             'profit' => $this->price_amount - $this->amount_cost,
         ];
     }
+
     // Scopes
     public function scopePaid($query)
     {
@@ -160,23 +161,21 @@ class EmployeeStage extends Model
     public function scopeProfitReport($query, array $filters)
     {
 
-        if (!empty($filters['company_id'])) {
+        if (! empty($filters['company_id'])) {
             $query->whereHas('employee', function ($q) use ($filters) {
                 $q->where('company_id', $filters['company_id']);
             });
         }
 
-
-        if (!empty($filters['employee_id'])) {
+        if (! empty($filters['employee_id'])) {
             $query->where('employee_id', $filters['employee_id']);
         }
 
-
-        if (!empty($filters['from_date'])) {
+        if (! empty($filters['from_date'])) {
             $query->whereDate('completed_at', '>=', $filters['from_date']);
         }
 
-        if (!empty($filters['to_date'])) {
+        if (! empty($filters['to_date'])) {
             $query->whereDate('completed_at', '<=', $filters['to_date']);
         }
 

@@ -93,10 +93,12 @@ class EndOfServiceController extends Controller
 
             $netPay = $eosAmount + $additions + $leavePay - $deductions;
 
-            $data['net_pay'] = $netPay;
+            $data['net_pay'] = floatval($netPay);
 
             DB::transaction(function () use ($data, $netPay, $user, $paymentAccount, $request) {
+
                 $newPaymentAccountBalance = $paymentAccount->balance - $netPay;
+                $newPaymentAccountBalance = floatval($newPaymentAccountBalance);
 
 
                 $eos = EndOfService::create([
@@ -208,6 +210,22 @@ class EndOfServiceController extends Controller
 
     public function destroy(EndOfService $eo)
     {
+        $eo->load('transaction.paymentAccount');
+
+
+        DB::transaction(function () use ($eo) {
+
+            $paymentAccount = $eo->transaction->paymentAccount;
+            $transaction = $eo->transaction;
+            $amount = $transaction->amount;
+
+//            dd('payment_id', $paymentAccount);
+            $newBalance = $paymentAccount->balance + $amount;
+
+            $paymentAccount->update(['balance' => $newBalance]);
+        });
+
+        $eo->transaction->delete();
         $eo->delete();
 
         return redirect()->route('admins.eos.index')->with('success', __('Record deleted successfully.'));

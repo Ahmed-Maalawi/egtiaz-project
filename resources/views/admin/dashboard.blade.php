@@ -1,21 +1,23 @@
 <x-dashboard.main-layout>
     <style>
         body {
-            background-color: #f8f9fc;
+            background-color: #f5f7fa;
             font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
         }
 
         .dashboard-card {
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             border: none;
-            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
-            border-left: 0.25rem solid #e3e6f0;
-            border-radius: 0.5rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border-left: 4px solid #e3e6f0;
+            border-radius: 12px;
+            background: #ffffff;
+            overflow: hidden;
         }
 
         .dashboard-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 0.25rem 2rem 0 rgba(58, 59, 69, 0.2);
+            transform: translateY(-5px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
         }
 
         .dashboard-card.border-left-primary {
@@ -39,39 +41,55 @@
         }
 
         .stats-icon {
-            width: 60px;
-            height: 60px;
+            width: 65px;
+            height: 65px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
+            font-size: 26px;
             color: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
 
-        .bg-primary { background-color: #4e73df !important; }
-        .bg-success { background-color: #1cc88a !important; }
-        .bg-info { background-color: #36b9cc !important; }
-        .bg-warning { background-color: #f6c23e !important; }
-        .bg-danger { background-color: #e74a3b !important; }
+        .bg-primary {
+            background-color: #4e73df !important;
+        }
+
+        .bg-success {
+            background-color: #1cc88a !important;
+        }
+
+        .bg-info {
+            background-color: #36b9cc !important;
+        }
+
+        .bg-warning {
+            background-color: #f6c23e !important;
+        }
+
+        .bg-danger {
+            background-color: #e74a3b !important;
+        }
 
         .text-xs {
-            font-size: .7rem;
-            font-weight: 700;
+            font-size: .75rem;
+            font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: .1rem;
+            letter-spacing: .15rem;
         }
 
         .page-title {
-            color: #5a5c69;
-            font-weight: 400;
+            color: #2c3e50;
+            font-weight: 700;
             margin-bottom: 2rem;
         }
 
         .metric-value {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #5a5c69;
+            font-size: 2.25rem;
+            font-weight: 800;
+            color: #2c3e50;
+            line-height: 1.2;
         }
 
         .metric-change {
@@ -79,11 +97,84 @@
         }
 
         .section-title {
-            color: #5a5c69;
-            font-weight: 600;
+            color: #2c3e50;
+            font-weight: 700;
+            font-size: 1.25rem;
             margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 3px solid #e3e6f0;
+            position: relative;
+        }
+
+        .section-title:after {
+            content: '';
+            position: absolute;
+            bottom: -3px;
+            left: 0;
+            width: 80px;
+            height: 3px;
+            background: #4e73df;
+        }
+
+        .card-header {
+            background: #ffffff;
             border-bottom: 2px solid #e3e6f0;
-            padding-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .table {
+            font-size: 0.9rem;
+        }
+
+        .table thead th {
+            border-bottom: 2px solid #dee2e6;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+            color: #5a5c69;
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: #f8f9fc;
+        }
+
+        .badge {
+            padding: 0.5rem 0.75rem;
+            font-weight: 600;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+        }
+
+        .btn {
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            border-radius: 8px;
+            padding: 0.5rem 1.25rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .fw-bold {
+            font-weight: 700 !important;
+        }
+
+        .empty-state {
+            padding: 3rem 1rem;
+            text-align: center;
+        }
+
+        .empty-state i {
+            opacity: 0.3;
+        }
+
+        .empty-state p {
+            color: #858796;
+            font-size: 1rem;
         }
     </style>
 
@@ -190,9 +281,9 @@
 
     <!-- Leave Management Metrics -->
     <div class="row mb-4">
-{{--        <div class="col-12">--}}
-{{--            <h4 class="section-title">{{ __('Leave Management') }}</h4>--}}
-{{--        </div>--}}
+        {{--        <div class="col-12"> --}}
+        {{--            <h4 class="section-title">{{ __('Leave Management') }}</h4> --}}
+        {{--        </div> --}}
         @can('leaves')
             <div class="col-xl-3 col-md-6 mb-4">
                 <div class="card dashboard-card border-left-info h-100 py-2">
@@ -301,7 +392,7 @@
     </div>
 
     <!-- Quick Actions -->
-    @canany(['employees','leaves','states','reports'])
+    @canany(['employees', 'leaves', 'states', 'reports'])
         <div class="row mb-4">
             <div class="col-12">
                 <h4 class="section-title">{{ __('Quick Actions') }}</h4>
@@ -374,7 +465,7 @@
     @endcanany
 
     <!-- Latest Leaves and EOS -->
-   @can(['leaves', 'eos'])
+    @can(['leaves', 'eos'])
         <div class="row mt-4">
             @can('leaves')
                 <!-- Latest Leaves -->
@@ -387,47 +478,52 @@
                             </a>
                         </div>
                         <div class="card-body">
-                            @if(isset($data['latest_leaves']) && count($data['latest_leaves']) > 0)
+                            @if (isset($data['latest_leaves']) && count($data['latest_leaves']) > 0)
                                 <div class="table-responsive">
                                     <table class="table table-bordered table-hover">
                                         <thead class="table-light">
-                                        <tr>
-                                            <th>{{ __('Employee') }}</th>
-                                            <th>{{ __('Type') }}</th>
-                                            <th>{{ __('From') }}</th>
-                                            <th>{{ __('To') }}</th>
-                                            <th>{{ __('Status') }}</th>
-                                        </tr>
+                                            <tr>
+                                                <th>{{ __('Employee') }}</th>
+                                                <th>{{ __('Type') }}</th>
+                                                <th>{{ __('From') }}</th>
+                                                <th>{{ __('To') }}</th>
+                                                <th>{{ __('Status') }}</th>
+                                            </tr>
                                         </thead>
                                         <tbody>
-                                        @foreach($data['latest_leaves'] as $leave)
-                                            <tr>
-                                                <td>
-                                                    <div class="d-flex align-items-center">
-                                                        <div>
-                                                            <div class="fw-bold">{{ $leave->user->name ?? 'N/A' }}</div>
-                                                            <small class="text-muted">{{ $leave->user->user_id ?? '' }}</small>
+                                            @foreach ($data['latest_leaves'] as $leave)
+                                                <tr>
+                                                    <td>
+                                                        <div class="d-flex align-items-center">
+                                                            <div>
+                                                                <div class="fw-bold">{{ $leave->user->name ?? 'N/A' }}</div>
+                                                                <small
+                                                                    class="text-muted">{{ $leave->user->user_id ?? '' }}</small>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <span class="badge bg-info text-white">{{ $leave->type ?? 'N/A' }}</span>
-                                                </td>
-                                                <td>{{ $leave->start_date ? \Carbon\Carbon::parse($leave->start_date)->format('M d, Y') : 'N/A' }}</td>
-                                                <td>{{ $leave->end_date ? \Carbon\Carbon::parse($leave->end_date)->format('M d, Y') : 'N/A' }}</td>
-                                                <td class="text-white">
-                                                    @if($leave->status == 'approved')
-                                                        <span class="badge bg-success">{{ __('Approved') }}</span>
-                                                    @elseif($leave->status == 'pending')
-                                                        <span class="badge bg-warning">{{ __('Pending') }}</span>
-                                                    @elseif($leave->status == 'rejected')
-                                                        <span class="badge bg-danger">{{ __('Rejected') }}</span>
-                                                    @else
-                                                        <span class="badge bg-secondary">{{ ucfirst($leave->status ?? 'Unknown') }}</span>
-                                                    @endif
-                                                </td>
-                                            </tr>
-                                        @endforeach
+                                                    </td>
+                                                    <td>
+                                                        <span
+                                                            class="badge bg-info text-white">{{ $leave->type ?? 'N/A' }}</span>
+                                                    </td>
+                                                    <td>{{ $leave->start_date ? \Carbon\Carbon::parse($leave->start_date)->format('M d, Y') : 'N/A' }}
+                                                    </td>
+                                                    <td>{{ $leave->end_date ? \Carbon\Carbon::parse($leave->end_date)->format('M d, Y') : 'N/A' }}
+                                                    </td>
+                                                    <td class="text-white">
+                                                        @if ($leave->status == 'approved')
+                                                            <span class="badge bg-success">{{ __('Approved') }}</span>
+                                                        @elseif($leave->status == 'pending')
+                                                            <span class="badge bg-warning">{{ __('Pending') }}</span>
+                                                        @elseif($leave->status == 'rejected')
+                                                            <span class="badge bg-danger">{{ __('Rejected') }}</span>
+                                                        @else
+                                                            <span
+                                                                class="badge bg-secondary">{{ ucfirst($leave->status ?? 'Unknown') }}</span>
+                                                        @endif
+                                                    </td>
+                                                </tr>
+                                            @endforeach
                                         </tbody>
                                     </table>
                                 </div>
@@ -447,45 +543,48 @@
                     <div class="card dashboard-card">
                         <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                             <h6 class="m-0 font-weight-bold text-danger">{{ __('Latest End of Service') }}</h6>
-                            <a href="{{ route('admins.eos.index')}}" class="btn btn-danger btn-sm">
+                            <a href="{{ route('admins.eos.index') }}" class="btn btn-danger btn-sm">
                                 <i class="fas fa-eye"></i> {{ __('View All') }}
                             </a>
                         </div>
                         <div class="card-body">
-                            @if(isset($data['latest_eos']) && count($data['latest_eos']) > 0)
+                            @if (isset($data['latest_eos']) && count($data['latest_eos']) > 0)
                                 <div class="table-responsive">
                                     <table class="table table-bordered table-hover">
                                         <thead class="table-light">
-                                        <tr>
-                                            <th>{{ __('Employee') }}</th>
-                                            <th>{{ __('Join Date') }}</th>
-                                            <th>{{ __('End Date') }}</th>
-                                            <th>{{ __('Net Pay') }}</th>
-                                        </tr>
+                                            <tr>
+                                                <th>{{ __('Employee') }}</th>
+                                                <th>{{ __('Join Date') }}</th>
+                                                <th>{{ __('End Date') }}</th>
+                                                <th>{{ __('Net Pay') }}</th>
+                                            </tr>
                                         </thead>
                                         <tbody>
-                                        @foreach($data['latest_eos'] as $eos)
-                                            <tr>
-                                                <td>
-                                                    <div class="d-flex align-items-center">
-                                                        <div>
-                                                            <div class="fw-bold">{{ $eos->user->name ?? 'N/A' }}</div>
-                                                            <small class="text-muted">{{ $eos->user->user_id ?? '' }}</small>
+                                            @foreach ($data['latest_eos'] as $eos)
+                                                <tr>
+                                                    <td>
+                                                        <div class="d-flex align-items-center">
+                                                            <div>
+                                                                <div class="fw-bold">{{ $eos->user->name ?? 'N/A' }}</div>
+                                                                <small
+                                                                    class="text-muted">{{ $eos->user->user_id ?? '' }}</small>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                </td>
-                                                <td>{{ $eos->joining_date ? \Carbon\Carbon::parse($eos->joining_date)->format('M d, Y') : 'N/A' }}</td>
-                                                <td>{{ $eos->leaving_date ? \Carbon\Carbon::parse($eos->leaving_date)->format('M d, Y') : 'N/A' }}</td>
-                                                <td>{{ $eos->net_pay}}</td>
-                                            </tr>
-                                        @endforeach
+                                                    </td>
+                                                    <td>{{ $eos->joining_date ? \Carbon\Carbon::parse($eos->joining_date)->format('M d, Y') : 'N/A' }}
+                                                    </td>
+                                                    <td>{{ $eos->leaving_date ? \Carbon\Carbon::parse($eos->leaving_date)->format('M d, Y') : 'N/A' }}
+                                                    </td>
+                                                    <td>{{ $eos->net_pay }}</td>
+                                                </tr>
+                                            @endforeach
                                         </tbody>
                                     </table>
                                 </div>
                             @else
-                                <div class="text-center py-4">
-                                    <i class="fas fa-user-times fa-3x text-muted mb-3"></i>
-                                    <p class="text-muted">{{ __('No recent end of service records found') }}</p>
+                                <div class="empty-state">
+                                    <i class="fas fa-user-times fa-3x mb-3"></i>
+                                    <p>{{ __('No recent end of service records found') }}</p>
                                 </div>
                             @endif
                         </div>
@@ -494,98 +593,104 @@
             @endcan
 
             @can('employees')
-                    <div class="col-lg-6 mb-4">
-                        <div class="card dashboard-card">
-                            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                                <h6 class="m-0 font-weight-bold text-warning">{{ __('Employees Documents will expire soon') }}</h6>
-                            </div>
-                            <div class="card-body">
-                                @if(isset($data['employees_will_have_documents_expiration']) && count($data['employees_will_have_documents_expiration']) > 0)
-                                    <div class="table-responsive">
-                                        <table class="table table-bordered table-hover">
-                                            <thead class="table-light">
+                <div class="col-lg-6 mb-4">
+                    <div class="card dashboard-card">
+                        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                            <h6 class="m-0 font-weight-bold text-warning">{{ __('Employees Documents will expire soon') }}
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            @if (isset($data['employees_will_have_documents_expiration']) &&
+                                    count($data['employees_will_have_documents_expiration']) > 0)
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-hover">
+                                        <thead class="table-light">
                                             <tr>
                                                 <th>{{ __('Employee') }}</th>
                                                 <th>{{ __('Passport Number') }}</th>
                                                 <th>{{ __('Expire At') }}</th>
                                             </tr>
-                                            </thead>
-                                            <tbody>
-                                            @foreach($data['employees_will_have_documents_expiration'] as $employee)
+                                        </thead>
+                                        <tbody>
+                                            @foreach ($data['employees_will_have_documents_expiration'] as $employee)
                                                 <tr>
                                                     <td>
                                                         <div class="d-flex align-items-center">
                                                             <div>
                                                                 <div class="fw-bold">{{ $employee->name ?? 'N/A' }}</div>
-                                                                <small class="text-muted">{{ $employee->user_id ?? '' }}</small>
+                                                                <small
+                                                                    class="text-muted">{{ $employee->user_id ?? '' }}</small>
                                                             </div>
                                                         </div>
                                                     </td>
                                                     <td>{{ $employee->passport_number }}</td>
                                                     <td>
-                                                        <span class="badge bg-info text-white">{{ \Carbon\Carbon::parse($employee->expired_date)->format('Y-m-d') ?? 'N/A' }}</span>
+                                                        <span
+                                                            class="badge bg-info text-white">{{ \Carbon\Carbon::parse($employee->expired_date)->format('Y-m-d') ?? 'N/A' }}</span>
                                                     </td>
                                                 </tr>
                                             @endforeach
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                @else
-                                    <div class="text-center py-4">
-                                        <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
-                                        <p class="text-muted">{{ __('No recent leaves found') }}</p>
-                                    </div>
-                                @endif
-                            </div>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @else
+                                <div class="text-center py-4">
+                                    <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                                    <p class="text-muted">{{ __('No recent leaves found') }}</p>
+                                </div>
+                            @endif
                         </div>
                     </div>
+                </div>
 
 
-                    <div class="col-lg-6 mb-4">
-                        <div class="card dashboard-card">
-                            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                                <h6 class="m-0 font-weight-bold text-danger">{{ __('Employees Documents Expired') }}</h6>
-                            </div>
-                            <div class="card-body">
-                                @if(isset($data['employees_have_expired_documents']) && count($data['employees_have_expired_documents']) > 0)
-                                    <div class="table-responsive">
-                                        <table class="table table-bordered table-hover">
-                                            <thead class="table-light">
+                <div class="col-lg-6 mb-4">
+                    <div class="card dashboard-card">
+                        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                            <h6 class="m-0 font-weight-bold text-danger">{{ __('Employees Documents Expired') }}</h6>
+                        </div>
+                        <div class="card-body">
+                            @if (isset($data['employees_have_expired_documents']) && count($data['employees_have_expired_documents']) > 0)
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-hover">
+                                        <thead class="table-light">
                                             <tr>
                                                 <th>{{ __('Employee') }}</th>
                                                 <th>{{ __('Passport Number') }}</th>
                                                 <th>{{ __('Expire At') }}</th>
                                             </tr>
-                                            </thead>
-                                            <tbody>
-                                            @foreach($data['employees_have_expired_documents'] as $employee)
+                                        </thead>
+                                        <tbody>
+                                            @foreach ($data['employees_have_expired_documents'] as $employee)
                                                 <tr>
                                                     <td>
                                                         <div class="d-flex align-items-center">
                                                             <div>
                                                                 <div class="fw-bold">{{ $employee->name ?? 'N/A' }}</div>
-                                                                <small class="text-muted">{{ $employee->user_id ?? '' }}</small>
+                                                                <small
+                                                                    class="text-muted">{{ $employee->user_id ?? '' }}</small>
                                                             </div>
                                                         </div>
                                                     </td>
                                                     <td>{{ $employee->passport_number }}</td>
                                                     <td>
-                                                        <span class="badge bg-info text-white">{{ \Carbon\Carbon::parse($employee->expired_date)->format('Y-m-d') ?? 'N/A' }}</span>
+                                                        <span
+                                                            class="badge bg-info text-white">{{ \Carbon\Carbon::parse($employee->expired_date)->format('Y-m-d') ?? 'N/A' }}</span>
                                                     </td>
                                                 </tr>
                                             @endforeach
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                @else
-                                    <div class="text-center py-4">
-                                        <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
-                                        <p class="text-muted">{{ __('No recent leaves found') }}</p>
-                                    </div>
-                                @endif
-                            </div>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @else
+                                <div class="text-center py-4">
+                                    <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                                    <p class="text-muted">{{ __('No recent leaves found') }}</p>
+                                </div>
+                            @endif
                         </div>
                     </div>
+                </div>
             @endcan
         </div>
     @endcan
@@ -602,71 +707,79 @@
                         </a>
                     </div>
                     <div class="card-body">
-                        @if(isset($data['latest_paid_stages']) && count($data['latest_paid_stages']) > 0)
+                        @if (isset($data['latest_paid_stages']) && count($data['latest_paid_stages']) > 0)
                             <div class="table-responsive">
                                 <table class="table table-bordered table-hover">
                                     <thead class="table-light">
-                                    <tr>
-                                        <th>{{ __('Employee') }}</th>
-                                        <th>{{ __('Stage') }}</th>
-                                        <th>{{ __('Stage Type') }}</th>
-                                        <th>{{ __('Cost') }}</th>
-                                        <th>{{ __('Profit') }}</th>
-                                        <th>{{ __('Price') }}</th>
-                                        <th>{{ __('Payment Date') }}</th>
-                                        <th>{{ __('Status') }}</th>
-                                    </tr>
+                                        <tr>
+                                            <th>{{ __('Employee') }}</th>
+                                            <th>{{ __('Stage') }}</th>
+                                            <th>{{ __('Stage Type') }}</th>
+                                            <th>{{ __('Cost') }}</th>
+                                            <th>{{ __('Profit') }}</th>
+                                            <th>{{ __('Price') }}</th>
+                                            <th>{{ __('Payment Date') }}</th>
+                                            <th>{{ __('Status') }}</th>
+                                        </tr>
                                     </thead>
                                     <tbody>
-                                    @foreach($data['latest_paid_stages'] as $stage)
-                                        <tr>
-                                            <td>
-                                                <div class="d-flex align-items-center">
-                                                    <div>
-                                                        <div class="fw-bold">{{ $stage->employee?->name ?? 'N/A' }}</div>
+                                        @foreach ($data['latest_paid_stages'] as $stage)
+                                            <tr>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <div>
+                                                            <div class="fw-bold">{{ $stage->employee?->name ?? 'N/A' }}
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <span class="badge bg-info text-white">{{ $stage->stage->getTranslation('name', app()->getLocale()) ?? 'N/A' }}</span>
-                                            </td>
-                                            <td>{{ $stage->stage->iqamaType->getTranslation('name', app()->getLocale()) ?? 'N/A' }}</td>
-                                            <td>
-                                                <span class="fw-bold text-success">
-                                                    {{ number_format($stage->amount_cost ?? 0, 2) }} {{ __('SAR') }}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <span class="fw-bold text-success">
-                                                    {{ number_format($stage->price_amount ?? 0, 2) }} {{ __('SAR') }}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <span class="fw-bold text-success">
-                                                    {{ number_format($stage->price_amount - $stage->amount_cost ?? 0, 2) }} {{ __('SAR') }}
-                                                </span>
-                                            </td>
-                                            <td>{{ $stage->completed_at ? \Carbon\Carbon::parse($stage->completed_at)->format('M d, Y') : 'N/A' }}</td>
-                                            <td class="text-white">
-                                                @if($stage->status == 'paid')
-                                                    <span class="badge bg-success">{{ __('Paid') }}</span>
-                                                @elseif($stage->status == 'pending')
-                                                    <span class="badge bg-warning">{{ __('Pending') }}</span>
-                                                @elseif($stage->status == 'cancelled')
-                                                    <span class="badge bg-danger">{{ __('Cancelled') }}</span>
-                                                @else
-                                                    <span class="badge bg-success">{{ ucfirst($stage->status ?? 'Unknown') }}</span>
-                                                @endif
-                                            </td>
-                                        </tr>
-                                    @endforeach
+                                                </td>
+                                                <td>
+                                                    <span
+                                                        class="badge bg-info text-white">{{ $stage->stage->getTranslation('name', app()->getLocale()) ?? 'N/A' }}</span>
+                                                </td>
+                                                <td>{{ $stage->stage->iqamaType->getTranslation('name', app()->getLocale()) ?? 'N/A' }}
+                                                </td>
+                                                <td>
+                                                    <span class="fw-bold text-success">
+                                                        {{ number_format($stage->amount_cost ?? 0, 2) }}
+                                                        {{ __('SAR') }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span class="fw-bold text-success">
+                                                        {{ number_format($stage->price_amount ?? 0, 2) }}
+                                                        {{ __('SAR') }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span class="fw-bold text-success">
+                                                        {{ number_format($stage->price_amount - $stage->amount_cost ?? 0, 2) }}
+                                                        {{ __('SAR') }}
+                                                    </span>
+                                                </td>
+                                                <td>{{ $stage->completed_at ? \Carbon\Carbon::parse($stage->completed_at)->format('M d, Y') : 'N/A' }}
+                                                </td>
+                                                <td class="text-white">
+                                                    @if ($stage->status == 'paid')
+                                                        <span class="badge bg-success">{{ __('Paid') }}</span>
+                                                    @elseif($stage->status == 'pending')
+                                                        <span class="badge bg-warning">{{ __('Pending') }}</span>
+                                                    @elseif($stage->status == 'cancelled')
+                                                        <span class="badge bg-danger">{{ __('Cancelled') }}</span>
+                                                    @else
+                                                        <span
+                                                            class="badge bg-success">{{ ucfirst($stage->status ?? 'Unknown') }}</span>
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                        @endforeach
                                     </tbody>
                                 </table>
                             </div>
                         @else
-                            <div class="text-center py-4">
-                                <i class="fas fa-money-bill-wave fa-3x text-muted mb-3"></i>
-                                <p class="text-muted">{{ __('No recent paid stages found') }}</p>
+                            <div class="empty-state">
+                                <i class="fas fa-money-bill-wave fa-3x mb-3"></i>
+                                <p>{{ __('No recent paid stages found') }}</p>
                             </div>
                         @endif
                     </div>

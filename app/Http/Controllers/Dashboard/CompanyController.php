@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers\Dashboard;
 
+use App\Http\Controllers\Controller;
 use App\Models\Company;
 use App\Models\Transaction;
 use App\Models\WalletTransaction;
-use Illuminate\Support\Facades\DB;
-use Mpdf\Mpdf;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\View;
+use Mpdf\Mpdf;
 
 class CompanyController extends Controller
 {
@@ -37,13 +37,13 @@ class CompanyController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name_ar'                   => 'required|string',
-            'name_en'                   => 'required|string',
-            'description_ar'            => 'required|string',
-            'description_en'            => 'required|string',
-            'status'                    => 'required|in:active,inactive',
-            'image'                     => 'required|image|max:5120',
-            'banner_image'              => 'nullable|image|max:5120',
+            'name_ar' => 'required|string',
+            'name_en' => 'required|string',
+            'description_ar' => 'required|string',
+            'description_en' => 'required|string',
+            'status' => 'required|in:active,inactive',
+            'image' => 'required|image|max:5120',
+            'banner_image' => 'nullable|image|max:5120',
         ]);
 
         $image_path = null;
@@ -59,17 +59,17 @@ class CompanyController extends Controller
         }
 
         Company::create([
-            'name'                  => [
-                'ar'                    => $request->name_ar,
-                'en'                    => $request->name_en,
+            'name' => [
+                'ar' => $request->name_ar,
+                'en' => $request->name_en,
             ],
-            'description'           => [
-                'ar'                    => $request->description_ar,
-                'en'                    => $request->description_en,
+            'description' => [
+                'ar' => $request->description_ar,
+                'en' => $request->description_en,
             ],
-            'status'                => $request->status,
-            'image'                 => $image_path,
-            'banner_image'          => $banner_path,
+            'status' => $request->status,
+            'image' => $image_path,
+            'banner_image' => $banner_path,
         ]);
 
         return redirect()->route('admins.companies.index')
@@ -87,18 +87,15 @@ class CompanyController extends Controller
             'wallet.walletTransactions.user',
             'employees.stages.stage',
             'employees.stages.transactions',
-            'moderators'
+            'moderators',
         ])->findOrFail($id);
-
 
         $walletTransactions = $company->wallet->walletTransactions()
             ->with(['employeeStage.employee', 'employeeStage.stage', 'user'])
             ->latest()
             ->get();
 
-
-
-        $paymentTransactions = Transaction::whereHas('employeeStage.employee', function($query) use ($company) {
+        $paymentTransactions = Transaction::whereHas('employeeStage.employee', function ($query) use ($company) {
             $query->where('company_id', $company->id);
         })
             ->with(['employeeStage.employee', 'employeeStage.stage', 'paymentAccount', 'createdBy'])
@@ -118,7 +115,6 @@ class CompanyController extends Controller
             ->get();
 
         $summary = $this->calculateCompanySummary($company);
-
 
         $employeeProfits = $this->getEmployeeProfitReport($company);
 
@@ -147,13 +143,13 @@ class CompanyController extends Controller
     public function update(Request $request, Company $company)
     {
         $request->validate([
-            'name_ar'                   => 'required|string',
-            'name_en'                   => 'required|string',
-            'description_ar'            => 'required|string',
-            'description_en'            => 'required|string',
-            'status'                    => 'required|in:active,inactive',
-            'image'                     => 'nullable|image|max:5120',
-            'banner_image'              => 'nullable|image|max:5120',
+            'name_ar' => 'required|string',
+            'name_en' => 'required|string',
+            'description_ar' => 'required|string',
+            'description_en' => 'required|string',
+            'status' => 'required|in:active,inactive',
+            'image' => 'nullable|image|max:5120',
+            'banner_image' => 'nullable|image|max:5120',
         ]);
 
         $image_path = $company->image;
@@ -176,17 +172,17 @@ class CompanyController extends Controller
         }
 
         $company->update([
-            'name'                  => [
-                'ar'                    => $request->name_ar,
-                'en'                    => $request->name_en,
+            'name' => [
+                'ar' => $request->name_ar,
+                'en' => $request->name_en,
             ],
-            'description'           => [
-                'ar'                    => $request->description_ar,
-                'en'                    => $request->description_en,
+            'description' => [
+                'ar' => $request->description_ar,
+                'en' => $request->description_en,
             ],
-            'status'                => $request->status,
-            'image'                 => $image_path,
-            'banner_image'          => $banner_path,
+            'status' => $request->status,
+            'image' => $image_path,
+            'banner_image' => $banner_path,
         ]);
 
         return redirect()->route('admins.companies.index')
@@ -220,49 +216,46 @@ class CompanyController extends Controller
         $company->save();
 
         return response()->json([
-            'message'   => __('company status updated')
+            'message' => __('company status updated'),
         ]);
     }
 
     public function search(Request $request)
     {
         $request->validate([
-            'q' =>'nullable|string',
+            'q' => 'nullable|string',
         ]);
 
         $locale = app()->getLocale();
 
         $search = "%{$request->query('q')}%";
 
-        $companies = Company::where("name->{$locale}",'like',$search)->limit(10)->get();
+        $companies = Company::where("name->{$locale}", 'like', $search)->limit(10)->get();
 
         return response()->json(
-            $companies->map(function($company) use ($locale){
+            $companies->map(function ($company) use ($locale) {
                 return [
-                    'id'    =>$company->id,
-                    'name'  =>$company->getTranslation('name',$locale),
+                    'id' => $company->id,
+                    'name' => $company->getTranslation('name', $locale),
                 ];
             })
         );
     }
 
-
     private function calculateCompanySummary($company)
     {
 
-        $completedStages = \App\Models\EmployeeStage::whereHas('employee', function($query) use ($company) {
+        $completedStages = \App\Models\EmployeeStage::whereHas('employee', function ($query) use ($company) {
             $query->where('company_id', $company->id);
         })
             ->where('status', 'completed')
             ->get();
 
-
         $totalWalletCharges = $company->wallet->walletTransactions()
             ->where('type', 'stage_payment')
             ->sum('amount');
 
-
-        $totalCosts = Transaction::whereHas('employeeStage.employee', function($query) use ($company) {
+        $totalCosts = Transaction::whereHas('employeeStage.employee', function ($query) use ($company) {
             $query->where('company_id', $company->id);
         })
             ->where('type', 'stage_payment')
@@ -287,13 +280,13 @@ class CompanyController extends Controller
     private function getEmployeeProfitReport($company)
     {
         return $company->employees()
-            ->with(['stages' => function($query) {
+            ->with(['stages' => function ($query) {
                 $query->where('status', 'completed');
             }])
             ->get()
-            ->map(function($employee) {
+            ->map(function ($employee) {
                 $completedStages = $employee->stages->where('status', 'completed');
-                    $totalCost = $completedStages->sum('amount_cost');
+                $totalCost = $completedStages->sum('amount_cost');
                 $totalPrice = $completedStages->sum('price_amount');
 
                 return [
@@ -304,7 +297,7 @@ class CompanyController extends Controller
                     'total_profit' => $totalPrice - $totalCost,
                 ];
             })
-            ->filter(function($item) {
+            ->filter(function ($item) {
                 return $item['completed_stages'] > 0;
             });
     }
@@ -313,7 +306,7 @@ class CompanyController extends Controller
     {
         $transaction = WalletTransaction::with([
             'employeeStage.employee.company',
-            'employeeStage.stage'
+            'employeeStage.stage',
         ])->findOrFail($transactionId);
 
         // Configure mPDF for Arabic/RTL support
@@ -325,7 +318,7 @@ class CompanyController extends Controller
             'margin_top' => 20,
             'margin_bottom' => 20,
             'margin_left' => 15,
-            'margin_right' => 15
+            'margin_right' => 15,
         ]);
 
         // Load your existing Blade view
@@ -333,10 +326,9 @@ class CompanyController extends Controller
 
         $mpdf->WriteHTML($html);
 
-        return response($mpdf->Output('invoice-' . $transactionId . '.pdf', 'S'))
+        return response($mpdf->Output('invoice-'.$transactionId.'.pdf', 'S'))
             ->header('Content-Type', 'application/pdf');
     }
-
 
     /**
      * Get transaction details for modal
@@ -347,7 +339,7 @@ class CompanyController extends Controller
             $transaction = WalletTransaction::with([
                 'employeeStage.employee',
                 'employeeStage.stage',
-                'wallet'
+                'wallet',
             ])->findOrFail($id);
 
             // Find related payment transaction
@@ -380,19 +372,19 @@ class CompanyController extends Controller
     /**
      * Export transactions to Excel
      */
-//    public function exportTransactions($companyId)
-//    {
-//        $company = Company::findOrFail($companyId);
-//
-//        $walletTransactions = $company->wallet->walletTransactions()
-//            ->with(['employeeStage.employee', 'employeeStage.stage'])
-//            ->get();
-//
-//        return \Excel::download(
-//            new \App\Exports\CompanyTransactionsExport($walletTransactions, $company),
-//            'company-' . $company->id . '-transactions.xlsx'
-//        );
-//    }
+    //    public function exportTransactions($companyId)
+    //    {
+    //        $company = Company::findOrFail($companyId);
+    //
+    //        $walletTransactions = $company->wallet->walletTransactions()
+    //            ->with(['employeeStage.employee', 'employeeStage.stage'])
+    //            ->get();
+    //
+    //        return \Excel::download(
+    //            new \App\Exports\CompanyTransactionsExport($walletTransactions, $company),
+    //            'company-' . $company->id . '-transactions.xlsx'
+    //        );
+    //    }
 
     /**
      * Get all company report data in one function
@@ -404,9 +396,9 @@ class CompanyController extends Controller
             'employees.stages.stage',
             'wallet',
             'wallet.walletTransactions',
-            'employees.stages' => function($query) {
+            'employees.stages' => function ($query) {
                 $query->with('stage');
-            }
+            },
         ])->findOrFail($id);
 
         // Summary Data
@@ -431,7 +423,6 @@ class CompanyController extends Controller
         ];
     }
 
-
     /**
      * Get wallet transactions (paginated for web, all for PDF)
      */
@@ -440,10 +431,10 @@ class CompanyController extends Controller
         $query = WalletTransaction::with([
             'employeeStage.employee.user',
             'employeeStage.stage',
-            'user'
+            'user',
         ])
-            ->where(function($query) use ($company) {
-                $query->whereHas('employeeStage.employee', function($q) use ($company) {
+            ->where(function ($query) use ($company) {
+                $query->whereHas('employeeStage.employee', function ($q) use ($company) {
                     $q->where('company_id', $company->id);
                 })
                     ->orWhere('wallet_id', $company->wallet->id ?? 0);
@@ -462,9 +453,9 @@ class CompanyController extends Controller
             'employeeStage.employee.user',
             'employeeStage.stage',
             'paymentAccount',
-            'createdBy'
+            'createdBy',
         ])
-            ->whereHas('employeeStage.employee', function($query) use ($company) {
+            ->whereHas('employeeStage.employee', function ($query) use ($company) {
                 $query->where('company_id', $company->id);
             })
             ->orderBy('created_at', 'desc');
@@ -477,11 +468,11 @@ class CompanyController extends Controller
      */
     private function getEmployeeProfits($company)
     {
-        return $company->employees->map(function($employee) {
+        return $company->employees->map(function ($employee) {
             $completedStages = $employee->stages->where('status', 'completed');
 
             $totalCost = $completedStages->sum('amount_cost'); // Use amount_cost instead of amount_cost
-            $totalPrice = $completedStages->sum(function($stage) {
+            $totalPrice = $completedStages->sum(function ($stage) {
                 return $stage->walletTransaction->amount ?? 0;
             });
             $totalProfit = $totalPrice - $totalCost;
@@ -493,7 +484,7 @@ class CompanyController extends Controller
                 'total_price' => $totalPrice,
                 'total_profit' => $totalProfit,
             ];
-        })->filter(function($item) {
+        })->filter(function ($item) {
             return $item['completed_stages'] > 0;
         });
     }
@@ -503,79 +494,94 @@ class CompanyController extends Controller
      */
     public function generateCompanyReport($companyId)
     {
-//        try {
-            // Load all necessary data
-            $company = Company::with([
-                'wallet.walletTransactions.employeeStage.employee',
-                'wallet.walletTransactions.employeeStage.stage',
-                'wallet.walletTransactions.user',
-                'employees.stages.stage',
-                'employees.stages.transactions',
-                'moderators'
-            ])->findOrFail($companyId);
+        //        try {
+        // Load all necessary data
+        $company = Company::with([
+            'wallet.walletTransactions.employeeStage.employee',
+            'wallet.walletTransactions.employeeStage.stage',
+            'wallet.walletTransactions.user',
+            'employees.stages.stage',
+            'employees.stages.transactions',
+            'moderators',
+        ])->findOrFail($companyId);
 
-            // Get all transactions without pagination for PDF
-            $walletTransactions = $company->wallet->walletTransactions()
-                ->with(['employeeStage.employee', 'employeeStage.stage', 'user'])
-                ->latest()
-                ->get();
+        // Get all transactions without pagination for PDF
+        $walletTransactions = $company->wallet->walletTransactions()
+            ->with(['employeeStage.employee', 'employeeStage.stage', 'user'])
+            ->latest()
+            ->get();
 
-            $paymentTransactions = Transaction::whereHas('employeeStage.employee', function($query) use ($company) {
-                $query->where('company_id', $company->id);
-            })
-                ->with(['employeeStage.employee', 'employeeStage.stage', 'paymentAccount', 'createdBy'])
-                ->latest()
-                ->get();
+        $paymentTransactions = Transaction::whereHas('employeeStage.employee', function ($query) use ($company) {
+            $query->where('company_id', $company->id);
+        })
+            ->with(['employeeStage.employee', 'employeeStage.stage', 'paymentAccount', 'createdBy'])
+            ->latest()
+            ->get();
 
-            // Calculate summary
-            $summary = $this->calculateCompanySummary($company);
+        // Get debit and credit transactions
+        $debitTransactions = $company->wallet->walletTransactions()
+            ->with(['employeeStage.employee', 'employeeStage.stage', 'user'])
+            ->whereNotNull('created_at')
+            ->where('type', 'stage_payment')
+            ->get();
 
-            // Get employee profits
-            $employeeProfits = $this->getEmployeeProfitReport($company);
+        $creditTransactions = $company->wallet->walletTransactions()
+            ->with(['employeeStage.employee', 'employeeStage.stage', 'user'])
+            ->whereNotNull('created_at')
+            ->whereNull('type')
+            ->get();
 
-            // Configure mPDF with better settings
-            $mpdf = new Mpdf([
-                'mode' => 'utf-8',
-                'format' => 'A4-L', // Landscape for better table display
-                'default_font' => app()->getLocale() === 'ar' ? 'xbriyaz' : 'dejavusans',
-                'direction' => app()->getLocale() === 'ar' ? 'rtl' : 'ltr',
-                'margin_top' => 15,
-                'margin_bottom' => 15,
-                'margin_left' => 10,
-                'margin_right' => 10,
-                'margin_header' => 5,
-                'margin_footer' => 5,
-                'tempDir' => storage_path('app/tmp'),
-            ]);
+        // Calculate summary
+        $summary = $this->calculateCompanySummary($company);
 
-            // Generate HTML from Blade view
-            $html = View::make('admin.companies.reports.company-details', [
-                'company' => $company,
-                'summary' => $summary,
-                'walletTransactions' => $walletTransactions,
-                'paymentTransactions' => $paymentTransactions,
-                'employeeProfits' => $employeeProfits,
-                'generatedDate' => now()->format('Y-m-d H:i:s'),
-            ])->render();
+        // Get employee profits
+        $employeeProfits = $this->getEmployeeProfitReport($company);
 
-            // Write HTML to PDF
-            $mpdf->WriteHTML($html);
+        // Configure mPDF with better settings
+        $mpdf = new Mpdf([
+            'mode' => 'utf-8',
+            'format' => 'A4-P', // Landscape for better table display
+            'default_font' => app()->getLocale() === 'ar' ? 'xbriyaz' : 'dejavusans',
+            'direction' => app()->getLocale() === 'ar' ? 'rtl' : 'ltr',
+            'margin_top' => 5,
+            'margin_bottom' => 5,
+            'margin_left' => 5,
+            'margin_right' => 5,
+            'margin_header' => 5,
+            'margin_footer' => 5,
+            'tempDir' => storage_path('app/tmp'),
+        ]);
 
-            $filename = 'company-report-' . $company->id . '-' . now()->format('Y-m-d') . '.pdf';
+        // Generate HTML from Blade view
+        $html = View::make('admin.companies.reports.company-details', [
+            'company' => $company,
+            'summary' => $summary,
+            'walletTransactions' => $walletTransactions,
+            'paymentTransactions' => $paymentTransactions,
+            'employeeProfits' => $employeeProfits,
+            'debitTransactions' => $debitTransactions,
+            'creditTransactions' => $creditTransactions,
+            'generatedDate' => now()->format('Y-m-d H:i:s'),
+        ])->render();
 
-            // Return PDF as download
-            return response($mpdf->Output($filename, 'D'))
-                ->header('Content-Type', 'application/pdf')
-                ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+        // Write HTML to PDF
+        $mpdf->WriteHTML($html);
 
-//        } catch (\Exception $e) {
-//            \Log::error('PDF Generation Error: ' . $e->getMessage(), [
-//                'trace' => $e->getTraceAsString(),
-//                'company_id' => $companyId
-//            ]);
-//
-//            return back()->with('error', __('Failed to generate PDF report. Please try again.'));
-//        }
+        $filename = 'company-report-'.$company->id.'-'.now()->format('Y-m-d').'.pdf';
+
+        // Return PDF as download
+        return response($mpdf->Output($filename, 'D'))
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'attachment; filename="'.$filename.'"');
+
+        //        } catch (\Exception $e) {
+        //            \Log::error('PDF Generation Error: ' . $e->getMessage(), [
+        //                'trace' => $e->getTraceAsString(),
+        //                'company_id' => $companyId
+        //            ]);
+        //
+        //            return back()->with('error', __('Failed to generate PDF report. Please try again.'));
+        //        }
     }
 
     /**
@@ -606,7 +612,7 @@ class CompanyController extends Controller
             $totalCost = $walletStats->total_cost ?? 0;
 
         } catch (\Exception $e) {
-            \Log::error('Error calculating wallet stats: ' . $e->getMessage());
+            \Log::error('Error calculating wallet stats: '.$e->getMessage());
             $totalPrice = 0;
             $totalCost = 0;
         }

@@ -353,4 +353,25 @@ class SalariesController extends Controller
             'company_name' => 'No company assigned',
         ]);
     }
+
+    public function destroy(Salary $salary)
+    {
+        $salary->load('transactions.paymentAccount');
+
+        DB::transaction(function () use ($salary) {
+
+            $paymentAccount = $salary->transactions->paymentAccount;
+            $paidAmount = $salary->transactions->amount;
+
+            $paymentAccount->update([
+               'balance' => floatval($paymentAccount->balance + $paidAmount),
+            ]);
+
+            // delete the salary with transaction
+            $salary->transactions()->delete();
+            $salary->delete();
+        });
+
+        return redirect()->back()->with('success', __('Salary deleted successfully.'));
+    }
 }

@@ -103,100 +103,108 @@
             <div class="table-responsive"> --}}
         <table class="table table-bordered" width="100%" cellspacing="0">
             <thead>
-            <tr>
-                <th>{{ __('Order') }}</th>
-                <th>{{ __('Stage Name') }}</th>
-                <th>{{ __('Stage Description') }}</th>
-                <th>{{ __('Stage Price') }}</th>
-                <th>{{ __('Estimated Days') }}</th>
-                <th>{{ __('Completed At') }}</th>
-                <th>{{ __('Registered By') }}</th>
-                <th>{{ __('Expired At') }}</th>
-                <th>{{ __('Status') }}</th>
-                <th>{{ __('Actions') }}</th>
-            </tr>
+                <tr>
+                    <th>{{ __('Order') }}</th>
+                    <th>{{ __('Stage Name') }}</th>
+                    <th>{{ __('Stage Description') }}</th>
+                    <th>{{ __('Stage Price') }}</th>
+                    <th>{{ __('Estimated Days') }}</th>
+                    <th>{{ __('Completed At') }}</th>
+                    <th>{{ __('Registered By') }}</th>
+                    <th>{{ __('Expired At') }}</th>
+                    <th>{{ __('Status') }}</th>
+                    <th>{{ __('Actions') }}</th>
+                </tr>
             </thead>
             <tbody>
-            @foreach ($employeeStages as $employeeStage)
-                <tr
-                    class="
+                @foreach ($employeeStages as $employeeStage)
+                    <tr
+                        class="
                             @if ($employeeStage->status === 'pending') status-pending
                             @elseif($employeeStage->status === 'on_running') status-running
                             @elseif($employeeStage->status === 'completed') status-completed @endif
                         ">
-                    <td>{{ $employeeStage->stage->order }}</td>
-                    <td>
-                        {{ $employeeStage->stage->getTranslation('name', app()->getLocale()) }}<br>
-                        {{ $employeeStage->stage->getTranslation('name', $rev_locale) }}
-                    </td>
-                    <td>
-                        {{ $employeeStage->stage->getTranslation('description', app()->getLocale()) }}
-                        <br>
-                        {{ $employeeStage->stage->getTranslation('description', $rev_locale) }}
-                    </td>
-                    <td>{{ $employeeStage->stage->price }}</td>
-                    @if ($employeeStage->stage->estimated_time_in_days)
-                        <td>{{ $employeeStage->stage->estimated_time_in_days . ' ' . __('Days') }}</td>
-                    @else
-                        <td>{{ __('Not Specified') }}</td>
-                    @endif
-                    <td>
-                        @if ($employeeStage->completed_at)
-                            {{ Carbon::createFromTimestamp($employeeStage->completed_at)->format('Y-m-d') }}
+                        <td>{{ $employeeStage->stage->order }}</td>
+                        <td>
+                            {{ $employeeStage->stage->getTranslation('name', app()->getLocale()) }}<br>
+                            {{ $employeeStage->stage->getTranslation('name', $rev_locale) }}
+                        </td>
+                        <td>
+                            {{ $employeeStage->stage->getTranslation('description', app()->getLocale()) }}
+                            <br>
+                            {{ $employeeStage->stage->getTranslation('description', $rev_locale) }}
+                        </td>
+                        <td>{{ $employeeStage->stage->price }}</td>
+                        @if ($employeeStage->stage->estimated_time_in_days)
+                            <td>{{ $employeeStage->stage->estimated_time_in_days . ' ' . __('Days') }}</td>
                         @else
-                            {{ __('Not Completed Yet') }}
+                            <td>{{ __('Not Specified') }}</td>
                         @endif
-                    </td>
-                    <td>
-                        @if ($employeeStage->done_by)
-                            {{ $employeeStage->doneBy->name }}
-                        @else
-                            {{ __('Not Completed Yet') }}
-                        @endif
-                    </td>
-                    <td>
-                        @if ($employeeStage->expired_at)
-                            {{ $employeeStage->expired_at->format('Y-m-d') }}
-                        @else
-                            {{ __('Not Specified Or Not Completed') }}
-                        @endif
-                    </td>
-                    <td>
-                        @if ($employeeStage->status == 'pending')
-                            <span class="px-2 py-1 text-white rounded bg-warning">
+                        <td>
+                            @if ($employeeStage->completed_at)
+                                {{ Carbon::createFromTimestamp($employeeStage->completed_at)->format('Y-m-d') }}
+                            @else
+                                {{ __('Not Completed Yet') }}
+                            @endif
+                        </td>
+                        <td>
+                            @if ($employeeStage->done_by)
+                                {{ $employeeStage->doneBy->name }}
+                            @else
+                                {{ __('Not Completed Yet') }}
+                            @endif
+                        </td>
+                        <td>
+                            @if ($employeeStage->expired_at)
+                                {{ $employeeStage->expired_at->format('Y-m-d') }}
+                            @else
+                                {{ __('Not Specified Or Not Completed') }}
+                            @endif
+                        </td>
+                        <td>
+                            @if ($employeeStage->status == 'pending')
+                                <span class="px-2 py-1 text-white rounded bg-warning">
                                     {{ __('Pending') }}
-                            </span>
-                        @elseif ($employeeStage->status == 'in_progress')
-                            <span class="px-2 py-1 text-white rounded bg-info">
+                                </span>
+                            @elseif ($employeeStage->status == 'in_progress')
+                                <span class="px-2 py-1 text-white rounded bg-info">
                                     {{ __('In Progress') }}
-                            </span>
-                        @elseif ($employeeStage->status == 'completed')
-                            <span class="px-2 py-1 text-white rounded bg-success">
+                                </span>
+                            @elseif ($employeeStage->status == 'completed')
+                                <span class="px-2 py-1 text-white rounded bg-success">
                                     {{ __('Completed') }}
-                            </span>
-                        @endif
-                    </td>
-                    <td>
-                        <div class="d-flex">
-{{--                            <button type="button" class="btn btn-warning">{{ __('Update') }}</button>--}}
-                            @can('payStages')
-                                @if($employeeStage && $employeeStage->status !== 'completed')
-                                    <a type="button" class="btn btn-primary text-white mx-1"
-                                       href="{{ route('admins.employee-stages.get-pay-page', ['id' => $employeeStage->id]) }}">
-                                        {{ __('Pay') }}
-                                    </a>
-                                @endif
-                            @endcan
-                        </div>
-                    </td>
-                </tr>
-            @endforeach
+                                </span>
+                            @endif
+                        </td>
+                        <td>
+                            <div class="d-flex">
+                                {{--                            <button type="button" class="btn btn-warning">{{ __('Update') }}</button> --}}
+                                @can('payStages')
+                                    @if ($employeeStage && $employeeStage->status !== 'completed')
+                                        <a type="button" class="btn btn-primary text-white mx-1"
+                                            href="{{ route('admins.employee-stages.get-pay-page', ['id' => $employeeStage->id]) }}">
+                                            {{ __('Pay') }}
+                                        </a>
+                                    @elseif ($employeeStage && $employeeStage->status === 'completed')
+                                        <form action="{{ route('admins.employee-stages.unpay', $employeeStage) }}"
+                                            method="post">
+                                            @csrf
+                                            @method('delete')
+                                            <button type="submit"
+                                                class="btn btn-danger text-white mx-1">{{ __('Unpay') }}</button>
+                                        </form>
+                                    @endif
+                                @endcan
+                            </div>
+                        </td>
+                    </tr>
+                @endforeach
             </tbody>
         </table>
         {{-- </div>
         </div> --}}
         <div class="py-2 d-flex justify-content-center">
-            {{--             {{ $employeeStages->links() }}--}}
+            {{--             {{ $employeeStages->links() }} --}}
         </div>
     @else
         <div class="alert alert-info">
@@ -205,24 +213,26 @@
     @endif
     <style>
         .status-pending {
-            background-color: #fff3cd; /* Light yellow */
+            background-color: #fff3cd;
+            /* Light yellow */
             color: #856404;
         }
 
         .status-running {
-            background-color: #d1ecf1; /* Light blue */
+            background-color: #d1ecf1;
+            /* Light blue */
             color: #0c5460;
         }
 
         .status-completed {
-            background-color: #d4edda; /* Light green */
+            background-color: #d4edda;
+            /* Light green */
             color: #155724;
         }
-
     </style>
 
     <script>
-        $(document).ready(function () {
+        $(document).ready(function() {
             selectCompany();
             selectEmployee();
         });
@@ -236,13 +246,13 @@
                     url: "{{ route('admins.employees.search') }}",
                     dataType: 'json',
                     delay: 500,
-                    data: function (params) {
+                    data: function(params) {
                         return {
                             q: params.term,
                             company_id: $('#select_company').val(),
                         };
                     },
-                    processResults: function (data) {
+                    processResults: function(data) {
                         return {
                             results: data.map(employee => ({
                                 id: employee.id,
@@ -265,12 +275,12 @@
                     url: "{{ route('admins.companies.search') }}",
                     dataType: 'json',
                     delay: 500,
-                    data: function (params) {
+                    data: function(params) {
                         return {
                             q: params.term
                         };
                     },
-                    processResults: function (data) {
+                    processResults: function(data) {
                         return {
                             results: data.map(company => ({
                                 id: company.id,
@@ -283,11 +293,9 @@
             })
         }
 
-        $('#select_employee').on('change', function (e) {
-        @this.set('selectedEmployee', $(this).val())
-            ;
-        @this.call('loadEmployeeStages')
-            ;
+        $('#select_employee').on('change', function(e) {
+            @this.set('selectedEmployee', $(this).val());
+            @this.call('loadEmployeeStages');
         });
     </script>
 

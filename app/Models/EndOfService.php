@@ -13,6 +13,11 @@ class EndOfService extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function transaction()
+    {
+        return $this->morphOne(Transaction::class, 'transactionable');
+    }
+
     public function getServiceYearsAttribute()
     {
         return \Carbon\Carbon::parse($this->joining_date)

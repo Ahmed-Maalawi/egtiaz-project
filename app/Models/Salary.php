@@ -39,7 +39,7 @@ class Salary extends Model
 
     public function transactions()
     {
-        return $this->morphTo(Transaction::class);
+        return $this->morphOne(Transaction::class, 'transactionable');
     }
 
     public function scopePaid($query)

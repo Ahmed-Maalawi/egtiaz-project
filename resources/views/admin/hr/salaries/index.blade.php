@@ -223,6 +223,12 @@
                                         class="btn btn-outline-success btn-sm">
                                     <i class="fas fa-money-bill-wave mr-1"></i> {{ __('Pay Salary') }}
                                 </button>
+                            @elseif($salary->status === 'paid')
+                                <form action="{{ route('admins.hr.salaries.delete', $salary) }}" method="POST">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-danger">{{ __('Delete') }}</button>
+                                </form>
                             @else
                                 <span class="text-muted">{{ __('Paid') }}</span>
                             @endif

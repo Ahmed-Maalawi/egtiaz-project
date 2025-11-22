@@ -2,16 +2,16 @@
 
 namespace App\Http\Controllers\Dashboard;
 
+use App\Http\Controllers\Controller;
 use App\Jobs\SendEmployeeCompletionEmail;
+use App\Models\Employee;
 use App\Models\EmployeeStage;
+use App\Models\IqamaType;
 use App\Models\PaymentAccount;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Models\WalletTransaction;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
-use App\Models\Employee;
-use App\Models\IqamaType;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -25,6 +25,7 @@ class EmployeeStageController extends Controller
     public function getSingleEmployee(Request $request)
     {
         $types = IqamaType::select('id', 'name')->get();
+
         return view('admin.employee-stages.get-single-employee', compact('types'));
     }
 
@@ -33,15 +34,14 @@ class EmployeeStageController extends Controller
         $moderator = User::findOrFail(Auth::id());
         $companyIds = $moderator->companyOfModeration()->pluck('id')->toArray();
 
-        $employees = Employee::with(['upcomingStage.stage','company','iqamaType'])
-            ->whereHas('upcomingStage', function ($query) use ($companyIds) {})
+        $employees = Employee::with(['upcomingStage.stage', 'company', 'iqamaType'])
+            ->whereHas('upcomingStage')
             ->get();
 
         return view('admin.employee-stages.upcoming', [
             'employees' => $employees,
         ]);
     }
-
 
     /**
      * Store a newly created resource in storage.
@@ -76,11 +76,125 @@ class EmployeeStageController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Delete/Reverse a paid employee stage payment
+     * Returns the paid amount to wallet and payment account, and deletes the transactions
      */
     public function destroy(EmployeeStage $employeeStage)
     {
-        //
+        try {
+            // Load necessary relationships
+            $employeeStage->load([
+                'stage',
+                'employee.company.wallet',
+                'walletTransaction.wallet',
+                'transactions.paymentAccount',
+            ]);
+
+            // Validate that the stage is completed
+            if ($employeeStage->status !== 'completed') {
+                throw new \Exception(__('Cannot delete payment for a stage that is not completed.'));
+            }
+
+            // dd($employeeStage->transactions->paymentAccount);
+
+            // Validate that we have transaction IDs
+            if (! $employeeStage->transaction_id || ! $employeeStage->wallet_transaction_id) {
+                throw new \Exception(__('Transaction information not found for this employee stage.'));
+            }
+
+            // Get the transactions using relationships
+            $transaction = $employeeStage->transactions;
+            $walletTransaction = $employeeStage->walletTransaction;
+
+            if (! $walletTransaction) {
+                throw new \Exception(__('Wallet transaction not found.'));
+            }
+
+            // Get payment account and wallet
+            $paymentAccount = $transaction->paymentAccount;  // PaymentAccount::findOrFail($transaction->payment_account_id);
+            $wallet = $employeeStage->employee->company->wallet;
+
+            if (! $wallet) {
+                throw new \Exception(__('Company wallet not found.'));
+            }
+
+            $cost_amount = $employeeStage->amount_cost;
+            $stage_price = $employeeStage->price_amount;
+
+            DB::transaction(function () use (
+                $employeeStage,
+                $transaction,
+                $walletTransaction,
+                $paymentAccount,
+                $wallet,
+                $cost_amount,
+                $stage_price
+            ) {
+                // Return the cost amount to the payment account
+                $newPaymentAccountBalance = $paymentAccount->balance + $cost_amount;
+                $paymentAccount->update(['balance' => $newPaymentAccountBalance]);
+
+                // Return the stage price to the wallet
+                $newWalletBalance = $wallet->balance + $stage_price;
+                $wallet->update(['balance' => $newWalletBalance]);
+
+                // Delete the transactions
+                $transaction->delete();
+                $walletTransaction->delete();
+
+                // Reset the employee stage status
+                $employeeStage->update([
+                    'status' => 'pending',
+                    'completed_at' => null,
+                    'done_by' => null,
+                    'price_amount' => null,
+                    'amount_cost' => null,
+                    'transaction_id' => null,
+                    'wallet_transaction_id' => null,
+                ]);
+
+                // Check if employee had all papers completed and update if needed
+                $employee = $employeeStage->employee;
+                if ($employee->all_papers_completed) {
+                    $employee->update([
+                        'all_papers_completed' => false,
+                        'papers_completed_at' => null,
+                    ]);
+                }
+
+                Log::info('Stage payment deleted/reversed successfully', [
+                    'employee_stage_id' => $employeeStage->id,
+                    'employee_id' => $employeeStage->employee_id,
+                    'cost_returned' => $cost_amount,
+                    'price_returned' => $stage_price,
+                    'payment_account_id' => $paymentAccount->id,
+                    'wallet_id' => $wallet->id,
+                    'deleted_by' => Auth::id(),
+                ]);
+            });
+
+            return redirect()
+                ->back()
+                ->with('success', __('Stage payment deleted successfully. Funds returned: Cost :cost to payment account, Price :price to wallet.', [
+                    'cost' => number_format($cost_amount, 2),
+                    'price' => number_format($stage_price, 2),
+                ]));
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            Log::error('Model not found in destroy employee stage payment: '.$e->getMessage());
+
+            return back()->with('error', __('One of the required records was not found.'));
+
+        } catch (\Exception $e) {
+            Log::error('Delete stage payment error: '.$e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'employee_stage_id' => $employeeStage->id ?? null,
+            ]);
+
+            return back()->with('error', __('An error occurred while deleting the stage payment: :error', [
+                'error' => $e->getMessage(),
+            ]));
+        }
     }
 
     public function showPayEmployeeStagePage(int $employeeStageId)
@@ -100,20 +214,19 @@ class EmployeeStageController extends Controller
         try {
 
             $validated = $request->validate([
-                'employee_stage_id'     => 'required|exists:employee_stages,id',
-                'payment_account_id'    => 'required|exists:payment_accounts,id',
-                'description'           => 'nullable|string|max:255',
-                'stage_price'           => 'required|numeric|min:0',
+                'employee_stage_id' => 'required|exists:employee_stages,id',
+                'payment_account_id' => 'required|exists:payment_accounts,id',
+                'description' => 'nullable|string|max:255',
+                'stage_price' => 'required|numeric|min:0',
             ]);
 
             $employeeStage = EmployeeStage::with([
                 'stage',
                 'employee.company.wallet',
-                'employee.stages' // To check if all stages completed
+                'employee.stages', // To check if all stages completed
             ])->findOrFail($validated['employee_stage_id']);
 
             $paymentAccount = PaymentAccount::findOrFail($validated['payment_account_id']);
-
 
             $this->validateStagePayment($employeeStage, $paymentAccount, $validated['stage_price']);
 
@@ -122,81 +235,75 @@ class EmployeeStageController extends Controller
             $company = $employeeStage->employee->company;
             $wallet = $company->wallet;
 
-
             DB::transaction(function () use ($employeeStage, $paymentAccount, $wallet, $cost_amount, $stage_price, $validated) {
 
                 $newPaymentAccountBalance = $paymentAccount->balance - $cost_amount;
                 $newWalletBalance = $wallet->balance - $stage_price;
                 $profit = $stage_price - $cost_amount;
 
-
                 $transaction = Transaction::create([
-                    'created_by'                => Auth::id(),
-                    'transaction_id'            => Str::uuid(),
-                    'payment_account_id'        => $paymentAccount->id,
-                    'employee_stage_id'         => $employeeStage->id,
-                    'user_id'                   => null,
-                    'amount'                    => $cost_amount,
-                    'transactionable_id'        => $employeeStage->id,
-                    'transactionable_type'      => EmployeeStage::class,
-                    'from_balance_before'       => $paymentAccount->balance,
-                    'from_balance_after'        => $newPaymentAccountBalance,
-                    'status'                    => 'completed',
-                    'type'                      => 'stage_payment',
-                    'method_type'               => 'debit',
-                    'description'               => $validated['description'] ??
+                    'created_by' => Auth::id(),
+                    'transaction_id' => Str::uuid(),
+                    'payment_account_id' => $paymentAccount->id,
+                    'employee_stage_id' => $employeeStage->id,
+                    'user_id' => null,
+                    'amount' => $cost_amount,
+                    'transactionable_id' => $employeeStage->id,
+                    'transactionable_type' => EmployeeStage::class,
+                    'from_balance_before' => $paymentAccount->balance,
+                    'from_balance_after' => $newPaymentAccountBalance,
+                    'status' => 'completed',
+                    'type' => 'stage_payment',
+                    'method_type' => 'debit',
+                    'description' => $validated['description'] ??
                         "Stage payment cost for {$employeeStage->stage->name} - Employee: {$employeeStage->employee->name}",
-                    'metadata'                  => [
+                    'metadata' => [
                         'cost' => $cost_amount,
                         'price' => $stage_price,
                         'profit' => $profit,
                         'company_id' => $wallet->company_id,
                         'employee_id' => $employeeStage->employee_id,
                     ],
-                    'processed_at'              => now(),
+                    'processed_at' => now(),
                 ]);
-
 
                 $paymentAccount->update(['balance' => $newPaymentAccountBalance]);
 
-
                 $walletTransaction = $wallet->walletTransactions()->create([
-                    'user_id'                   => Auth::id(),
-                    'employee_stage_id'         => $employeeStage->id, // Link to employee stage
-                    'payment_id'                => Str::uuid(),
-                    'merchant_transaction_id'   => Str::uuid(),
-                    'amount'                    => $stage_price,
-                    'currency'                  => 'SAR',
-                    'status'                    => 'completed',
-                    'type'                      => 'stage_payment', // Add type to differentiate
-                    'description'               => "Service charge for {$employeeStage->stage->name} - Employee: {$employeeStage->employee->name}",
-                    'payment_link'              => null,
-                    'qr_code'                   => null,
-                    'ndc'                       => null,
-                    'gateway_response'          => [
+                    'user_id' => Auth::id(),
+                    'employee_stage_id' => $employeeStage->id, // Link to employee stage
+                    'payment_id' => Str::uuid(),
+                    'merchant_transaction_id' => Str::uuid(),
+                    'amount' => $stage_price,
+                    'currency' => 'SAR',
+                    'status' => 'completed',
+                    'type' => 'stage_payment', // Add type to differentiate
+                    'description' => "Service charge for {$employeeStage->stage->name} - Employee: {$employeeStage->employee->name}",
+                    'payment_link' => null,
+                    'qr_code' => null,
+                    'ndc' => null,
+                    'gateway_response' => [
                         'transaction_id' => $transaction->id,
                         'cost' => $cost_amount,
                         'price' => $stage_price,
                         'profit' => $profit,
                     ],
-                    'completed_at'              => now(),
+                    'completed_at' => now(),
                 ]);
-
 
                 $wallet->update(['balance' => $newWalletBalance]);
 
-
                 $employeeStage->update([
-                    'status'                    => 'completed',
-                    'completed_at'              => now(),
-                    'done_by'                   => Auth::id(),
-                    'price_amount'              => $stage_price,
-                    'amount_cost'               => $cost_amount,
-                    'transaction_id'            => $transaction->id, // Link main transaction
-                    'wallet_transaction_id'     => $walletTransaction->id, // Link wallet transaction
+                    'status' => 'completed',
+                    'completed_at' => now(),
+                    'done_by' => Auth::id(),
+                    'price_amount' => $stage_price,
+                    'amount_cost' => $cost_amount,
+                    'transaction_id' => $transaction->id, // Link main transaction
+                    'wallet_transaction_id' => $walletTransaction->id, // Link wallet transaction
                 ]);
 
-                Log::info("Stage payment completed successfully", [
+                Log::info('Stage payment completed successfully', [
                     'transaction_id' => $transaction->id,
                     'wallet_transaction_id' => $walletTransaction->id,
                     'employee_stage_id' => $employeeStage->id,
@@ -206,33 +313,34 @@ class EmployeeStageController extends Controller
                     'profit' => $profit,
                     'payment_account_id' => $paymentAccount->id,
                     'wallet_id' => $wallet->id,
-                    'user_id' => Auth::id()
+                    'user_id' => Auth::id(),
                 ]);
             });
-
 
             $this->checkAndNotifyIfAllPapersCompleted($employeeStage->employee);
 
             return redirect()
                 ->route('admins.employee-stages.getSingleEmployee', ['employee_id' => $employeeStage->employee_id])
                 ->with('success', __('Stage payment completed successfully. Profit: :profit', [
-                    'profit' => number_format($stage_price - $cost_amount, 2)
+                    'profit' => number_format($stage_price - $cost_amount, 2),
                 ]));
 
         } catch (\Illuminate\Validation\ValidationException $e) {
             return back()->withErrors($e->validator)->withInput();
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            Log::error('Model not found in PayEmployeeStage: ' . $e->getMessage());
+            Log::error('Model not found in PayEmployeeStage: '.$e->getMessage());
+
             return back()->with('error', __('One of the required records was not found.'));
 
         } catch (\Exception $e) {
-            Log::error('Stage payment error: ' . $e->getMessage(), [
+            Log::error('Stage payment error: '.$e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
-                'request' => $request->all()
+                'request' => $request->all(),
             ]);
+
             return back()->with('error', __('An error occurred while processing the stage payment: :error', [
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]));
         }
     }
@@ -242,19 +350,19 @@ class EmployeeStageController extends Controller
      */
     private function validateStagePayment($employeeStage, $paymentAccount, $stagePrice)
     {
-        if (!$employeeStage->stage) {
+        if (! $employeeStage->stage) {
             throw new \Exception(__('Stage information not found for this employee stage.'));
         }
 
-        if (!$employeeStage->employee) {
+        if (! $employeeStage->employee) {
             throw new \Exception(__('Employee information not found for this stage.'));
         }
 
-        if (!$employeeStage->employee->company) {
+        if (! $employeeStage->employee->company) {
             throw new \Exception(__('Company information not found for this employee.'));
         }
 
-        if (!$employeeStage->employee->company->wallet) {
+        if (! $employeeStage->employee->company->wallet) {
             throw new \Exception(__('Company wallet not found.'));
         }
 
@@ -264,7 +372,7 @@ class EmployeeStageController extends Controller
 
         $cost_amount = $employeeStage->stage->cost ?? 0;
 
-        if (!$cost_amount || $cost_amount <= 0) {
+        if (! $cost_amount || $cost_amount <= 0) {
             throw new \Exception(__('Invalid stage cost. Please check stage configuration.'));
         }
 
@@ -275,7 +383,7 @@ class EmployeeStageController extends Controller
         if ($stagePrice < $cost_amount) {
             throw new \Exception(__('Stage price cannot be less than cost. Cost: :cost, Price: :price', [
                 'cost' => number_format($cost_amount, 2),
-                'price' => number_format($stagePrice, 2)
+                'price' => number_format($stagePrice, 2),
             ]));
         }
     }
@@ -287,7 +395,7 @@ class EmployeeStageController extends Controller
     {
         $employee->load('stages');
 
-        $allCompleted = $employee->stages->every(fn($stage) => $stage->status === 'completed');
+        $allCompleted = $employee->stages->every(fn ($stage) => $stage->status === 'completed');
 
         if ($allCompleted && $employee->stages->count() > 0) {
 
@@ -296,20 +404,18 @@ class EmployeeStageController extends Controller
                 'papers_completed_at' => now(),
             ]);
 
-
             $moderators = User::role('moderator')
                 ->where('moderator_company_id', $employee->company_id)
                 ->where('status', 'active')
                 ->whereNotNull('email')
                 ->get();
 
-
             foreach ($moderators as $moderator) {
                 SendEmployeeCompletionEmail::dispatch($employee, $moderator);
                 Log::info("Email queued for moderator: {$moderator->email}");
             }
 
-            Log::info("All papers completed for employee", [
+            Log::info('All papers completed for employee', [
                 'employee_id' => $employee->id,
                 'employee_name' => $employee->name,
                 'total_stages' => $employee->stages->count(),
@@ -325,9 +431,8 @@ class EmployeeStageController extends Controller
     {
         $employeeStage = EmployeeStage::with([
             'stage',
-            'employee.company'
+            'employee.company',
         ])->findOrFail($employeeStageId);
-
 
         $transaction = Transaction::where('employee_stage_id', $employeeStageId)
             ->where('transactionable_type', EmployeeStage::class)
@@ -359,15 +464,15 @@ class EmployeeStageController extends Controller
             ->whereNotNull('price_amount')
             ->whereNotNull('amount_cost');
 
-        if (!empty($validated['from_date'])) {
+        if (! empty($validated['from_date'])) {
             $query->whereDate('completed_at', '>=', $validated['from_date']);
         }
 
-        if (!empty($validated['to_date'])) {
+        if (! empty($validated['to_date'])) {
             $query->whereDate('completed_at', '<=', $validated['to_date']);
         }
 
-        if (!empty($validated['company_id'])) {
+        if (! empty($validated['company_id'])) {
             $query->whereHas('employee', function ($q) use ($validated) {
                 $q->where('company_id', $validated['company_id']);
             });
