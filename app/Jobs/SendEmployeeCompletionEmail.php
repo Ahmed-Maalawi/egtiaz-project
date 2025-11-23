@@ -36,7 +36,7 @@ class SendEmployeeCompletionEmail implements ShouldQueue
     {
         try {
             Mail::to($this->moderator->email)
-                ->send(new EmployeePapersCompletedMail($this->employee, $this->moderator));
+                ->sendNow(new EmployeePapersCompletedMail($this->employee, $this->moderator));
 
             Log::info("Email sent successfully", [
                 'employee_id' => $this->employee->id,

@@ -24,15 +24,15 @@ class EmployeePapersCompletedMail extends Mailable
     public function build()
     {
         return $this->subject('All Papers Completed - ' . $this->employee->name)
-            ->markdown('emails.employee-papers-completed')
+            ->view('emails.employee-papers-completed')
             ->with([
                 'moderatorName' => $this->moderator->name,
-                'employeeName'  => $this->employee->name,
-                'companyName'   => $this->employee->company->name,
+                'employeeName' => $this->employee->name,
+                'companyName' => $this->employee->company->name,
                 'completedStages' => $this->employee->stages,
-                'totalStages'   => $this->employee->stages->count(),
-                'completedAt'   => now()->format('d M Y, h:i A'),
-                'employee'      => $this->employee,
+                'totalStages' => $this->employee->stages->count(),
+                'completedAt' => now()->format('d M Y, h:i A'),
+                'employee' => $this->employee,
             ]);
     }
 

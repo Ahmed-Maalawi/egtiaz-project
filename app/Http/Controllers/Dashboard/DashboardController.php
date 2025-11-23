@@ -38,7 +38,7 @@ class DashboardController extends Controller
 
         $data['latest_leaves'] = OfficialLeave::with(['user', 'approver'])->latest()->take(10)->get();
 
-        $data['latest_paid_stages'] = EmployeeStage::with(['employee', 'stage'])->latest()->take(10)->get();
+        $data['latest_paid_stages'] = EmployeeStage::with(['employee', 'stage'])->where('status', 'completed')->latest()->take(10)->get();
 
         $data['total_profit'] = EmployeeStage::where('status', 'completed')->get()->sum('profit');
 

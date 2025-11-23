@@ -18,8 +18,18 @@ class CheckPassportExpiry extends Command
     {
         $this->info('Checking passport expiry dates...');
 
-
         $oneMonthFromNow = Carbon::now()->addMonth();
+
+        // Debug: Show the exact date we're searching for
+        $this->info("Looking for passports expiring on: " . $oneMonthFromNow->toDateString());
+
+        // Debug: Show total employees
+        $totalEmployees = Employee::count();
+        $this->info("Total employees in database: {$totalEmployees}");
+
+        // Debug: Show employees with expired_date
+        $employeesWithDates = Employee::whereNotNull('expired_date')->count();
+        $this->info("Employees with expired_date set: {$employeesWithDates}");
 
         $expiringEmployees = Employee::whereDate('expired_date', '=', $oneMonthFromNow->toDateString())
             ->with(['company', 'company.moderators' => function($query) {
@@ -28,6 +38,17 @@ class CheckPassportExpiry extends Command
             ->get();
 
         $this->info("Found {$expiringEmployees->count()} employees with passports expiring in 1 month.");
+
+        // Debug: Show some sample expiry dates
+        $sampleDates = Employee::whereNotNull('expired_date')
+            ->orderBy('expired_date')
+            ->limit(5)
+            ->pluck('expired_date', 'name');
+
+        $this->info("Sample expiry dates:");
+        foreach ($sampleDates as $name => $date) {
+            $this->info("  - {$name}: {$date}");
+        }
 
         foreach ($expiringEmployees as $employee) {
             try {

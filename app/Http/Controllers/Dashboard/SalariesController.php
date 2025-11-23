@@ -204,8 +204,8 @@ class SalariesController extends Controller
                     'amount'                    => $amount,
                     'transactionable_id'        => $salary->id,
                     'transactionable_type'      => Salary::class,
-                    'from_balance_before'       => $paymentAccount->balance,
-                    'from_balance_after'        => $newPaymentAccountBalance,
+                    'from_balance_before'       => number_format($paymentAccount->balance, 2),
+                    'from_balance_after'        => number_format($newPaymentAccountBalance, 2),
                     'status'                    => 'completed',
                     'type'                      => 'salary_payment',
                     'description'               => $request->description ?? "Salary payment for {$salary->month} - {$salary->user->name}",
@@ -213,7 +213,7 @@ class SalariesController extends Controller
                 ]);
 
                 $paymentAccount->update([
-                    'balance' => $newPaymentAccountBalance
+                    'balance' => number_format($newPaymentAccountBalance, 2)
                 ]);
 
 
@@ -293,8 +293,8 @@ class SalariesController extends Controller
                                 'amount'                    => $amount,
                                 'transactionable_id'        => $salary->id,
                                 'transactionable_type'      => Salary::class,
-                                'from_balance_before'       => $paymentAccount->balance,
-                                'from_balance_after'        => $newPaymentAccountBalance,
+                                'from_balance_before'       => number_format($paymentAccount->balance, 2),
+                                'from_balance_after'        => number_format($newPaymentAccountBalance, 2),
                                 'status'                    => 'completed',
                                 'type'                      => 'salary_payment',
                                 'description'               => $request->description ?? "Salary payment for {$salary->month} - {$salary->user->name}",
@@ -302,7 +302,7 @@ class SalariesController extends Controller
                             ]);
 
 
-                            $paymentAccount->update(['balance' => $newPaymentAccountBalance]);
+                            $paymentAccount->update(['balance' => number_format($newPaymentAccountBalance, 2)]);
 
                             $salary->update([
                                 'status' => 'paid',
@@ -364,10 +364,9 @@ class SalariesController extends Controller
             $paidAmount = $salary->transactions->amount;
 
             $paymentAccount->update([
-               'balance' => floatval($paymentAccount->balance + $paidAmount),
+               'balance' => number_format($paymentAccount->balance + $paidAmount, 2),
             ]);
 
-            // delete the salary with transaction
             $salary->transactions()->delete();
             $salary->delete();
         });

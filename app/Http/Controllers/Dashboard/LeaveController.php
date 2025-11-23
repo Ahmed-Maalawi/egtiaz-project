@@ -9,6 +9,7 @@ use App\Models\User;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 class LeaveController extends Controller
@@ -27,7 +28,7 @@ class LeaveController extends Controller
      */
     public function create()
     {
-        $users = User::where('status', 'active')->get();
+        $users = User::where('status', 'active')->whereNot('id', Auth::user()->id)->withoutRole('super-admin')->get();
         $leaveTypes = ['annual', 'sick', 'maternity', 'paternity', 'unpaid', 'other'];
         return view('admin.hr.leaves.create', ['users' => $users, 'leaveTypes' => $leaveTypes]);
     }

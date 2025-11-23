@@ -34,7 +34,7 @@ class EndOfServiceController extends Controller
 
         $paymentAccounts = $user->paymentAccounts;
 
-        $users = User::whereDoesntHave('eos')->get();
+        $users = User::whereDoesntHave('eos')->whereNot('id', Auth::user()->id)->withoutRole('super-admin')->get();
         return view('admin.eos.create', compact('users', 'paymentAccounts'));
     }
 

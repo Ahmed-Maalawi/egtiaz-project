@@ -70,7 +70,26 @@ class WalletTransaction extends Model
             $query->whereDate('created_at', '<=', $filters['to_date']);
         }
 
+        if (!empty($filters['method_type'])) {
+            if ($filters['method_type'] === 'credit') {
+                $query->whereNull('employee_stage_id');
+            } elseif ($filters['method_type'] === 'debit') {
+                $query->whereNotNull('employee_stage_id');
+            }
+        }
+
         return $query;
     }
 
+    /**
+     * Get the method type attribute (debit or credit).
+     * Credit: Wallet charge (employee_stage_id is null)
+     * Debit: Payment for employee stage (employee_stage_id has value)
+     */
+    public function getMethodTypeAttribute()
+    {
+        return $this->employee_stage_id ? 'debit' : 'credit';
+    }
+
 }
+

@@ -28,7 +28,7 @@ class ReportController extends Controller
         $query = EndOfService::with(['user.leaves']);
 
         if ($request->has('user_id') && $request->user_id) {
-            $query->whereHas('user', function($q) use ($request) {
+            $query->whereHas('user', function ($q) use ($request) {
                 $q->where('id', $request->user_id);
             });
         }
@@ -176,18 +176,51 @@ class ReportController extends Controller
     {
         $perPage = $request->per_page ?? 10;
 
-        $transactions = Transaction::with([
+        $query = Transaction::with([
             'fromPaymentAccount',
             'toWallet',
             'paymentAccount',
             'user',
             'createdBy',
             'transactionable'
-        ])
-            ->when($request->status, fn($q) => $q->where('status', $request->status))
-            ->when($request->type, fn($q) => $q->where('type', $request->type))
-            ->latest()
-            ->paginate($perPage);
+        ]);
+
+        // Filters
+        if ($request->filled('transaction_id')) {
+            $query->where('transaction_id', 'like', '%' . $request->transaction_id . '%');
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('type')) {
+            $query->where('type', $request->type);
+        }
+
+        if ($request->filled('payment_account_id')) {
+            $query->where('payment_account_id', $request->payment_account_id);
+        }
+
+        if ($request->filled('amount_min')) {
+            $query->where('amount', '>=', $request->amount_min);
+        }
+
+        if ($request->filled('amount_max')) {
+            $query->where('amount', '<=', $request->amount_max);
+        }
+
+        if ($request->filled('date_range')) {
+            $dates = explode(' to ', $request->date_range);
+            if (count($dates) == 2) {
+                $query->whereBetween('created_at', [
+                    Carbon::parse($dates[0])->startOfDay(),
+                    Carbon::parse($dates[1])->endOfDay()
+                ]);
+            }
+        }
+
+        $transactions = $query->latest()->paginate($perPage);
 
         return view('admin.reports.transactions-report', [
             'transactions' => $transactions,
@@ -229,10 +262,10 @@ class ReportController extends Controller
     public function getProfitReport(Request $request)
     {
         $filters = $request->validate([
-            'employee_id'    => 'nullable|integer|exists:employees,id',
-            'company_id'     => 'nullable|integer|exists:companies,id',
-            'from_date'      => 'nullable|date|date_format:Y-m-d',
-            'to_date'        => 'nullable|date|date_format:Y-m-d|after_or_equal:from_date'
+            'employee_id' => 'nullable|integer|exists:employees,id',
+            'company_id' => 'nullable|integer|exists:companies,id',
+            'from_date' => 'nullable|date|date_format:Y-m-d',
+            'to_date' => 'nullable|date|date_format:Y-m-d|after_or_equal:from_date'
         ]);
 
         $employeeStages = EmployeeStage::with(['stage', 'employee'])
@@ -253,16 +286,36 @@ class ReportController extends Controller
     {
         $filters = $request->only(['user_id', 'status', 'from_date', 'to_date']);
 
-        $transactions = WalletTransaction::with('user')
+        $baseQuery = WalletTransaction::with('user', 'wallet.company', 'employeeStage.employee', 'employeeStage.stage')
             ->filter($filters)
-            ->latest()
+            ->latest();
+
+        // Get all transactions
+        $transactions = (clone $baseQuery)->get();
+
+        // Debit transactions: where type = 'stage_payment'
+        $debitTransactions = (clone $baseQuery)
+            ->where('type', 'stage_payment')
+            ->get();
+
+        // Credit transactions: where type is null (wallet charges)
+        $creditTransactions = (clone $baseQuery)
+            ->whereNull('type')
             ->get();
 
         $users = User::all();
         $totalAmount = $transactions->sum('amount');
+        $totalCredit = $creditTransactions->sum('amount');
+        $totalDebit = $debitTransactions->sum('amount');
 
-        $users = User::all();
-
-        return view('admin.reports.wallets-transactions-report', compact('transactions', 'users', 'totalAmount'));
+        return view('admin.reports.wallets-transactions-report', compact(
+            'transactions',
+            'debitTransactions',
+            'creditTransactions',
+            'users',
+            'totalAmount',
+            'totalCredit',
+            'totalDebit'
+        ));
     }
 }

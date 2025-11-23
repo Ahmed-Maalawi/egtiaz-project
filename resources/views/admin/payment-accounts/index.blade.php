@@ -33,7 +33,7 @@
                                 </td>
                                 <td>{{ $payment_account->description }} <br>
                                     {{ $payment_account->getTranslation('description', $rev_locale) }}</td>
-                                <td>{{ $payment_account->balance }}</td>
+                                <td>{{ number_format($payment_account->balance, 2) }}</td>
                                 <td class="d-flex justify-content-center">
 
                                     @can('chargePaymentAccounts')
