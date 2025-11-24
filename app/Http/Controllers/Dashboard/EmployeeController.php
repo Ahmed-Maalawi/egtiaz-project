@@ -394,7 +394,7 @@ class EmployeeController extends Controller
                 'files',
                 'employeeStages.stage',
                 'employeeStages.files',
-                'employeeStages',
+                'employeeStages.doneBy',
                 'employeeStages.transactions',
                 'employeeStages.walletTransaction',
             ])->findOrFail($id);

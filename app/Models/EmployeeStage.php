@@ -108,7 +108,7 @@ class EmployeeStage extends Model
         //            return 0;
         //        }
 
-        return (float) $this->amont_paid - (float) $this->amount_cost;
+        return (float) $this->price_amount - (float) $this->amount_cost;
     }
 
     /**

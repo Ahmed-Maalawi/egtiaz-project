@@ -2,18 +2,22 @@
     .file-card {
         transition: transform 0.2s;
     }
+
     .file-card:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
+
     .nav-tabs .nav-link {
         color: #6c757d;
         font-weight: 500;
     }
+
     .nav-tabs .nav-link.active {
         color: #495057;
         font-weight: 600;
     }
+
     .table td {
         vertical-align: middle;
     }
@@ -41,7 +45,8 @@
                     <!-- Tabs Navigation -->
                     <ul class="nav nav-tabs" id="employeeTabs" role="tablist">
                         <li class="nav-item">
-                            <a class="nav-link active" id="personal-tab" data-toggle="tab" href="#personal" role="tab">
+                            <a class="nav-link active" id="personal-tab" data-toggle="tab" href="#personal"
+                                role="tab">
                                 <i class="fas fa-user"></i> {{ __('Personal Information') }}
                             </a>
                         </li>
@@ -103,7 +108,8 @@
                                     <div class="table-responsive">
                                         <table class="table table-bordered table-striped">
                                             <tr>
-                                                <td width="40%" class="font-weight-bold">{{ __('Passport Number') }}</td>
+                                                <td width="40%" class="font-weight-bold">{{ __('Passport Number') }}
+                                                </td>
                                                 <td>{{ $employee->passport_number ?? __('N/A') }}</td>
                                             </tr>
                                             <tr>
@@ -112,11 +118,14 @@
                                                     @if ($employee->expired_date)
                                                         {{ \Carbon\Carbon::parse($employee->expired_date)->format('d M, Y') }}
                                                         @if ($employee->expired_date->isPast())
-                                                            <span class="badge badge-danger ml-2">{{ __('Expired') }}</span>
+                                                            <span
+                                                                class="badge badge-danger ml-2">{{ __('Expired') }}</span>
                                                         @elseif ($employee->expired_date->diffInDays(now()) <= 30)
-                                                            <span class="badge badge-warning ml-2">{{ __('Expiring Soon') }}</span>
+                                                            <span
+                                                                class="badge badge-warning ml-2">{{ __('Expiring Soon') }}</span>
                                                         @else
-                                                            <span class="badge badge-success ml-2">{{ __('Valid') }}</span>
+                                                            <span
+                                                                class="badge badge-success ml-2">{{ __('Valid') }}</span>
                                                         @endif
                                                     @else
                                                         {{ __('N/A') }}
@@ -125,16 +134,18 @@
                                             </tr>
                                             <tr>
                                                 <td class="font-weight-bold">{{ __('Joined Date') }}</td>
-                                                <td>{{ \Carbon\Carbon::parse($employee->created_at)->format('d M, Y h:i A') }}</td>
+                                                <td>{{ \Carbon\Carbon::parse($employee->created_at)->format('d M, Y h:i A') }}
+                                                </td>
                                             </tr>
                                             <tr>
                                                 <td class="font-weight-bold">{{ __('Last Updated') }}</td>
-                                                <td>{{ \Carbon\Carbon::parse($employee->updated_at)->format('d M, Y h:i A') }}</td>
+                                                <td>{{ \Carbon\Carbon::parse($employee->updated_at)->format('d M, Y h:i A') }}
+                                                </td>
                                             </tr>
                                             <tr>
                                                 <td class="font-weight-bold">{{ __('Status') }}</td>
                                                 <td>
-                                                    @if($employee->status == 'active')
+                                                    @if ($employee->status == 'active')
                                                         <span class="badge badge-success">{{ __('Active') }}</span>
                                                     @else
                                                         <span class="badge badge-danger">{{ __('Inactive') }}</span>
@@ -157,9 +168,9 @@
                                                 <td width="40%" class="font-weight-bold">{{ __('Company') }}</td>
                                                 <td>
                                                     {{ $employee->company->name ?? __('N/A') }}
-                                                    @if($employee->company)
+                                                    @if ($employee->company)
                                                         <a href="{{ route('admins.companies.show', $employee->company->id) }}"
-                                                           class="btn btn-sm btn-outline-primary ml-2">
+                                                            class="btn btn-sm btn-outline-primary ml-2">
                                                             <i class="fas fa-external-link-alt"></i>
                                                         </a>
                                                     @endif
@@ -169,21 +180,21 @@
                                                 <td class="font-weight-bold">{{ __('Iqama Type') }}</td>
                                                 <td>{{ $employee->iqamaType->name ?? __('N/A') }}</td>
                                             </tr>
-{{--                                            <tr>--}}
-{{--                                                <td class="font-weight-bold">{{ __('Salary') }}</td>--}}
-{{--                                                <td>--}}
-{{--                                                    @if($employee->salary)--}}
-{{--                                                        {{ number_format($employee->salary, 2) }} {{ __('SAR') }}--}}
-{{--                                                        @if($employee->current_month_salary)--}}
-{{--                                                            <span class="badge badge-success ml-2">{{ __('Paid this month') }}</span>--}}
-{{--                                                        @else--}}
-{{--                                                            <span class="badge badge-warning ml-2">{{ __('Pending payment') }}</span>--}}
-{{--                                                        @endif--}}
-{{--                                                    @else--}}
-{{--                                                        {{ __('N/A') }}--}}
-{{--                                                    @endif--}}
-{{--                                                </td>--}}
-{{--                                            </tr>--}}
+                                            {{--                                            <tr> --}}
+                                            {{--                                                <td class="font-weight-bold">{{ __('Salary') }}</td> --}}
+                                            {{--                                                <td> --}}
+                                            {{--                                                    @if ($employee->salary) --}}
+                                            {{--                                                        {{ number_format($employee->salary, 2) }} {{ __('SAR') }} --}}
+                                            {{--                                                        @if ($employee->current_month_salary) --}}
+                                            {{--                                                            <span class="badge badge-success ml-2">{{ __('Paid this month') }}</span> --}}
+                                            {{--                                                        @else --}}
+                                            {{--                                                            <span class="badge badge-warning ml-2">{{ __('Pending payment') }}</span> --}}
+                                            {{--                                                        @endif --}}
+                                            {{--                                                    @else --}}
+                                            {{--                                                        {{ __('N/A') }} --}}
+                                            {{--                                                    @endif --}}
+                                            {{--                                                </td> --}}
+                                            {{--                                            </tr> --}}
                                         </table>
                                     </div>
                                 </div>
@@ -191,10 +202,12 @@
                                     <div class="table-responsive">
                                         <table class="table table-bordered table-striped">
                                             <tr>
-                                                <td width="40%" class="font-weight-bold">{{ __('Total Files') }}</td>
+                                                <td width="40%" class="font-weight-bold">{{ __('Total Files') }}
+                                                </td>
                                                 <td>
-                                                    <span class="badge badge-info">{{ $employee->files->count() }}</span>
-                                                    @if($employee->files->count() > 0)
+                                                    <span
+                                                        class="badge badge-info">{{ $employee->files->count() }}</span>
+                                                    @if ($employee->files->count() > 0)
                                                         <small class="text-muted ml-2">
                                                             ({{ $employee->getTotalFilesSize() }})
                                                         </small>
@@ -204,22 +217,28 @@
                                             <tr>
                                                 <td class="font-weight-bold">{{ __('Total Stages') }}</td>
                                                 <td>
-                                                    <span class="badge badge-primary">{{ $employee->employeeStages->count() }}</span>
+                                                    <span
+                                                        class="badge badge-primary">{{ $employee->employeeStages->count() }}</span>
                                                     <small class="text-muted ml-2">
-                                                        {{ $employee->completedStages()->count() }} {{ __('completed') }}
+                                                        {{ $employee->completedStages()->count() }}
+                                                        {{ __('completed') }}
                                                     </small>
                                                 </td>
                                             </tr>
                                             <tr>
                                                 <td class="font-weight-bold">{{ __('Current Stage') }}</td>
                                                 <td>
-                                                    @if($employee->upcomingStage)
-                                                        <span class="font-weight-bold">{{ $employee->upcomingStage->stage->name ?? __('N/A') }}</span>
-                                                        <span class="badge badge-warning ml-2">{{ __('Pending') }}</span>
+                                                    @if ($employee->upcomingStage)
+                                                        <span
+                                                            class="font-weight-bold">{{ $employee->upcomingStage->stage->name ?? __('N/A') }}</span>
+                                                        <span
+                                                            class="badge badge-warning ml-2">{{ __('Pending') }}</span>
                                                     @elseif($employee->checkAllPapersCompleted())
-                                                        <span class="badge badge-success">{{ __('All Stages Completed') }}</span>
+                                                        <span
+                                                            class="badge badge-success">{{ __('All Stages Completed') }}</span>
                                                     @else
-                                                        <span class="badge badge-secondary">{{ __('No Active Stage') }}</span>
+                                                        <span
+                                                            class="badge badge-secondary">{{ __('No Active Stage') }}</span>
                                                     @endif
                                                 </td>
                                             </tr>
@@ -237,13 +256,13 @@
                                     <div class="text-center">
                                         @if ($employee->image)
                                             <img src="{{ asset('storage/' . $employee->image) }}"
-                                                 class="img-fluid rounded shadow"
-                                                 style="max-height: 300px; max-width: 100%;">
+                                                class="img-fluid rounded shadow"
+                                                style="max-height: 300px; max-width: 100%;">
                                             <div class="mt-2">
-                                                <a href="{{ asset('storage/' . $employee->image) }}"
-                                                   target="_blank"
-                                                   class="btn btn-sm btn-outline-primary">
-                                                    <i class="fas fa-external-link-alt"></i> {{ __('View Full Size') }}
+                                                <a href="{{ asset('storage/' . $employee->image) }}" target="_blank"
+                                                    class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-external-link-alt"></i>
+                                                    {{ __('View Full Size') }}
                                                 </a>
                                             </div>
                                         @else
@@ -259,13 +278,13 @@
                                     <div class="text-center">
                                         @if ($employee->passport_image)
                                             <img src="{{ asset('storage/' . $employee->passport_image) }}"
-                                                 class="img-fluid rounded shadow"
-                                                 style="max-height: 300px; max-width: 100%;">
+                                                class="img-fluid rounded shadow"
+                                                style="max-height: 300px; max-width: 100%;">
                                             <div class="mt-2">
                                                 <a href="{{ asset('storage/' . $employee->passport_image) }}"
-                                                   target="_blank"
-                                                   class="btn btn-sm btn-outline-primary">
-                                                    <i class="fas fa-external-link-alt"></i> {{ __('View Full Size') }}
+                                                    target="_blank" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-external-link-alt"></i>
+                                                    {{ __('View Full Size') }}
                                                 </a>
                                             </div>
                                         @else
@@ -278,20 +297,20 @@
                                 </div>
                             </div>
 
-                            @if($employee->files->count() > 0)
+                            @if ($employee->files->count() > 0)
                                 <div class="mt-5">
                                     <h6 class="font-weight-bold mb-3">{{ __('Additional Files') }}</h6>
                                     <div class="row">
-                                        @foreach($employee->files as $file)
+                                        @foreach ($employee->files as $file)
                                             <div class="col-md-4 mb-3">
                                                 <div class="card file-card">
                                                     <div class="card-body text-center">
                                                         <i class="fas fa-file fa-2x text-primary mb-2"></i>
                                                         <h6 class="card-title">{{ basename($file->path) }}</h6>
-                                                        <p class="text-muted small">{{ $file->getFormattedSize() }}</p>
-                                                        <a href="{{ $file->file_url }}"
-                                                           target="_blank"
-                                                           class="btn btn-sm btn-outline-primary">
+                                                        <p class="text-muted small">{{ $file->getFormattedSize() }}
+                                                        </p>
+                                                        <a href="{{ $file->file_url }}" target="_blank"
+                                                            class="btn btn-sm btn-outline-primary">
                                                             <i class="fas fa-download"></i> {{ __('Download') }}
                                                         </a>
                                                     </div>
@@ -305,73 +324,77 @@
 
                         <!-- Stages Tab -->
                         <div class="tab-pane fade" id="stages" role="tabpanel">
-                            @if($employee->employeeStages->count() > 0)
+                            @if ($employee->employeeStages->count() > 0)
                                 <div class="table-responsive">
                                     <table class="table table-bordered table-striped">
                                         <thead class="thead-dark">
-                                        <tr>
-                                            <th>{{ __('Stage Name') }}</th>
-                                            <th>{{ __('Status') }}</th>
-{{--                                            <th>{{ __('Payment Status') }}</th>--}}
-                                            <th>{{ __('Amount Paid') }}</th>
-                                            <th>{{ __('Cost') }}</th>
-                                            <th>{{ __('Profit') }}</th>
-                                            <th>{{ __('Completed At') }}</th>
-                                            <th>{{ __('Actions') }}</th>
-                                        </tr>
+                                            <tr>
+                                                <th>{{ __('Stage Name') }}</th>
+                                                <th>{{ __('Status') }}</th>
+                                                {{--                                            <th>{{ __('Payment Status') }}</th> --}}
+                                                <th>{{ __('Amount Paid') }}</th>
+                                                <th>{{ __('Cost') }}</th>
+                                                <th>{{ __('Profit') }}</th>
+                                                <th>{{ __('Completed At') }}</th>
+                                                <th>{{ __('Actions') }}</th>
+                                            </tr>
                                         </thead>
                                         <tbody>
-                                        @foreach($employee->employeeStages->sortBy('stage.order') as $employeeStage)
-                                            <tr>
-                                                <td class="font-weight-bold">{{ $employeeStage->stage->name ?? __('N/A') }}</td>
-                                                <td>
-                                                    @if($employeeStage->status == 'completed')
-                                                        <span class="badge badge-success">{{ __('Completed') }}</span>
-                                                    @else
-                                                        <span class="badge badge-warning">{{ __('Pending') }}</span>
-                                                    @endif
-                                                </td>
-                                                <td>
-                                                    @if($employeeStage->amount_paid)
-                                                        {{ number_format($employeeStage->amount_paid, 2) . ' ' . __('SAR')}}
-                                                    @else
-                                                        {{ __('N/A') }}
-                                                    @endif
-                                                </td>
-                                                <td>
-                                                    @if($employeeStage->amount_cost)
-                                                        {{ number_format($employeeStage->amount_cost, 2) }} SAR
-                                                    @else
-                                                        {{ __('N/A') }}
-                                                    @endif
-                                                </td>
-                                                <td>
-                                                    @if($employeeStage->amount_paid && $employeeStage->amount_cost)
-                                                        <span class="{{ $employeeStage->profit >= 0 ? 'text-success' : 'text-danger' }}">
+                                            @foreach ($employee->employeeStages->sortBy('stage.order') as $employeeStage)
+                                                <tr>
+                                                    <td class="font-weight-bold">
+                                                        {{ $employeeStage->stage->name ?? __('N/A') }}</td>
+                                                    <td>
+                                                        @if ($employeeStage->status == 'completed')
+                                                            <span
+                                                                class="badge badge-success">{{ __('Completed') }}</span>
+                                                        @else
+                                                            <span
+                                                                class="badge badge-warning">{{ __('Pending') }}</span>
+                                                        @endif
+                                                    </td>
+                                                    <td>
+                                                        @if ($employeeStage->price_amount)
+                                                            {{ number_format($employeeStage->price_amount, 2) . ' ' . __('SAR') }}
+                                                        @else
+                                                            {{ __('N/A') }}
+                                                        @endif
+                                                    </td>
+                                                    <td>
+                                                        @if ($employeeStage->amount_cost)
+                                                            {{ number_format($employeeStage->amount_cost, 2) }} SAR
+                                                        @else
+                                                            {{ __('N/A') }}
+                                                        @endif
+                                                    </td>
+                                                    <td>
+                                                        @if ($employeeStage->price_amount && $employeeStage->amount_cost)
+                                                            <span
+                                                                class="{{ $employeeStage->profit >= 0 ? 'text-success' : 'text-danger' }}">
                                                                 {{ number_format($employeeStage->profit, 2) }} SAR
                                                             </span>
-                                                    @else
-                                                        {{ __('N/A') }}
-                                                    @endif
-                                                </td>
-                                                <td>
-                                                    @if($employeeStage->completed_at)
-                                                        {{ \Carbon\Carbon::parse($employeeStage->completed_at)->format('d M, Y') }}
-                                                    @else
-                                                        {{ __('N/A') }}
-                                                    @endif
-                                                </td>
-                                                <td>
-                                                    @if($employeeStage->files->count() > 0)
-                                                        <button class="btn btn-sm btn-info"
-                                                                data-toggle="tooltip"
+                                                        @else
+                                                            {{ __('N/A') }}
+                                                        @endif
+                                                    </td>
+                                                    <td>
+                                                        @if ($employeeStage->completed_at)
+                                                            {{ \Carbon\Carbon::parse($employeeStage->completed_at)->format('d M, Y') }}
+                                                        @else
+                                                            {{ __('N/A') }}
+                                                        @endif
+                                                    </td>
+                                                    <td>
+                                                        @if ($employeeStage->files->count() > 0)
+                                                            <button class="btn btn-sm btn-info" data-toggle="tooltip"
                                                                 title="{{ __('View Files') }}">
-                                                            <i class="fas fa-file"></i> ({{ $employeeStage->files->count() }})
-                                                        </button>
-                                                    @endif
-                                                </td>
-                                            </tr>
-                                        @endforeach
+                                                                <i class="fas fa-file"></i>
+                                                                ({{ $employeeStage->files->count() }})
+                                                            </button>
+                                                        @endif
+                                                    </td>
+                                                </tr>
+                                            @endforeach
                                         </tbody>
                                     </table>
                                 </div>
@@ -407,8 +430,9 @@
                                                 </tr>
                                                 <tr>
                                                     <td class="font-weight-bold">{{ __('Total Profit') }}</td>
-                                                    <td class="{{ $employee->total_profit >= 0 ? 'text-success' : 'text-danger' }} font-weight-bold">
-                                                        {{ number_format($employee->total_profit, 2) . __('SAR')}}
+                                                    <td
+                                                        class="{{ $employee->total_profit >= 0 ? 'text-success' : 'text-danger' }} font-weight-bold">
+                                                        {{ number_format($employee->total_profit, 2) . __('SAR') }}
                                                     </td>
                                                 </tr>
                                             </table>
@@ -426,13 +450,16 @@
                                 <i class="fas fa-edit"></i> {{ __('Edit Employee') }}
                             </a>
 
-                            @if($employee->files->count() > 0)
-                                <a href="{{ route('admins.employees.files', $employee->id) }}" class="btn btn-info ml-2">
-                                    <i class="fas fa-folder-open"></i> {{ __('View Files') }} ({{ $employee->files->count() }})
+                            @if ($employee->files->count() > 0)
+                                <a href="{{ route('admins.employees.files', $employee->id) }}"
+                                    class="btn btn-info ml-2">
+                                    <i class="fas fa-folder-open"></i> {{ __('View Files') }}
+                                    ({{ $employee->files->count() }})
                                 </a>
                             @endif
 
-                            <a type="button" class="btn btn-success ml-2" href="{{ route('admins.employees.download-pdf', $employee->id) }}">
+                            <a type="button" class="btn btn-success ml-2"
+                                href="{{ route('admins.employees.download-pdf', $employee->id) }}">
                                 <i class="fas fa-print"></i> {{ __('Print') }}
                             </a>
                         </div>
@@ -445,12 +472,12 @@
 
 <script>
     // Initialize tooltips
-    $(function () {
+    $(function() {
         $('[data-toggle="tooltip"]').tooltip()
     })
 
     // Tab persistence
-    $('#employeeTabs a').on('click', function (e) {
+    $('#employeeTabs a').on('click', function(e) {
         e.preventDefault()
         $(this).tab('show')
     })
