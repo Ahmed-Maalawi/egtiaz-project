@@ -277,7 +277,7 @@ class EmployeeStageController extends Controller
                     'amount' => $stage_price,
                     'currency' => 'SAR',
                     'status' => 'completed',
-                    'type' => 'stage_payment', // Add type to differentiate
+                    'type' => 'stage_payment',
                     'description' => "Service charge for {$employeeStage->stage->name} - Employee: {$employeeStage->employee->name}",
                     'payment_link' => null,
                     'qr_code' => null,
