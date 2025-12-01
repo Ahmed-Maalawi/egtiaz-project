@@ -11,6 +11,7 @@ use App\Models\PaymentAccount;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Models\WalletTransaction;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -87,56 +88,80 @@ class EmployeeStageController extends Controller
                 'stage',
                 'employee.company.wallet',
                 'walletTransaction.wallet',
-                'transactions.paymentAccount',
+                'transactions.paymentAccount', // Changed from 'transactions.paymentAccount'
             ]);
 
             // Validate that the stage is completed
             if ($employeeStage->status !== 'completed') {
-                throw new \Exception(__('Cannot delete payment for a stage that is not completed.'));
+                throw new Exception(__('Cannot delete payment for a stage that is not completed.'));
             }
 
-            // dd($employeeStage->transactions->paymentAccount);
-
             // Validate that we have transaction IDs
-            if (! $employeeStage->transaction_id || ! $employeeStage->wallet_transaction_id) {
-                throw new \Exception(__('Transaction information not found for this employee stage.'));
+            if (!$employeeStage->transaction_id || !$employeeStage->wallet_transaction_id) {
+                throw new Exception(__('Transaction information not found for this employee stage.'));
             }
 
             // Get the transactions using relationships
-            $transaction = $employeeStage->transactions;
+            $transaction = $employeeStage->transactions; // Singular, not plural
             $walletTransaction = $employeeStage->walletTransaction;
 
-            if (! $walletTransaction) {
-                throw new \Exception(__('Wallet transaction not found.'));
+            if (!$transaction) {
+                throw new Exception(__('Payment transaction not found.'));
+            }
+
+            if (!$walletTransaction) {
+                throw new Exception(__('Wallet transaction not found.'));
             }
 
             // Get payment account and wallet
-            $paymentAccount = $transaction->paymentAccount;  // PaymentAccount::findOrFail($transaction->payment_account_id);
-            $wallet = $employeeStage->employee->company->wallet;
+            $paymentAccount = $transaction->paymentAccount;
 
-            if (! $wallet) {
-                throw new \Exception(__('Company wallet not found.'));
+            // Check if payment account exists
+            if (!$paymentAccount) {
+                throw new Exception(__('Payment account not found.'));
             }
 
-            $cost_amount = $employeeStage->amount_cost;
-            $stage_price = $employeeStage->price_amount;
+            $wallet = $employeeStage->employee->company->wallet;
 
-            DB::transaction(function () use (
-                $employeeStage,
-                $transaction,
-                $walletTransaction,
-                $paymentAccount,
-                $wallet,
-                $cost_amount,
-                $stage_price
-            ) {
+            if (!$wallet) {
+                throw new Exception(__('Company wallet not found.'));
+            }
+
+            // Ensure amounts are numeric
+            $cost_amount = (float) $employeeStage->amount_cost;
+            $stage_price = (float) $employeeStage->price_amount;
+
+            // Validate amounts are positive
+            if ($cost_amount <= 0 || $stage_price <= 0) {
+                throw new Exception(__('Invalid amount values.'));
+            }
+
+            DB::beginTransaction(); // Explicitly start transaction
+
+            try {
                 // Return the cost amount to the payment account
                 $newPaymentAccountBalance = $paymentAccount->balance + $cost_amount;
                 $paymentAccount->update(['balance' => $newPaymentAccountBalance]);
 
+                // Log payment account balance update
+                Log::info('Payment account balance updated', [
+                    'payment_account_id' => $paymentAccount->id,
+                    'old_balance' => $paymentAccount->balance - $cost_amount,
+                    'new_balance' => $newPaymentAccountBalance,
+                    'amount_added' => $cost_amount,
+                ]);
+
                 // Return the stage price to the wallet
                 $newWalletBalance = $wallet->balance + $stage_price;
                 $wallet->update(['balance' => $newWalletBalance]);
+
+                // Log wallet balance update
+                Log::info('Wallet balance updated', [
+                    'wallet_id' => $wallet->id,
+                    'old_balance' => $wallet->balance - $stage_price,
+                    'new_balance' => $newWalletBalance,
+                    'amount_added' => $stage_price,
+                ]);
 
                 // Delete the transactions
                 $transaction->delete();
@@ -171,22 +196,28 @@ class EmployeeStageController extends Controller
                     'wallet_id' => $wallet->id,
                     'deleted_by' => Auth::id(),
                 ]);
-            });
 
-            return redirect()
-                ->back()
-                ->with('success', __('Stage payment deleted successfully. Funds returned: Cost :cost to payment account, Price :price to wallet.', [
-                    'cost' => number_format($cost_amount, 2),
-                    'price' => number_format($stage_price, 2),
-                ]));
+                DB::commit(); // Commit transaction
+
+                return redirect()
+                    ->back()
+                    ->with('success', __('Stage payment deleted successfully. Funds returned: Cost :cost to payment account, Price :price to wallet.', [
+                        'cost' => number_format($cost_amount, 2),
+                        'price' => number_format($stage_price, 2),
+                    ]));
+
+            } catch (\Exception $e) {
+                DB::rollBack(); // Rollback on inner exception
+                throw $e; // Re-throw to be caught by outer catch
+            }
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            Log::error('Model not found in destroy employee stage payment: '.$e->getMessage());
+            Log::error('Model not found in destroy employee stage payment: ' . $e->getMessage());
 
             return back()->with('error', __('One of the required records was not found.'));
 
         } catch (\Exception $e) {
-            Log::error('Delete stage payment error: '.$e->getMessage(), [
+            Log::error('Delete stage payment error: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
                 'employee_stage_id' => $employeeStage->id ?? null,
             ]);
@@ -333,7 +364,7 @@ class EmployeeStageController extends Controller
 
             return back()->with('error', __('One of the required records was not found.'));
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Stage payment error: '.$e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
                 'request' => $request->all(),
@@ -351,37 +382,37 @@ class EmployeeStageController extends Controller
     private function validateStagePayment($employeeStage, $paymentAccount, $stagePrice)
     {
         if (! $employeeStage->stage) {
-            throw new \Exception(__('Stage information not found for this employee stage.'));
+            throw new Exception(__('Stage information not found for this employee stage.'));
         }
 
         if (! $employeeStage->employee) {
-            throw new \Exception(__('Employee information not found for this stage.'));
+            throw new Exception(__('Employee information not found for this stage.'));
         }
 
         if (! $employeeStage->employee->company) {
-            throw new \Exception(__('Company information not found for this employee.'));
+            throw new Exception(__('Company information not found for this employee.'));
         }
 
         if (! $employeeStage->employee->company->wallet) {
-            throw new \Exception(__('Company wallet not found.'));
+            throw new Exception(__('Company wallet not found.'));
         }
 
         if ($employeeStage->status == 'completed') {
-            throw new \Exception(__('Stage already completed.'));
+            throw new Exception(__('Stage already completed.'));
         }
 
         $cost_amount = $employeeStage->stage->cost ?? 0;
 
         if (! $cost_amount || $cost_amount <= 0) {
-            throw new \Exception(__('Invalid stage cost. Please check stage configuration.'));
+            throw new Exception(__('Invalid stage cost. Please check stage configuration.'));
         }
 
         if ($stagePrice <= 0) {
-            throw new \Exception(__('Invalid stage price. Price must be greater than zero.'));
+            throw new Exception(__('Invalid stage price. Price must be greater than zero.'));
         }
 
         if ($stagePrice < $cost_amount) {
-            throw new \Exception(__('Stage price cannot be less than cost. Cost: :cost, Price: :price', [
+            throw new Exception(__('Stage price cannot be less than cost. Cost: :cost, Price: :price', [
                 'cost' => number_format($cost_amount, 2),
                 'price' => number_format($stagePrice, 2),
             ]));

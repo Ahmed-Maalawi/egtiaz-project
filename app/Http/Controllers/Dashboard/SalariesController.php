@@ -204,8 +204,8 @@ class SalariesController extends Controller
                     'amount'                    => $amount,
                     'transactionable_id'        => $salary->id,
                     'transactionable_type'      => Salary::class,
-                    'from_balance_before'       => number_format($paymentAccount->balance, 2),
-                    'from_balance_after'        => number_format($newPaymentAccountBalance, 2),
+                    'from_balance_before'       => floatval($paymentAccount->balance),
+                    'from_balance_after'        => floatval($newPaymentAccountBalance),
                     'status'                    => 'completed',
                     'type'                      => 'salary_payment',
                     'description'               => $request->description ?? "Salary payment for {$salary->month} - {$salary->user->name}",
@@ -213,7 +213,7 @@ class SalariesController extends Controller
                 ]);
 
                 $paymentAccount->update([
-                    'balance' => number_format($newPaymentAccountBalance, 2)
+                    'balance' => floatval($newPaymentAccountBalance)
                 ]);
 
 
@@ -257,7 +257,7 @@ class SalariesController extends Controller
             }
 
             if ($paymentAccount->balance < $totalAmount) {
-                return back()->with('error', __('Insufficient balance in the payment account. Required: $' . number_format($totalAmount, 2) . ', Available: $' . number_format($paymentAccount->balance, 2)));
+                return back()->with('error', __('Insufficient balance in the payment account. Required: $' . floatval($totalAmount) . ', Available: $' . floatval($paymentAccount->balance)));
             }
 
 
@@ -293,8 +293,8 @@ class SalariesController extends Controller
                                 'amount'                    => $amount,
                                 'transactionable_id'        => $salary->id,
                                 'transactionable_type'      => Salary::class,
-                                'from_balance_before'       => number_format($paymentAccount->balance, 2),
-                                'from_balance_after'        => number_format($newPaymentAccountBalance, 2),
+                                'from_balance_before'       => floatval($paymentAccount->balance),
+                                'from_balance_after'        => floatval($newPaymentAccountBalance),
                                 'status'                    => 'completed',
                                 'type'                      => 'salary_payment',
                                 'description'               => $request->description ?? "Salary payment for {$salary->month} - {$salary->user->name}",
@@ -302,7 +302,7 @@ class SalariesController extends Controller
                             ]);
 
 
-                            $paymentAccount->update(['balance' => number_format($newPaymentAccountBalance, 2)]);
+                            $paymentAccount->update(['balance' => floatval($newPaymentAccountBalance)]);
 
                             $salary->update([
                                 'status' => 'paid',
@@ -364,7 +364,7 @@ class SalariesController extends Controller
             $paidAmount = $salary->transactions->amount;
 
             $paymentAccount->update([
-               'balance' => number_format($paymentAccount->balance + $paidAmount, 2),
+               'balance' => floatval($paymentAccount->balance + $paidAmount),
             ]);
 
             $salary->transactions()->delete();

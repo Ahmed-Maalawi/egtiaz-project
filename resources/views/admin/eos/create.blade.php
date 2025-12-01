@@ -37,7 +37,7 @@
                         <option value="">{{ __('Select Payment Account') }}</option>
                         @foreach($paymentAccounts as $account)
                             <option value="{{ $account->id }}" {{ old('payment_account_id') == $account->id ? 'selected' : '' }}>
-                                {{ $account->getTranslation('name', app()->getLocale()) . ' - ('. $account->balance . ') ' . __('SAR')}}
+                                {{ $account->getTranslation('name', app()->getLocale()) . ' - ('. number_format($account->balance, 2) . ') ' . __('SAR')}}
                             </option>
                         @endforeach
                     </select>
