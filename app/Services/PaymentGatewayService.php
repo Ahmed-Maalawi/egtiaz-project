@@ -29,7 +29,7 @@ class PaymentGatewayService
      * @param string $currency
      * @return array
      */
-    public function generatePaymentLink($amount, $userId, $customerData = [], $currency = 'SAR')
+    public function generatePaymentLink($amount, $userId, $customerData = [], $currency = 'AED')
     {
         $merchantTransactionId = $this->generateTransactionId($userId);
 

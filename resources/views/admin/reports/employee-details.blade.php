@@ -247,6 +247,8 @@
             @page {
                 margin: 15mm;
             }
+            /* Ensure table footer is visible in PDF */
+            tfoot { display: table-row-group; }
         }
     </style>
 
@@ -333,7 +335,7 @@
                                 </div>
                                 <div class="info-item">
                                     <span class="info-label">{{ __('Salary:') }}</span>
-                                    <span id="infoSalary">{{ $employee->salary . ' ' . __('SAR') }}</span>
+                                    <span id="infoSalary">{{ $employee->salary . ' ' . __('AED') }}</span>
                                 </div>
                                 <div class="info-item">
                                     <span class="info-label">{{ __('Address:') }}</span>
@@ -372,7 +374,7 @@
                                 </div>
                                 <div class="info-item">
                                     <span class="info-label">{{ __('Balance:') }}</span>
-                                    <span id="companyBalance">{{ $employee->company->wallet->balance . ' ' . __('SAR') }}</span>
+                                    <span id="companyBalance">{{ $employee->company->wallet->balance . ' ' . __('AED') }}</span>
                                 </div>
                             </div>
                         </div>

@@ -41,9 +41,9 @@ return [
     ],
 
     'afs_payment_gateway' => [
-        'url' => env('PAYMENT_GATEWAY_URL', 'https://eu-test.oppwa.com/paybylink/v1'),
-        'entity_id' => env('PAYMENT_GATEWAY_ENTITY_ID'),
-        'auth_token' => env('PAYMENT_GATEWAY_AUTH_TOKEN'),
-        'shopper_result_url' => env('PAYMENT_GATEWAY_SHOPPER_RESULT_URL'),
+        'url' => env('AFS_PAYMENT_GATEWAY_URL', 'https://eu-test.oppwa.com/paybylink/v1'),
+        'entity_id' => env('AFS_PAYMENT_GATEWAY_ENTITY_ID'),
+        'auth_token' => env('AFS_PAYMENT_GATEWAY_AUTH_TOKEN'),
+        'shopper_result_url' => env('AFS_PAYMENT_GATEWAY_SHOPPER_RESULT_URL'),
     ],
 ];

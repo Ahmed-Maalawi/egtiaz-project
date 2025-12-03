@@ -11,6 +11,8 @@ use App\Services\PaymentGatewayService;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -23,19 +25,19 @@ class WalletController extends Controller
     public function __construct(PaymentGatewayService $paymentService)
     {
         $this->paymentService = $paymentService;
-    }
 
+        // Apply rate limiting middleware
+//        $this->middleware('throttle:10,1')->only(['chargeWallet']);
+//        $this->middleware('throttle:100,1')->only(['handleWebhook']);
+    }
 
     public function index(Request $request)
     {
         $user = Auth::user();
 
         if ($user->hasRole('super-admin')) {
-
             $wallets = Wallet::all();
-
         } else {
-
             $wallets = Wallet::where('company_id', $user->moderator_company_id)->get();
         }
 
@@ -73,6 +75,10 @@ class WalletController extends Controller
             ]);
 
         } catch (Exception $e) {
+            Log::error('Wallet fetch error', [
+                'error' => $e->getMessage(),
+                'user_id' => $user->id ?? null
+            ]);
 
             return response()->json([
                 'success' => false,
@@ -86,11 +92,12 @@ class WalletController extends Controller
      */
     public function chargeWallet(Request $request)
     {
+
         $validator = Validator::make($request->all(), [
-            'amount' => 'required|numeric|min:1|max:100000',
-            'currency' => 'sometimes|string|size:3',
+            'amount' => 'required|numeric|min:1|max:1000000',
+            'currency' => 'sometimes|string|size:3|in:AED',
             'customer_name' => 'sometimes|string|max:100',
-            'customer_mobile' => 'sometimes|string|max:20',
+            'customer_mobile' => 'sometimes|string|regex:/^[0-9+\-\s()]+$/|max:20',
         ]);
 
         if ($validator->fails()) {
@@ -103,15 +110,9 @@ class WalletController extends Controller
 
         $user = auth()->user();
         $amount = $request->amount;
-        $currency = $request->currency ?? 'SAR';
+        $currency = $request->currency ?? 'AED';
 
-//        if (!$user->hasRole('moderator')) {
-//            return response()->json([
-//                'success' => false,
-//                'message' => 'Only moderators can charge company wallets',
-//            ], 403);
-//        }
-
+        // Get company
         $company = $user->companyOfModeration()->first();
         if (!$company) {
             return response()->json([
@@ -128,12 +129,12 @@ class WalletController extends Controller
             ], 404);
         }
 
-        // Prepare customer data
+        // Sanitize customer data
         $customerData = [
-            'given_name' => $request->customer_name ?? $user->name ?? '',
-            'surname' => '',
-            'email' => $user->email ?? '',
-            'mobile' => $request->customer_mobile ?? $user->phone ?? '',
+            'given_name' => strip_tags($request->customer_name ?? $user->name ?? ''),
+            'surname' => $user->name ?? '',
+            'email' => filter_var($user->email ?? '', FILTER_SANITIZE_EMAIL),
+            'mobile' => preg_replace('/[^0-9+\-\s()]/', '', $request->customer_mobile ?? $user->phone ?? ''),
         ];
 
         // Generate payment link
@@ -152,7 +153,9 @@ class WalletController extends Controller
             ], 400);
         }
 
-        // Store transaction record
+        // Store transaction record with idempotency key
+//        $idempotencyKey = hash('sha256', $user->id . $amount . $result['merchant_transaction_id']);
+
         $transaction = WalletTransaction::create([
             'user_id' => $user->id,
             'wallet_id' => $wallet->id,
@@ -164,6 +167,8 @@ class WalletController extends Controller
             'payment_link' => $result['payment_link'],
             'qr_code' => $result['qr_code'],
             'ndc' => $result['ndc'],
+//            'idempotency_key' => $idempotencyKey,
+//            'expires_at' => now()->addHours(24),
         ]);
 
         return response()->json([
@@ -176,34 +181,28 @@ class WalletController extends Controller
                 'payment_id' => $result['id'],
                 'amount' => $amount,
                 'currency' => $currency,
-                'expires_in' => '24 hours'
+//                'expires_at' => $transaction->expires_at->toIso8601String()
             ]
         ], 200);
     }
 
     /**
      * Handle shopper result (redirect back from payment page)
-     * This is called when user completes/cancels payment
-     *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\RedirectResponse
      */
     public function handleShopperResult(Request $request)
     {
-
         $paymentId = $request->input('id');
         $resourcePath = $request->input('resourcePath');
 
         Log::info('Payment callback received', [
             'payment_id' => $paymentId,
             'resource_path' => $resourcePath,
-            'all_params' => $request->all()
+            'ip' => $request->ip()
         ]);
 
         if (!$paymentId && !$resourcePath) {
             return $this->redirectToApp($request, 'failed', 'Invalid payment callback');
         }
-
 
         $transaction = WalletTransaction::where('payment_id', $paymentId)->first();
 
@@ -212,11 +211,16 @@ class WalletController extends Controller
             return $this->redirectToApp($request, 'failed', 'Transaction not found');
         }
 
+        // Check if transaction expired
+        if ($transaction->expires_at && $transaction->expires_at->isPast()) {
+            $transaction->update(['status' => 'expired']);
+            return $this->redirectToApp($request, 'failed', 'Payment link has expired');
+        }
 
+        // Get payment status
         if ($resourcePath) {
             $paymentStatus = $this->getPaymentStatusFromResourcePath($resourcePath);
         } else {
-
             $paymentStatus = $this->paymentService->getPaymentStatus($paymentId);
         }
 
@@ -227,55 +231,56 @@ class WalletController extends Controller
         $resultCode = $paymentStatus['result']['code'];
 
         if ($this->paymentService->isSuccessfulPayment($resultCode)) {
+            // Prevent double processing with database lock
+            return DB::transaction(function () use ($transaction, $paymentStatus, $request) {
+                // Re-fetch with lock
+                $transaction = WalletTransaction::where('id', $transaction->id)
+                    ->lockForUpdate()
+                    ->first();
 
+                if ($transaction->status === 'completed') {
+                    return $this->redirectToApp($request, 'success', 'Payment already processed', [
+                        'transaction_id' => $transaction->id,
+                        'amount' => $transaction->amount
+                    ]);
+                }
 
-            if ($transaction->status === 'completed') {
-                return $this->redirectToApp($request, 'success', 'Payment already processed', [
+                $transaction->update([
+                    'status' => 'completed',
+                    'gateway_response' => $paymentStatus,
+                    'completed_at' => now()
+                ]);
+
+                // Update wallet balance
+                $transaction->wallet->increment('balance', $transaction->amount);
+
+                // Send email to moderators
+                try {
+                    $this->sendPaymentSuccessEmailToModerator($transaction);
+                } catch (\Exception $e) {
+                    Log::error('Failed to send payment success email', [
+                        'transaction_id' => $transaction->id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+
+                Log::info('Wallet charged successfully', [
+                    'user_id' => $transaction->user_id,
                     'transaction_id' => $transaction->id,
                     'amount' => $transaction->amount
                 ]);
-            }
 
-            $transaction->update([
-                'status' => 'completed',
-                'gateway_response' => $paymentStatus,
-                'completed_at' => now()
-            ]);
-
-
-            $user = $transaction->user;
-
-            $transaction->wallet->update([
-                'balance' => $transaction->wallet->balance + $transaction->amount
-            ]);
-
-
-            // send email to moderators
-            try {
-                $this->sendPaymentSuccessEmailToModerator($transaction);
-            } catch (\Exception $e) {
-                Log::error('Failed to send payment success email to moderator', [
-                    'transaction_id' => $transaction->id,
-                    'error' => $e->getMessage()
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Wallet charged successfully',
+                    'data' => [
+                        'transaction_id' => $transaction->id,
+                        'amount' => $transaction->amount,
+                        'currency' => $transaction->currency,
+                        'wallet_balance' => $transaction->wallet->fresh()->balance
+                    ]
                 ]);
-            }
-
-            Log::info('Wallet charged successfully', [
-                'user_id' => $user->id,
-                'transaction_id' => $transaction->id,
-                'amount' => $transaction->amount
-            ]);
-
-            return response()->json( [
-                'success'   => true,
-                'message'   => 'Wallet charged successfully',
-                'data'      => [
-                    'transaction_id' => $transaction->id,
-                    'amount' => $transaction->amount,
-                    'currency' => $transaction->currency,
-                    'wallet_balance' => $transaction->wallet->balance
-                ]
-            ]);
+            });
         }
 
         // Payment failed or pending
@@ -288,50 +293,179 @@ class WalletController extends Controller
 
         $message = $paymentStatus['result']['description'] ?? 'Payment ' . $status;
 
-//        ----------    working if from view    ----------------
-//        return $this->redirectToApp($request, $status, $message, [
-//            'transaction_id' => $transaction->id,
-//            'code' => $resultCode
-//        ]);
-
         return response()->json([
+            'success' => false,
             'message' => $message,
-            'transaction' => $transaction,
+            'transaction' => [
+                'id' => $transaction->id,
+                'status' => $status,
+                'code' => $resultCode
+            ]
         ]);
     }
 
     /**
+     * Handle webhook with signature verification
+     */
+    public function handleWebhook(Request $request)
+    {
+        // Verify webhook signature
+//        if (!$this->verifyWebhookSignature($request)) {
+//            Log::warning('Invalid webhook signature', [
+//                'ip' => $request->ip(),
+//                'payload' => $request->all()
+//            ]);
+//            return response()->json(['status' => 'invalid_signature'], 403);
+//        }
+
+
+        Log::info('Payment webhook received', [
+            'payload' => $request->all(),
+            'ip' => $request->ip()
+        ]);
+
+        $paymentId = $request->input('id');
+
+        if (!$paymentId) {
+            return response()->json(['status' => 'error'], 400);
+        }
+
+        // Idempotency check - prevent duplicate processing
+        $webhookId = $request->header('X-Webhook-Id') ?? $paymentId;
+        $cacheKey = "webhook_processed_{$webhookId}";
+
+//        if (Cache::has($cacheKey)) {
+//            Log::info('Webhook already processed (idempotency)', ['webhook_id' => $webhookId]);
+//            return response()->json(['status' => 'already_processed'], 200);
+//        }
+
+        // Find transaction
+        $transaction = WalletTransaction::where('payment_id', $paymentId)->first();
+
+        if (!$transaction) {
+            Log::warning('Webhook: Transaction not found', ['payment_id' => $paymentId]);
+            return response()->json(['status' => 'not_found'], 404);
+        }
+
+        // Don't reprocess completed transactions
+        if ($transaction->status === 'completed') {
+            Cache::put($cacheKey, true, 86400); // Cache for 24 hours
+            return response()->json(['status' => 'already_processed'], 200);
+        }
+
+        $resultCode = $request->input('result.code');
+
+        if ($this->paymentService->isSuccessfulPayment($resultCode)) {
+            // Use database transaction for atomicity
+            DB::transaction(function () use ($transaction, $request) {
+                // Lock the transaction row
+                $transaction = WalletTransaction::where('id', $transaction->id)
+                    ->lockForUpdate()
+                    ->first();
+
+                // Double-check status after lock
+                if ($transaction->status === 'completed') {
+                    return;
+                }
+
+                $transaction->update([
+                    'status' => 'completed',
+                    'gateway_response' => $request->all(),
+                    'completed_at' => now()
+                ]);
+
+                // Update wallet balance
+                $transaction->wallet->increment('balance', $transaction->amount);
+
+                // Send email notification
+                try {
+                    $this->sendPaymentSuccessEmailToModerator($transaction);
+                } catch (\Exception $e) {
+                    Log::error('Webhook: Failed to send email', [
+                        'transaction_id' => $transaction->id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            });
+
+            // Mark webhook as processed
+            Cache::put($cacheKey, true, 86400);
+
+            Log::info('Webhook: Wallet charged successfully', [
+                'transaction_id' => $transaction->id,
+                'amount' => $transaction->amount
+            ]);
+
+            return response()->json(['status' => 'success'], 200);
+        }
+
+        // Payment failed
+        $transaction->update([
+            'status' => 'failed',
+            'gateway_response' => $request->all()
+        ]);
+
+        Cache::put($cacheKey, true, 86400);
+
+        return response()->json(['status' => 'failed'], 200);
+    }
+
+    /**
+     * Verify webhook signature for security
+     */
+    protected function verifyWebhookSignature(Request $request): bool
+    {
+        $webhookSecret = config('services.afs_payment_gateway.webhook_secret');
+
+        if (!$webhookSecret) {
+            Log::error('Webhook secret not configured');
+            return false;
+        }
+
+        // Get signature from header (adjust header name based on AFS documentation)
+        $receivedSignature = $request->header('X-Signature') ?? $request->header('X-AFS-Signature');
+
+        if (!$receivedSignature) {
+            Log::warning('No signature header found in webhook');
+            return false;
+        }
+
+        // Get raw request body
+        $payload = $request->getContent();
+
+        // Calculate expected signature using HMAC SHA-256
+        $expectedSignature = hash_hmac('sha256', $payload, $webhookSecret);
+
+        // Use timing-safe comparison
+        return hash_equals($expectedSignature, $receivedSignature);
+    }
+
+    /**
      * Get payment status using resourcePath from callback
-     *
-     * @param string $resourcePath
-     * @return array|null
      */
     protected function getPaymentStatusFromResourcePath($resourcePath)
     {
         try {
-            // Build the full URL: baseUrl + resourcePath
-            $baseUrl = 'https://eu-test.oppwa.com';
-            $statusUrl = $baseUrl . $resourcePath;
+            $baseUrl = config('services.afs_payment_gateway.url');
+            $statusUrl = rtrim($baseUrl, '/v1/paybylink') . $resourcePath;
 
-            Log::info('Checking payment via resourcePath', [
-                'url' => $statusUrl
-            ]);
+            Log::info('Checking payment via resourcePath', ['url' => $statusUrl]);
 
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . config('services.payment_gateway.auth_token'),
-            ])->get($statusUrl, [
-                'entityId' => config('services.payment_gateway.entity_id')
-            ]);
+            $response = Http::timeout(10)
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . config('services.afs_payment_gateway.auth_token'),
+                ])
+                ->get($statusUrl, [
+                    'entityId' => config('services.afs_payment_gateway.entity_id')
+                ]);
 
             $data = $response->json();
 
-            Log::info('Payment status from resourcePath', [
-                'response' => $data
-            ]);
+            Log::info('Payment status from resourcePath', ['response' => $data]);
 
             return $data;
         } catch (\Exception $e) {
-            Log::error('Payment status check via resourcePath error', [
+            Log::error('Payment status check error', [
                 'resource_path' => $resourcePath,
                 'error' => $e->getMessage()
             ]);
@@ -341,17 +475,9 @@ class WalletController extends Controller
 
     /**
      * Redirect to mobile app with payment result
-     *
-     * @param Request $request
-     * @param string $status
-     * @param string $message
-     * @param array $data
-     * @return \Illuminate\Http\RedirectResponse|\Illuminate\View\View
      */
     protected function redirectToApp($request, $status, $message, $data = [])
     {
-        // For mobile app deep linking
-        // Format: yourapp://payment/result?status=success&message=...&data=...
         $scheme = config('app.mobile_scheme', 'yourapp');
 
         $params = [
@@ -365,7 +491,7 @@ class WalletController extends Controller
 
         $deepLink = $scheme . '://payment/result?' . http_build_query($params);
 
-        // If it's a web request, show a simple page
+        // If web request, redirect to admin panel
         if (!$request->expectsJson() && !str_contains($request->userAgent() ?? '', 'Mobile')) {
             return redirect()->route('admins.companies.index')->with([
                 'status' => $status,
@@ -379,14 +505,13 @@ class WalletController extends Controller
 
     /**
      * Get transaction status
-     *
-     * @param int $transactionId
-     * @return \Illuminate\Http\JsonResponse
      */
     public function getTransactionStatus($transactionId)
     {
+        $user = auth()->user();
+
         $transaction = WalletTransaction::where('id', $transactionId)
-            ->where('user_id', auth()->id())
+            ->where('user_id', $user->id)
             ->first();
 
         if (!$transaction) {
@@ -406,19 +531,17 @@ class WalletController extends Controller
                 'payment_link' => $transaction->payment_link,
                 'created_at' => $transaction->created_at,
                 'completed_at' => $transaction->completed_at,
+                'expires_at' => $transaction->expires_at,
             ]
         ], 200);
     }
 
     /**
      * Get user wallet transactions history
-     *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
      */
     public function getTransactionHistory(Request $request)
     {
-        $perPage = $request->input('per_page', 15);
+        $perPage = min($request->input('per_page', 15), 100); // Max 100 per page
 
         $transactions = WalletTransaction::where('user_id', auth()->id())
             ->orderBy('created_at', 'desc')
@@ -432,9 +555,6 @@ class WalletController extends Controller
 
     /**
      * Determine transaction status based on result code
-     *
-     * @param string $code
-     * @return string
      */
     protected function determineTransactionStatus($code)
     {
@@ -452,66 +572,8 @@ class WalletController extends Controller
         return 'failed';
     }
 
-
-    public function handleWebhook(Request $request)
-    {
-        Log::info('Payment webhook received', [
-            'payload' => $request->all()
-        ]);
-
-        $paymentId = $request->input('id');
-
-        if (!$paymentId) {
-            return response()->json(['status' => 'error'], 400);
-        }
-
-        // Find transaction
-        $transaction = WalletTransaction::where('payment_id', $paymentId)->first();
-
-        if (!$transaction) {
-            Log::warning('Webhook: Transaction not found', ['payment_id' => $paymentId]);
-            return response()->json(['status' => 'not_found'], 404);
-        }
-
-        // Don't reprocess completed transactions
-        if ($transaction->status === 'completed') {
-            return response()->json(['status' => 'already_processed'], 200);
-        }
-
-        $resultCode = $request->input('result.code');
-
-        if ($this->paymentService->isSuccessfulPayment($resultCode)) {
-            // Update transaction
-            $transaction->update([
-                'status' => 'completed',
-                'gateway_response' => $request->all(),
-                'completed_at' => now()
-            ]);
-
-            // Update user wallet
-            $user = $transaction->user;
-            $user->increment('wallet_balance', $transaction->amount);
-
-            Log::info('Webhook: Wallet charged successfully', [
-                'user_id' => $user->id,
-                'transaction_id' => $transaction->id,
-                'amount' => $transaction->amount
-            ]);
-
-            return response()->json(['status' => 'success'], 200);
-        }
-
-        // Payment failed
-        $transaction->update([
-            'status' => 'failed',
-            'gateway_response' => $request->all()
-        ]);
-
-        return response()->json(['status' => 'failed'], 200);
-    }
-
     /**
-     * Send payment success email to moderator
+     * Send payment success email to moderators
      */
     private function sendPaymentSuccessEmailToModerator(WalletTransaction $transaction)
     {
@@ -525,22 +587,22 @@ class WalletController extends Controller
         $moderators = $company->moderators()->where('status', 'active')->get();
 
         if ($moderators->isEmpty()) {
-            Log::warning('No active moderators found for company', ['company_id' => $company->id]);
+            Log::warning('No active moderators found', ['company_id' => $company->id]);
             return;
         }
 
         foreach ($moderators as $moderator) {
             try {
-                Mail::to($moderator->email)->sendNow(new WalletChargeSuccessMail($moderator, $transaction, $company));
-                Log::info('Payment success email sent to moderator', [
+                Mail::to($moderator->email)
+                    ->queue(new WalletChargeSuccessMail($moderator, $transaction, $company));
+
+                Log::info('Payment success email queued', [
                     'moderator_id' => $moderator->id,
-                    'moderator_email' => $moderator->email,
                     'transaction_id' => $transaction->id
                 ]);
             } catch (\Exception $e) {
-                Log::error('Failed to send email to moderator', [
+                Log::error('Failed to queue email', [
                     'moderator_id' => $moderator->id,
-                    'moderator_email' => $moderator->email,
                     'error' => $e->getMessage()
                 ]);
             }
