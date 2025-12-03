@@ -54,6 +54,12 @@ class WalletTransaction extends Model
      */
     public function scopeFilter(Builder $query, array $filters)
     {
+        if (!empty($filters['company_id'])) {
+            $query->whereHas('wallet.company', function ($query) use ($filters) {
+                $query->where('id', $filters['company_id']);
+            });
+        }
+
         if (!empty($filters['user_id'])) {
             $query->where('user_id', $filters['user_id']);
         }

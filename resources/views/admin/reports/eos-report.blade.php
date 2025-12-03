@@ -368,7 +368,7 @@
         });
 
         // Quick filter buttons
-        $('.quick-filter').on('click', function() {
+        $('.quick-filter').on('click', function () {
             var days = $(this).data('days');
             var endDate = new Date();
             var startDate = new Date();
@@ -379,7 +379,7 @@
         });
 
         // Auto-close modal after applying filters
-        $('#filterForm').on('submit', function() {
+        $('#filterForm').on('submit', function () {
             $('#filterModal').modal('hide');
         });
 
@@ -394,6 +394,7 @@
                     text: '<i class="fa fa-print"></i> {{ __("Print") }}',
                     className: 'btn btn-primary',
                     title: '',
+                    footer: true, // Add this line
                     customize: function (win) {
                         // Apply Cairo font
                         $(win.document.body)
@@ -402,17 +403,22 @@
                             .css('color', '#000')
                             .css('direction', 'ltr');
 
+                        // Calculate totals
+                        var totalNetPay = {{ $eosRecords->sum('net_pay') }};
+                        var totalSalary = {{ $eosRecords->sum(function($eo) { return $eo->user->salary ?? 0; }) }};
+                        var totalLeaves = {{ $eosRecords->sum(function($eo) { return $eo->user->leaves()->count() ?? 0; }) }};
+                        var totalRecords = {{ $eosRecords->count() }};
+
                         // Add custom header
                         $(win.document.body).prepend(`
-                            <div style="text-align:center; margin-bottom:25px; font-family: 'Cairo', sans-serif;">
-                                <h2 style="margin:0; font-family: 'Cairo', sans-serif; color: #007bff;">{{ config('app.name') }}</h2>
-                                <p style="margin:0; font-family: 'Cairo', sans-serif; font-size: 14pt; font-weight: bold;">{{ __("End of Service Report") }}</p>
-                                <hr style="border-top:2px solid #007bff; width:80%; margin:10px auto;">
-                                <p style="font-size:11pt; margin:5px 0;">{{ __("Generated on") }}: ${new Date().toLocaleDateString()}</p>
-                                <p style="font-size:10pt; margin:5px 0; color: #666;">{{ __("Total Records") }}: {{ $eosRecords->count() }}</p>
-                                <p style="font-size:10pt; margin:5px 0; color: #666;">{{ __("Total Net Pay") }}: AED {{ number_format($eosRecords->sum('net_pay'), 2) }}</p>
-                            </div>
-                        `);
+                    <div style="text-align:center; margin-bottom:25px; font-family: 'Cairo', sans-serif;">
+                        <h2 style="margin:0; font-family: 'Cairo', sans-serif; color: #007bff;">{{ config('app.name') }}</h2>
+                        <p style="margin:0; font-family: 'Cairo', sans-serif; font-size: 14pt; font-weight: bold;">{{ __("End of Service Report") }}</p>
+                        <hr style="border-top:2px solid #007bff; width:80%; margin:10px auto;">
+                        <p style="font-size:11pt; margin:5px 0;">{{ __("Generated on") }}: ${new Date().toLocaleDateString()}</p>
+                        <p style="font-size:10pt; margin:5px 0; color: #666;">{{ __("Total Records") }}: ${totalRecords}</p>
+                    </div>
+                `);
 
                         // Style the table for printing
                         $(win.document.body).find('table')
@@ -426,7 +432,7 @@
                                 'border': '2px solid #000'
                             });
 
-                        // Style table headers with bold text and distinctive borders
+                        // Style table headers
                         $(win.document.body).find('thead th')
                             .css({
                                 'background-color': 'transparent',
@@ -447,56 +453,80 @@
                                 'border': '1px solid #ddd'
                             });
 
-                        // Style the Net Pay column to make it stand out
-                        $(win.document.body).find('td:last-child')
+                        // Add a totals row at the bottom of the table
+                        var tfoot = `
+                    <tfoot>
+                        <tr style="background-color: #f8f9fa; font-weight: bold; border-top: 3px double #007bff;">
+                            <td colspan="5" style="text-align: right; padding: 8px; border: 1px solid #ddd;">{{ __("TOTALS:") }}</td>
+                            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">${formatNumber(totalSalary)}</td>
+                            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">${formatNumber(totalLeaves)}</td>
+                            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold; color: #007bff;">AED ${formatNumber(totalNetPay)}</td>
+                        </tr>
+                    </tfoot>
+                `;
+
+                        $(win.document.body).find('table').append(tfoot);
+
+                        // Style the footer
+                        $(win.document.body).find('tfoot td')
                             .css({
-                                'font-weight': 'bold',
-                                'color': '#000'
+                                'font-family': '"Cairo", sans-serif',
+                                'padding': '8px',
+                                'border': '1px solid #ddd',
+                                'font-weight': 'bold'
                             });
 
                         // Add CSS for print
                         var printStyle = `
-                            <style type="text/css" media="print">
-                                @media print {
-                                    body {
-                                        font-family: "Cairo", sans-serif !important;
-                                        color: #000 !important;
-                                        direction: ltr !important;
-                                    }
-                                    thead th {
-                                        background-color: transparent !important;
-                                        color: #000000 !important;
-                                        font-weight: bold !important;
-                                        border: 2px solid #000000 !important;
-                                        border-bottom: 3px solid #007bff !important;
-                                    }
-                                    table {
-                                        border-collapse: collapse !important;
-                                        width: 100% !important;
-                                        border: 2px solid #000 !important;
-                                    }
-                                    th, td {
-                                        border: 1px solid #ddd !important;
-                                    }
-                                    .table-bordered {
-                                        border: 2px solid #000 !important;
-                                    }
-                                    td:last-child {
-                                        font-weight: bold !important;
-                                        color: #000 !important;
-                                    }
-                                }
-                            </style>
-                        `;
+                    <style type="text/css" media="print">
+                        @media print {
+                            body {
+                                font-family: "Cairo", sans-serif !important;
+                                color: #000 !important;
+                                direction: ltr !important;
+                            }
+                            thead th {
+                                background-color: transparent !important;
+                                color: #000000 !important;
+                                font-weight: bold !important;
+                                border: 2px solid #000000 !important;
+                                border-bottom: 3px solid #007bff !important;
+                            }
+                            table {
+                                border-collapse: collapse !important;
+                                width: 100% !important;
+                                border: 2px solid #000 !important;
+                            }
+                            th, td {
+                                border: 1px solid #ddd !important;
+                            }
+                            .table-bordered {
+                                border: 2px solid #000 !important;
+                            }
+                            td:last-child {
+                                font-weight: bold !important;
+                                color: #000 !important;
+                            }
+                            tfoot tr:first-child {
+                                background-color: #f8f9fa !important;
+                                border-top: 3px double #007bff !important;
+                            }
+                            tfoot td {
+                                font-weight: bold !important;
+                            }
+                        }
+                    </style>
+                `;
                         $(win.document.head).append(printStyle);
 
                         // Add footer with generation info
                         $(win.document.body).append(`
-                            <div style="text-align:center; margin-top:30px; font-size:10pt; font-family: 'Cairo', sans-serif;">
-                                <hr style="border-top:1px solid #ccc; margin:20px 0;">
-                                <p>{{ __("Generated by") }}: {{ Auth::user()->name ?? 'System' }}</p>
-                            </div>
-                        `);
+                    <div style="text-align:center; margin-top:30px; font-size:10pt; font-family: 'Cairo', sans-serif;">
+                        <hr style="border-top:1px solid #ccc; margin:20px 0;">
+                        <p>{{ __("Generated by") }}: {{ Auth::user()->name ?? 'System' }}</p>
+                        <p style="color: #666; font-size: 9pt;">{{ __("Printed on") }}: ${new Date().toLocaleString()}</p>
+                    </div>
+                `);
 
                         // Remove DataTables default elements from print
                         $(win.document.body).find('.dataTables_length, .dataTables_filter, .dataTables_info, .dataTables_paginate, .dt-buttons')
@@ -508,7 +538,31 @@
                     text: '<i class="fa fa-file-excel"></i> {{ __("Export Excel") }}',
                     className: 'btn btn-success',
                     title: 'End_of_Service_Report_{{ now()->format("Y_m_d") }}',
-                    message: 'Filtered Results'
+                    message: 'Filtered Results',
+                    footer: true, // Add footer to Excel export too
+                    customize: function (xlsx) {
+                        var sheet = xlsx.xl.worksheets['sheet1.xml'];
+
+                        // Add totals row to Excel export
+                        var totalRecords = {{ $eosRecords->count() }};
+                        var totalNetPay = {{ $eosRecords->sum('net_pay') }};
+                        var totalSalary = {{ $eosRecords->sum(function($eo) { return $eo->user->salary ?? 0; }) }};
+                        var totalLeaves = {{ $eosRecords->sum(function($eo) { return $eo->user->leaves()->count() ?? 0; }) }};
+
+                        // Find the last row number
+                        var rows = $('row', sheet);
+                        var lastRowNum = rows.length;
+
+                        // Add totals row
+                        var totalsRow = '<row r="' + (lastRowNum + 1) + '">' +
+                            '<c r="A' + (lastRowNum + 1) + '" t="inlineStr"><is><t>{{ __("TOTALS") }}</t></is></c>' +
+                            '<c r="F' + (lastRowNum + 1) + '"><v>' + totalSalary + '</v></c>' +
+                            '<c r="G' + (lastRowNum + 1) + '"><v>' + totalLeaves + '</v></c>' +
+                            '<c r="H' + (lastRowNum + 1) + '"><v>' + totalNetPay + '</v></c>' +
+                            '</row>';
+
+                        $('sheetData', sheet).append(totalsRow);
+                    }
                 }
             ],
             columnDefs: [
@@ -528,12 +582,108 @@
                     previous: "{{ __('Previous') }}",
                     next: "{{ __('Next') }}"
                 }
+            },
+            // Add footer callback for DataTables display
+            footerCallback: function (row, data, start, end, display) {
+                var api = this.api();
+
+                // Calculate totals - properly parse the data
+                var totalNetPay = api
+                    .column(7, { page: 'current' })
+                    .data()
+                    .reduce(function (a, b) {
+                        // Clean the value by removing commas and non-numeric characters
+                        var cleanA = typeof a === 'string' ? a.replace(/[^0-9.-]+/g, '') : a;
+                        var cleanB = typeof b === 'string' ? b.replace(/[^0-9.-]+/g, '') : b;
+                        return parseFloat(cleanA || 0) + parseFloat(cleanB || 0);
+                    }, 0);
+
+                var totalSalary = api
+                    .column(5, { page: 'current' })
+                    .data()
+                    .reduce(function (a, b) {
+                        var cleanA = typeof a === 'string' ? a.replace(/[^0-9.-]+/g, '') : a;
+                        var cleanB = typeof b === 'string' ? b.replace(/[^0-9.-]+/g, '') : b;
+                        return parseFloat(cleanA || 0) + parseFloat(cleanB || 0);
+                    }, 0);
+
+                var totalLeaves = api
+                    .column(6, { page: 'current' })
+                    .data()
+                    .reduce(function (a, b) {
+                        var cleanA = typeof a === 'string' ? a.replace(/[^0-9.-]+/g, '') : a;
+                        var cleanB = typeof b === 'string' ? b.replace(/[^0-9.-]+/g, '') : b;
+                        return parseFloat(cleanA || 0) + parseFloat(cleanB || 0);
+                    }, 0);
+
+                // Update footer in the main table view
+                if ($(this).find('tfoot').length === 0) {
+                    $(this).append('<tfoot><tr></tr></tfoot>');
+                }
+
+                var footerRow = $(this).find('tfoot tr');
+                footerRow.html(`
+        <td colspan="5" class="text-end"><strong>{{ __("Page Totals:") }}</strong></td>
+        <td class="text-center"><strong>${formatNumber(totalSalary)}</strong></td>
+        <td class="text-center"><strong>${formatNumber(totalLeaves)}</strong></td>
+        <td class="text-center"><strong>AED ${formatNumber(totalNetPay)}</strong></td>
+    `);
+            },
+            drawCallback: function (settings) {
+                // Add global totals in the table info area
+                var globalTotalNetPay = {{ $eosRecords->sum('net_pay') }};
+                var globalTotalRecords = {{ $eosRecords->count() }};
+                var info = $(this).closest('.dataTables_wrapper').find('.dataTables_info');
+
+                // Add global totals to the info text
+                info.html(info.html() +
+                    ' <span class="text-primary">| {{ __("Total Net Pay:") }} <strong>AED ' +
+                    formatNumber(globalTotalNetPay) + '</strong></span>');
             }
         });
+
+        function formatNumber(number) {
+            return parseFloat(number).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+        }
     });
+
+
+
+
 </script>
 
 <style>
+    /* Print-specific styles for footer */
+    @media print {
+        #eosTable tfoot {
+            background-color: #f8f9fa !important;
+            -webkit-print-color-adjust: exact;
+        }
+
+        #eosTable tfoot td {
+            border-top: 3px double #007bff !important;
+            font-weight: bold !important;
+        }
+    }
+
+    /* Add to your existing CSS */
+    #eosTable tfoot {
+        background-color: #f8f9fa;
+        font-weight: bold;
+    }
+
+    #eosTable tfoot td {
+        border-top: 2px solid #007bff !important;
+        text-align: center;
+        vertical-align: middle;
+        padding: 10px !important;
+    }
+
+    #eosTable tfoot td:last-child {
+        color: #007bff;
+        font-size: 1.1em;
+    }
+
     #eosTable thead th {
         text-align: center;
         vertical-align: middle;

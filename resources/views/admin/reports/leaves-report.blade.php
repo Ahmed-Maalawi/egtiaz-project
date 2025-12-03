@@ -371,6 +371,21 @@
 
 <script>
     $(document).ready(function () {
+        // Helper function to format numbers
+        function formatNumber(number) {
+            if (number === null || number === undefined || isNaN(number)) {
+                return '0';
+            }
+            // If it's already a formatted string with commas, remove them first
+            if (typeof number === 'string') {
+                number = number.replace(/[^0-9.-]/g, '');
+            }
+            return parseFloat(number).toLocaleString('en-US', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            });
+        }
+
         // Initialize Select2
         $('.select2-filter').select2({
             placeholder: "{{ __('Select User') }}",
@@ -413,6 +428,7 @@
                     text: '<i class="fa fa-print"></i> {{ __("Print") }}',
                     className: 'btn btn-primary',
                     title: '',
+                    footer: true,
                     customize: function (win) {
                         // Apply Cairo font
                         $(win.document.body)
@@ -421,6 +437,13 @@
                             .css('color', '#000')
                             .css('direction', 'ltr');
 
+                        // Calculate totals for print
+                        var totalLeaves = {{ $leaves->count() }};
+                        var totalDays = {{ $leaves->sum('days_taken') }};
+                        var pendingCount = {{ $leaves->where('status', 'pending')->count() }};
+                        var approvedCount = {{ $leaves->where('status', 'approved')->count() }};
+                        var rejectedCount = {{ $leaves->where('status', 'rejected')->count() }};
+
                         // Add custom header
                         $(win.document.body).prepend(`
                             <div style="text-align:center; margin-bottom:25px; font-family: 'Cairo', sans-serif;">
@@ -428,8 +451,23 @@
                                 <p style="margin:0; font-family: 'Cairo', sans-serif; font-size: 14pt; font-weight: bold;">{{ __("Leaves Report") }}</p>
                                 <hr style="border-top:2px solid #007bff; width:80%; margin:10px auto;">
                                 <p style="font-size:11pt; margin:5px 0;">{{ __("Generated on") }}: ${new Date().toLocaleDateString()}</p>
-                                <p style="font-size:10pt; margin:5px 0; color: #666;">{{ __("Total Records") }}: {{ $leaves->count() }}</p>
-                                <p style="font-size:10pt; margin:5px 0; color: #666;">{{ __("Total Leave Days") }}: {{ $leaves->sum('days_taken') }}</p>
+                                <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin: 10px 0; font-size: 10pt;">
+                                    <div style="display: inline-block; margin: 0 15px;">
+                                        <strong>{{ __("Total Records") }}:</strong> ${totalLeaves}
+                                    </div>
+                                    <div style="display: inline-block; margin: 0 15px;">
+                                        <strong>{{ __("Total Days") }}:</strong> ${formatNumber(totalDays)}
+                                    </div>
+                                    <div style="display: inline-block; margin: 0 15px;">
+                                        <strong>{{ __("Pending") }}:</strong> ${pendingCount}
+                                    </div>
+                                    <div style="display: inline-block; margin: 0 15px;">
+                                        <strong>{{ __("Approved") }}:</strong> ${approvedCount}
+                                    </div>
+                                    <div style="display: inline-block; margin: 0 15px;">
+                                        <strong>{{ __("Rejected") }}:</strong> ${rejectedCount}
+                                    </div>
+                                </div>
                             </div>
                         `);
 
@@ -466,6 +504,34 @@
                                 'border': '1px solid #ddd'
                             });
 
+                        // Add totals row at the bottom of the table
+                        var tfoot = `
+                            <tfoot>
+                                <tr style="background-color: #f8f9fa; font-weight: bold; border-top: 3px double #007bff;">
+                                    <td colspan="3" style="text-align: right; padding: 8px; border: 1px solid #ddd; font-family: 'Cairo', sans-serif;">
+                                        {{ __("TOTALS:") }}
+                        </td>
+                        <td style="padding: 8px; border: 1px solid #ddd; font-family: 'Cairo', sans-serif; font-weight: bold; color: #007bff;">
+${formatNumber(totalDays)}
+                                    </td>
+                                    <td colspan="6" style="text-align: center; padding: 8px; border: 1px solid #ddd; font-family: 'Cairo', sans-serif;">
+                                        {{ __("Summary") }}: {{ __("Total Records") }}: ${totalLeaves} | {{ __("Total Days") }}: ${formatNumber(totalDays)}
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        `;
+
+                        $(win.document.body).find('table').append(tfoot);
+
+                        // Style the footer
+                        $(win.document.body).find('tfoot td')
+                            .css({
+                                'font-family': '"Cairo", sans-serif',
+                                'padding': '8px',
+                                'border': '1px solid #ddd',
+                                'font-weight': 'bold'
+                            });
+
                         // Add CSS for print
                         var printStyle = `
                             <style type="text/css" media="print">
@@ -493,6 +559,16 @@
                                     .table-bordered {
                                         border: 2px solid #000 !important;
                                     }
+                                    tfoot tr:first-child {
+                                        background-color: #f8f9fa !important;
+                                        border-top: 3px double #007bff !important;
+                                    }
+                                    tfoot td {
+                                        font-weight: bold !important;
+                                    }
+                                    tfoot td:nth-child(4) {
+                                        color: #007bff !important;
+                                    }
                                 }
                             </style>
                         `;
@@ -503,6 +579,7 @@
                             <div style="text-align:center; margin-top:30px; font-size:10pt; font-family: 'Cairo', sans-serif;">
                                 <hr style="border-top:1px solid #ccc; margin:20px 0;">
                                 <p>{{ __("Generated by") }}: {{ Auth::user()->name ?? 'System' }}</p>
+                                <p style="color: #666; font-size: 9pt;">{{ __("Printed on") }}: ${new Date().toLocaleString()}</p>
                             </div>
                         `);
 
@@ -516,13 +593,44 @@
                     text: '<i class="fa fa-file-excel"></i> {{ __("Export Excel") }}',
                     className: 'btn btn-success',
                     title: 'Leaves_Report_{{ now()->format("Y_m_d") }}',
-                    message: 'Filtered Results'
+                    message: 'Filtered Results',
+                    footer: true,
+                    customize: function (xlsx) {
+                        var sheet = xlsx.xl.worksheets['sheet1.xml'];
+
+                        // Add totals to Excel export
+                        var totalLeaves = {{ $leaves->count() }};
+                        var totalDays = {{ $leaves->sum('days_taken') }};
+
+                        // Find the last row number
+                        var rows = $('row', sheet);
+                        var lastRowNum = rows.length;
+
+                        // Add totals row
+                        var totalsRow = '<row r="' + (lastRowNum + 1) + '">' +
+                            '<c r="A' + (lastRowNum + 1) + '" t="inlineStr"><is><t>{{ __("TOTALS") }}</t></is></c>' +
+                            '<c r="D' + (lastRowNum + 1) + '"><v>' + totalDays + '</v></c>' +
+                            '<c r="I' + (lastRowNum + 1) + '" t="inlineStr"><is><t>' + totalLeaves + ' {{ __("records") }}</t></is></c>' +
+                            '</row>';
+
+                        $('sheetData', sheet).append(totalsRow);
+                    }
                 }
             ],
             columnDefs: [
                 {
                     className: "text-center",
                     targets: "_all"
+                },
+                // Add render function for days_taken column (index 3)
+                {
+                    targets: [3], // Days Taken column
+                    render: function(data, type, row) {
+                        if (type === 'display' || type === 'filter') {
+                            return formatNumber(data);
+                        }
+                        return data;
+                    }
                 }
             ],
             language: {
@@ -536,12 +644,193 @@
                     previous: "{{ __('Previous') }}",
                     next: "{{ __('Next') }}"
                 }
+            },
+            // Add footer callback for DataTables display
+            footerCallback: function (row, data, start, end, display) {
+                var api = this.api();
+
+                // Helper function to parse values
+                var intVal = function (i) {
+                    return typeof i === 'string' ?
+                        i.replace(/[^\d.-]/g, '') * 1 :
+                        typeof i === 'number' ?
+                            i : 0;
+                };
+
+                // Calculate total days taken (column 3, index 3)
+                var daysTotal = api
+                    .column(3, { page: 'current' })
+                    .data()
+                    .reduce(function (a, b) {
+                        return intVal(a) + intVal(b);
+                    }, 0);
+
+                // Calculate total records on current page
+                var pageTotal = api.page.info().recordsDisplay;
+
+                // Update footer in the main table view
+                if ($(api.table().footer()).length === 0) {
+                    $(api.table()).append('<tfoot><tr></tr></tfoot>');
+                }
+
+                var footerRow = $(api.table().footer()).find('tr');
+                footerRow.html(`
+                    <td colspan="3" class="text-end" style="font-family: 'Cairo', sans-serif;">
+                        <strong>{{ __("Page Totals:") }}</strong>
+                    </td>
+                    <td class="text-center" style="font-family: 'Cairo', sans-serif; font-weight: bold; color: #007bff;">
+                        <strong>${formatNumber(daysTotal)}</strong>
+                    </td>
+                    <td colspan="6" class="text-center" style="font-family: 'Cairo', sans-serif;">
+                        <small class="text-muted">{{ __("Page Records") }}: ${pageTotal} | {{ __("Total Days") }}: ${formatNumber(daysTotal)}</small>
+                    </td>
+                `);
+            },
+            drawCallback: function (settings) {
+                // Calculate global totals from original data
+                var globalTotalDays = {{ $leaves->sum('days_taken') }};
+                var globalTotalRecords = {{ $leaves->count() }};
+                var info = $(this).closest('.dataTables_wrapper').find('.dataTables_info');
+
+                // Remove any existing total info
+                var infoText = info.html();
+                if (infoText.includes('|')) {
+                    info.html(infoText.split('|')[0]);
+                }
+
+                // Add global totals to the info text
+                info.html(info.html() +
+                    ' <span class="text-primary">| {{ __("Total Days") }}: <strong>' +
+                    formatNumber(globalTotalDays) + '</strong></span>' +
+                    ' <span class="text-success">| {{ __("Total Records") }}: <strong>' +
+                    formatNumber(globalTotalRecords) + '</strong></span>');
             }
         });
     });
 </script>
 
 <style>
+    #leavesTable thead th {
+        text-align: center;
+        vertical-align: middle;
+        font-family: 'Cairo', sans-serif;
+        background-color: #007bff;
+        color: #ffffff;
+    }
+
+    #leavesTable tbody td {
+        font-family: 'Cairo', sans-serif;
+    }
+
+    #leavesTable tfoot {
+        background-color: #f8f9fa;
+        font-weight: bold;
+    }
+
+    #leavesTable tfoot td {
+        border-top: 2px solid #007bff !important;
+        text-align: center;
+        vertical-align: middle;
+        padding: 10px !important;
+        font-family: 'Cairo', sans-serif;
+    }
+
+    #leavesTable tfoot td:nth-child(4) {
+        color: #007bff;
+        font-size: 1.1em;
+    }
+
+    .dataTables_length, .dataTables_filter {
+        margin-bottom: 1rem;
+        font-family: 'Cairo', sans-serif;
+    }
+
+    .dt-buttons {
+        margin-bottom: 1rem;
+    }
+
+    .dt-buttons .btn {
+        margin-right: 5px;
+        font-family: 'Cairo', sans-serif;
+    }
+
+    body {
+        font-family: 'Cairo', sans-serif;
+    }
+
+    /* Modal Styling */
+    .modal-lg {
+        max-width: 800px;
+    }
+
+    .form-label {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .select2-container--default .select2-selection--single {
+        border: 1px solid #ced4da;
+        height: 38px;
+        padding: 5px;
+        border-radius: 0.375rem;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 36px;
+    }
+
+    .active-filters {
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 0.375rem;
+        border: 1px solid #e9ecef;
+    }
+
+    .active-filters .badge {
+        font-size: 0.75rem;
+        padding: 0.35em 0.65em;
+    }
+
+    .quick-filter {
+        margin-right: 5px;
+        margin-bottom: 5px;
+    }
+
+    .flatpickr-input {
+        background-color: white;
+    }
+
+    /* Statistics Card */
+    .card.bg-light .card-body {
+        padding: 0.75rem;
+    }
+
+    /* Ensure DataTables elements use Cairo font */
+    .dataTables_wrapper .dataTables_length,
+    .dataTables_wrapper .dataTables_filter,
+    .dataTables_wrapper .dataTables_info,
+    .dataTables_wrapper .dataTables_paginate {
+        font-family: 'Cairo', sans-serif;
+    }
+
+    /* Print-specific styles for footer */
+    @media print {
+        #leavesTable tfoot {
+            background-color: #f8f9fa !important;
+            -webkit-print-color-adjust: exact;
+        }
+
+        #leavesTable tfoot td {
+            border-top: 3px double #007bff !important;
+            font-weight: bold !important;
+        }
+
+        #leavesTable tfoot td:nth-child(4) {
+            color: #007bff !important;
+        }
+    }
+
     #leavesTable thead th {
         text-align: center;
         vertical-align: middle;

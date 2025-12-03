@@ -313,7 +313,30 @@
 
     <script>
         $(document).ready(function () {
-             // Initialize Select2 for modal dropdowns
+            // Helper function to format numbers
+            function formatNumber(number) {
+                if (number === null || number === undefined || isNaN(number)) {
+                    return '0.00';
+                }
+                // If it's already a formatted string with commas, remove them first
+                if (typeof number === 'string') {
+                    number = number.replace(/[^0-9.-]/g, '');
+                }
+                return parseFloat(number).toLocaleString('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+            }
+
+            // Helper function to parse values
+            function intVal(i) {
+                return typeof i === 'string' ?
+                    i.replace(/[^\d.-]/g, '') * 1 :
+                    typeof i === 'number' ?
+                        i : 0;
+            }
+
+            // Initialize Select2 for modal dropdowns
             $('#payment_account_id').select2({
                 placeholder: "{{ __('Select Account') }}",
                 allowClear: true,
@@ -328,7 +351,7 @@
                 allowInput: true
             });
 
-             // Quick filter buttons
+            // Quick filter buttons
             $('.quick-filter').on('click', function() {
                 var days = $(this).data('days');
                 var endDate = new Date();
@@ -340,7 +363,7 @@
             });
 
             // Initialize DataTable with search enabled
-            $('#transactionsTable').DataTable({
+            var table = $('#transactionsTable').DataTable({
                 paging: false, // Disable DataTables pagination since we use Laravel's
                 info: false,   // Disable info display
                 searching: true, // Enable client-side search
@@ -351,39 +374,425 @@
                         extend: 'print',
                         text: '<i class="fa fa-print"></i> {{ __("Print") }}',
                         className: 'btn btn-primary btn-sm',
-                        title: '{{ __("Transactions Report") }}'
+                        title: '',
+                        footer: true,
+                        customize: function (win) {
+                            // Calculate totals for print
+                            var totalTransactions = {{ $transactions->total() }};
+                            var totalAmount = {{ $transactions->sum('amount') }};
+                            var completedTransactions = {{ $transactions->where('status', 'completed')->count() }};
+                            var pendingTransactions = {{ $transactions->where('status', 'pending')->count() }};
+                            var failedTransactions = {{ $transactions->where('status', 'failed')->count() }};
+
+                            // Apply styling
+                            $(win.document.body)
+                                .css('font-family', '"Cairo", sans-serif')
+                                .css('font-size', '12pt')
+                                .css('color', '#000')
+                                .css('direction', 'ltr');
+
+                            // Add custom header
+                            $(win.document.body).prepend(`
+                            <div style="text-align:center; margin-bottom:25px; font-family: 'Cairo', sans-serif;">
+                                <h2 style="margin:0; font-family: 'Cairo', sans-serif; color: #007bff;">{{ config('app.name') }}</h2>
+                                <p style="margin:0; font-family: 'Cairo', sans-serif; font-size: 14pt; font-weight: bold;">{{ __("Transactions Report") }}</p>
+                                <hr style="border-top:2px solid #007bff; width:80%; margin:10px auto;">
+                                <p style="font-size:11pt; margin:5px 0;">{{ __("Generated on") }}: ${new Date().toLocaleDateString()}</p>
+                                <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin: 10px 0; font-size: 10pt;">
+                                    <div style="display: inline-block; margin: 0 15px;">
+                                        <strong>{{ __("Total Transactions") }}:</strong> ${totalTransactions}
+                                    </div>
+                                    <div style="display: inline-block; margin: 0 15px;">
+                                        <strong>{{ __("Total Amount") }}:</strong> ${formatNumber(totalAmount)}
+                                    </div>
+                                    <div style="display: inline-block; margin: 0 15px;">
+                                        <strong>{{ __("Completed") }}:</strong> ${completedTransactions}
+                                    </div>
+                                    <div style="display: inline-block; margin: 0 15px;">
+                                        <strong>{{ __("Pending") }}:</strong> ${pendingTransactions}
+                                    </div>
+                                    <div style="display: inline-block; margin: 0 15px;">
+                                        <strong>{{ __("Failed") }}:</strong> ${failedTransactions}
+                                    </div>
+                                </div>
+                            </div>
+                        `);
+
+                            // Style the table for printing
+                            $(win.document.body).find('table')
+                                .addClass('table table-bordered')
+                                .css({
+                                    'border-collapse': 'collapse',
+                                    'font-family': '"Cairo", sans-serif',
+                                    'font-size': '10pt',
+                                    'width': '100%',
+                                    'text-align': 'center',
+                                    'border': '2px solid #000'
+                                });
+
+                            // Style table headers
+                            $(win.document.body).find('thead th')
+                                .css({
+                                    'background-color': 'transparent',
+                                    'color': '#000',
+                                    'font-family': '"Cairo", sans-serif',
+                                    'font-weight': 'bold',
+                                    'font-size': '11pt',
+                                    'padding': '8px',
+                                    'border': '2px solid #000',
+                                    'border-bottom': '3px solid #007bff'
+                                });
+
+                            // Style table cells
+                            $(win.document.body).find('td')
+                                .css({
+                                    'font-family': '"Cairo", sans-serif',
+                                    'padding': '6px',
+                                    'border': '1px solid #ddd'
+                                });
+
+                            // Style the Amount column to make it stand out
+                            $(win.document.body).find('td:nth-child(5), td:nth-child(6), td:nth-child(7)')
+                                .css({
+                                    'font-weight': 'bold',
+                                    'color': '#000'
+                                });
+
+                            // Add totals row at the bottom of the table
+                            var tfoot = `
+                            <tfoot>
+                                <tr style="background-color: #f8f9fa; font-weight: bold; border-top: 3px double #007bff;">
+                                    <td colspan="4" style="text-align: right; padding: 8px; border: 1px solid #ddd; font-family: 'Cairo', sans-serif;">
+                                        {{ __("TOTALS:") }}
+                            </td>
+                            <td style="padding: 8px; border: 1px solid #ddd; font-family: 'Cairo', sans-serif; font-weight: bold; color: #007bff;">
+${formatNumber(totalAmount)}
+                                    </td>
+                                    <td style="padding: 8px; border: 1px solid #ddd; font-family: 'Cairo', sans-serif; font-weight: bold;">
+                                        -
+                                    </td>
+                                    <td style="padding: 8px; border: 1px solid #ddd; font-family: 'Cairo', sans-serif; font-weight: bold;">
+                                        -
+                                    </td>
+                                    <td colspan="4" style="text-align: center; padding: 8px; border: 1px solid #ddd; font-family: 'Cairo', sans-serif;">
+                                        {{ __("Summary") }}: {{ __("Total Transactions") }}: ${totalTransactions} | {{ __("Total Amount") }}: ${formatNumber(totalAmount)}
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        `;
+
+                            $(win.document.body).find('table').append(tfoot);
+
+                            // Style the footer
+                            $(win.document.body).find('tfoot td')
+                                .css({
+                                    'font-family': '"Cairo", sans-serif',
+                                    'padding': '8px',
+                                    'border': '1px solid #ddd',
+                                    'font-weight': 'bold'
+                                });
+
+                            // Add CSS for print
+                            var printStyle = `
+                            <style type="text/css" media="print">
+                                @media print {
+                                    body {
+                                        font-family: "Cairo", sans-serif !important;
+                                        color: #000 !important;
+                                        direction: ltr !important;
+                                    }
+                                    thead th {
+                                        background-color: transparent !important;
+                                        color: #000000 !important;
+                                        font-weight: bold !important;
+                                        border: 2px solid #000000 !important;
+                                        border-bottom: 3px solid #007bff !important;
+                                    }
+                                    table {
+                                        border-collapse: collapse !important;
+                                        width: 100% !important;
+                                        border: 2px solid #000 !important;
+                                    }
+                                    th, td {
+                                        border: 1px solid #ddd !important;
+                                    }
+                                    .table-bordered {
+                                        border: 2px solid #000 !important;
+                                    }
+                                    td:nth-child(5), td:nth-child(6), td:nth-child(7) {
+                                        font-weight: bold !important;
+                                        color: #000 !important;
+                                    }
+                                    tfoot tr:first-child {
+                                        background-color: #f8f9fa !important;
+                                        border-top: 3px double #007bff !important;
+                                    }
+                                    tfoot td {
+                                        font-weight: bold !important;
+                                    }
+                                    tfoot td:nth-child(5) {
+                                        color: #007bff !important;
+                                    }
+                                }
+                            </style>
+                        `;
+                            $(win.document.head).append(printStyle);
+
+                            // Add footer with generation info
+                            $(win.document.body).append(`
+                            <div style="text-align:center; margin-top:30px; font-size:10pt; font-family: 'Cairo', sans-serif;">
+                                <hr style="border-top:1px solid #ccc; margin:20px 0;">
+                                <p>{{ __("Generated by") }}: {{ Auth::user()->name ?? 'System' }}</p>
+                                <p style="color: #666; font-size: 9pt;">{{ __("Printed on") }}: ${new Date().toLocaleString()}</p>
+                            </div>
+                        `);
+
+                            // Remove DataTables default elements from print
+                            $(win.document.body).find('.dataTables_length, .dataTables_filter, .dataTables_info, .dataTables_paginate, .dt-buttons')
+                                .remove();
+                        }
                     },
                     {
                         extend: 'excelHtml5',
                         text: '<i class="fa fa-file-excel"></i> {{ __("Export Excel") }}',
                         className: 'btn btn-success btn-sm',
-                        title: 'Transactions_Report_{{ now()->format("Y_m_d") }}'
+                        title: 'Transactions_Report_{{ now()->format("Y_m_d") }}',
+                        message: 'Filtered Results',
+                        footer: true,
+                        customize: function (xlsx) {
+                            var sheet = xlsx.xl.worksheets['sheet1.xml'];
+
+                            // Add totals to Excel export
+                            var totalTransactions = {{ $transactions->total() }};
+                            var totalAmount = {{ $transactions->sum('amount') }};
+
+                            // Find the last row number
+                            var rows = $('row', sheet);
+                            var lastRowNum = rows.length;
+
+                            // Add totals row
+                            var totalsRow = '<row r="' + (lastRowNum + 1) + '">' +
+                                '<c r="A' + (lastRowNum + 1) + '" t="inlineStr"><is><t>{{ __("TOTALS") }}</t></is></c>' +
+                                '<c r="E' + (lastRowNum + 1) + '"><v>' + totalAmount + '</v></c>' +
+                                '<c r="K' + (lastRowNum + 1) + '" t="inlineStr"><is><t>' + totalTransactions + ' {{ __("transactions") }}</t></is></c>' +
+                                '</row>';
+
+                            $('sheetData', sheet).append(totalsRow);
+                        }
                     }
-                ]
+                ],
+                columnDefs: [
+                    {
+                        className: "text-center",
+                        targets: "_all"
+                    },
+                    // Add render functions for numeric columns (Amount, Balance Before, Balance After)
+                    {
+                        targets: [4, 5, 6], // Amount (5), Balance Before (6), Balance After (7) columns
+                        render: function(data, type, row) {
+                            if (type === 'display' || type === 'filter') {
+                                return formatNumber(data);
+                            }
+                            return data;
+                        }
+                    }
+                ],
+                language: {
+                    search: "{{ __('Search:') }}",
+                    lengthMenu: "{{ __('Show _MENU_ records per page') }}",
+                    zeroRecords: "{{ __('No matching records found') }}",
+                    info: "{{ __('Showing _START_ to _END_ of _TOTAL_ records') }}",
+                    infoEmpty: "{{ __('No records available') }}",
+                    infoFiltered: "{{ __('(filtered from _MAX_ total records)') }}",
+                    paginate: {
+                        previous: "{{ __('Previous') }}",
+                        next: "{{ __('Next') }}"
+                    }
+                },
+                // Add footer callback for DataTables display
+                footerCallback: function (row, data, start, end, display) {
+                    var api = this.api();
+
+                    // Calculate total amount (column 4, index 4)
+                    var amountTotal = api
+                        .column(4, { page: 'current' })
+                        .data()
+                        .reduce(function (a, b) {
+                            return intVal(a) + intVal(b);
+                        }, 0);
+
+                    // Calculate balance before total (column 5, index 5)
+                    var balanceBeforeTotal = api
+                        .column(5, { page: 'current' })
+                        .data()
+                        .reduce(function (a, b) {
+                            return intVal(a) + intVal(b);
+                        }, 0);
+
+                    // Calculate balance after total (column 6, index 6)
+                    var balanceAfterTotal = api
+                        .column(6, { page: 'current' })
+                        .data()
+                        .reduce(function (a, b) {
+                            return intVal(a) + intVal(b);
+                        }, 0);
+
+                    // Calculate total records on current page
+                    var pageTotal = api.rows({ page: 'current' }).count();
+
+                    // Count statuses on current page
+                    var statusData = api.column(7).data().toArray();
+                    var completedCount = statusData.filter(status => status.includes('completed') || status.includes('Completed')).length;
+                    var pendingCount = statusData.filter(status => status.includes('pending') || status.includes('Pending')).length;
+                    var failedCount = statusData.filter(status => status.includes('failed') || status.includes('Failed')).length;
+
+                    // Update footer in the main table view
+                    if ($(api.table().footer()).length === 0) {
+                        $(api.table()).append('<tfoot><tr></tr></tfoot>');
+                    }
+
+                    var footerRow = $(api.table().footer()).find('tr');
+                    footerRow.html(`
+                    <td colspan="4" class="text-end" style="font-family: 'Cairo', sans-serif;">
+                        <strong>{{ __("Page Totals:") }}</strong>
+                    </td>
+                    <td class="text-center" style="font-family: 'Cairo', sans-serif; font-weight: bold; color: #007bff;">
+                        <strong>${formatNumber(amountTotal)}</strong>
+                    </td>
+                    <td class="text-center" style="font-family: 'Cairo', sans-serif; font-weight: bold;">
+                        <strong>${formatNumber(balanceBeforeTotal)}</strong>
+                    </td>
+                    <td class="text-center" style="font-family: 'Cairo', sans-serif; font-weight: bold;">
+                        <strong>${formatNumber(balanceAfterTotal)}</strong>
+                    </td>
+                    <td colspan="4" class="text-center" style="font-family: 'Cairo', sans-serif;">
+                        <small class="text-muted">{{ __("Page Records") }}: ${pageTotal} | {{ __("Completed") }}: ${completedCount} | {{ __("Pending") }}: ${pendingCount} | {{ __("Failed") }}: ${failedCount}</small>
+                    </td>
+                `);
+                },
+                drawCallback: function (settings) {
+                    // Calculate global totals from original data
+                    var globalTotalAmount = {{ $transactions->sum('amount') }};
+                    var globalTotalRecords = {{ $transactions->total() }};
+                    var globalCompletedRecords = {{ $transactions->where('status', 'completed')->count() }};
+                    var globalPendingRecords = {{ $transactions->where('status', 'pending')->count() }};
+                    var globalFailedRecords = {{ $transactions->where('status', 'failed')->count() }};
+
+                    // Find or create the info element
+                    var infoElement = $(this).closest('.dataTables_wrapper').find('.dataTables_info');
+                    if (infoElement.length === 0) {
+                        // Create info element if it doesn't exist
+                        infoElement = $('<div class="dataTables_info"></div>');
+                        $(this).closest('.dataTables_wrapper').find('.dataTables_filter').after(infoElement);
+                    }
+
+                    // Add global totals to the info text
+                    infoElement.html(
+                        '<span class="text-primary">{{ __("Total Amount") }}: <strong>' + formatNumber(globalTotalAmount) + '</strong></span>' +
+                        ' | <span class="text-success">{{ __("Completed") }}: <strong>' + globalCompletedRecords + '</strong></span>' +
+                        ' | <span class="text-warning">{{ __("Pending") }}: <strong>' + globalPendingRecords + '</strong></span>' +
+                        ' | <span class="text-danger">{{ __("Failed") }}: <strong>' + globalFailedRecords + '</strong></span>' +
+                        ' | <span class="text-muted">{{ __("Total Records") }}: <strong>' + globalTotalRecords + '</strong></span>'
+                    );
+                }
             });
         });
     </script>
+
     <style>
+        /* Add Cairo font import */
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap');
+
+        #transactionsTable thead th {
+            text-align: center;
+            vertical-align: middle;
+            font-family: 'Cairo', sans-serif;
+            background-color: #007bff;
+            color: #ffffff;
+        }
+
+        #transactionsTable tbody td {
+            font-family: 'Cairo', sans-serif;
+        }
+
+        #transactionsTable tfoot {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+
+        #transactionsTable tfoot td {
+            border-top: 2px solid #007bff !important;
+            text-align: center;
+            vertical-align: middle;
+            padding: 10px !important;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        #transactionsTable tfoot td:nth-child(5) {
+            color: #007bff;
+            font-size: 1.1em;
+        }
+
+        #transactionsTable tbody td:nth-child(5),
+        #transactionsTable tbody td:nth-child(6),
+        #transactionsTable tbody td:nth-child(7) {
+            font-weight: bold;
+            color: #007bff;
+        }
+
         .active-filters {
             padding: 10px;
             background: #f8f9fa;
             border-radius: 0.375rem;
             border: 1px solid #e9ecef;
         }
+
         .active-filters .badge {
             font-size: 0.75rem;
             padding: 0.35em 0.65em;
         }
+
         .select2-container {
             width: 100% !important;
         }
+
         .dataTables_wrapper .dataTables_filter {
             float: right;
             text-align: right;
             margin-bottom: 10px;
         }
+
         .dataTables_wrapper .dataTables_filter input {
             margin-left: 0.5em;
+        }
+
+        .dataTables_info {
+            margin-top: 10px;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        /* Print-specific styles for footer */
+        @media print {
+            #transactionsTable tfoot {
+                background-color: #f8f9fa !important;
+                -webkit-print-color-adjust: exact;
+            }
+
+            #transactionsTable tfoot td {
+                border-top: 3px double #007bff !important;
+                font-weight: bold !important;
+            }
+
+            #transactionsTable tfoot td:nth-child(5) {
+                color: #007bff !important;
+            }
+
+            #transactionsTable tbody td:nth-child(5),
+            #transactionsTable tbody td:nth-child(6),
+            #transactionsTable tbody td:nth-child(7) {
+                font-weight: bold !important;
+                color: #000 !important;
+            }
         }
     </style>
 </x-dashboard.main-layout>

@@ -284,26 +284,24 @@ class ReportController extends Controller
 
     public function getWalletTransactionReport(Request $request)
     {
-        $filters = $request->only(['user_id', 'status', 'from_date', 'to_date']);
+        $filters = $request->only(['user_id', 'company_id', 'status', 'from_date', 'to_date']);
 
         $baseQuery = WalletTransaction::with('user', 'wallet.company', 'employeeStage.employee', 'employeeStage.stage')
             ->filter($filters)
             ->latest();
 
-        // Get all transactions
         $transactions = (clone $baseQuery)->get();
 
-        // Debit transactions: where type = 'stage_payment'
         $debitTransactions = (clone $baseQuery)
             ->where('type', 'stage_payment')
             ->get();
 
-        // Credit transactions: where type is null (wallet charges)
         $creditTransactions = (clone $baseQuery)
             ->whereNull('type')
             ->get();
 
         $users = User::all();
+        $companies = Company::all();
         $totalAmount = $transactions->sum('amount');
         $totalCredit = $creditTransactions->sum('amount');
         $totalDebit = $debitTransactions->sum('amount');
@@ -313,6 +311,7 @@ class ReportController extends Controller
             'debitTransactions',
             'creditTransactions',
             'users',
+            'companies',
             'totalAmount',
             'totalCredit',
             'totalDebit'
