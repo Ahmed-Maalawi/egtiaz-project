@@ -538,30 +538,80 @@
                     text: '<i class="fa fa-file-excel"></i> {{ __("Export Excel") }}',
                     className: 'btn btn-success',
                     title: 'End_of_Service_Report_{{ now()->format("Y_m_d") }}',
-                    message: 'Filtered Results',
-                    footer: true, // Add footer to Excel export too
-                    customize: function (xlsx) {
-                        var sheet = xlsx.xl.worksheets['sheet1.xml'];
-
-                        // Add totals row to Excel export
+                    messageTop: function() {
                         var totalRecords = {{ $eosRecords->count() }};
                         var totalNetPay = {{ $eosRecords->sum('net_pay') }};
                         var totalSalary = {{ $eosRecords->sum(function($eo) { return $eo->user->salary ?? 0; }) }};
                         var totalLeaves = {{ $eosRecords->sum(function($eo) { return $eo->user->leaves()->count() ?? 0; }) }};
 
-                        // Find the last row number
+                        return 'Report Generated: ' + new Date().toLocaleDateString() + '\n' +
+                            'Total Records: ' + totalRecords + '\n' +
+                            'Total Salary: ' + formatNumber(totalSalary) + '\n' +
+                            'Total Leaves: ' + totalLeaves + '\n' +
+                            'Total Net Pay: AED ' + formatNumber(totalNetPay);
+                    },
+                    footer: true,
+                    exportOptions: {
+                        columns: ':visible',
+                        format: {
+                            body: function(data, row, column, node) {
+                                return data.replace(/<[^>]*>/g, '').trim();
+                            }
+                        }
+                    },
+                    customize: function (xlsx) {
+                        var sheet = xlsx.xl.worksheets['sheet1.xml'];
                         var rows = $('row', sheet);
-                        var lastRowNum = rows.length;
+
+                        var totalRecords = {{ $eosRecords->count() }};
+                        var totalNetPay = {{ $eosRecords->sum('net_pay') }};
+                        var totalSalary = {{ $eosRecords->sum(function($eo) { return $eo->user->salary ?? 0; }) }};
+                        var totalLeaves = {{ $eosRecords->sum(function($eo) { return $eo->user->leaves()->count() ?? 0; }) }};
+
+                        var lastRowNum = rows.length + 1;
+
+                        // Add empty row
+                        $('sheetData', sheet).append('<row r="' + lastRowNum + '"></row>');
+                        lastRowNum++;
 
                         // Add totals row
-                        var totalsRow = '<row r="' + (lastRowNum + 1) + '">' +
-                            '<c r="A' + (lastRowNum + 1) + '" t="inlineStr"><is><t>{{ __("TOTALS") }}</t></is></c>' +
-                            '<c r="F' + (lastRowNum + 1) + '"><v>' + totalSalary + '</v></c>' +
-                            '<c r="G' + (lastRowNum + 1) + '"><v>' + totalLeaves + '</v></c>' +
-                            '<c r="H' + (lastRowNum + 1) + '"><v>' + totalNetPay + '</v></c>' +
+                        // Columns: # | Name | Join Date | Leave Date | Years | Salary | Leaves | Net Pay
+                        var totalsRow = '<row r="' + lastRowNum + '">' +
+                            '<c r="A' + lastRowNum + '" t="inlineStr"><is><t><b>TOTALS</b></t></is></c>' +
+                            '<c r="B' + lastRowNum + '"></c>' +
+                            '<c r="C' + lastRowNum + '"></c>' +
+                            '<c r="D' + lastRowNum + '"></c>' +
+                            '<c r="E' + lastRowNum + '"></c>' +
+                            '<c r="F' + lastRowNum + '"><v>' + totalSalary + '</v></c>' +
+                            '<c r="G' + lastRowNum + '"><v>' + totalLeaves + '</v></c>' +
+                            '<c r="H' + lastRowNum + '"><v>' + totalNetPay + '</v></c>' +
                             '</row>';
 
                         $('sheetData', sheet).append(totalsRow);
+
+                        // Set column widths
+                        var colWidths = [
+                            { wch: 5 },   // #
+                            { wch: 25 },  // Name
+                            { wch: 12 },  // Join Date
+                            { wch: 12 },  // Leave Date
+                            { wch: 12 },  // Years
+                            { wch: 15 },  // Salary
+                            { wch: 10 },  // Leaves
+                            { wch: 18 }   // Net Pay
+                        ];
+
+                        var cols = $('cols', sheet);
+                        if (cols.length === 0) {
+                            cols = $('<cols/>');
+                            $('sheetData', sheet).before(cols);
+                        }
+
+                        cols.empty();
+                        for (var i = 0; i < colWidths.length; i++) {
+                            cols.append('<col min="' + (i + 1) + '" max="' + (i + 1) +
+                                '" width="' + colWidths[i].wch + '" customWidth="1"/>');
+                        }
                     }
                 }
             ],

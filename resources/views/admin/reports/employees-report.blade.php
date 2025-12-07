@@ -141,6 +141,7 @@
     <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
@@ -353,27 +354,84 @@
                         text: '<i class="fa fa-file-excel"></i> {{ __("Excel") }}',
                         className: 'btn btn-success',
                         title: 'Employees_Report_{{ now()->format("Y_m_d") }}',
-                        message: 'Filtered Results',
-                        footer: true,
-                        customize: function (xlsx) {
-                            var sheet = xlsx.xl.worksheets['sheet1.xml'];
-
-                            // Add totals to Excel export
+                        messageTop: function() {
                             var totalEmployees = {{ $employees->count() }};
                             var totalSalary = {{ $employees->sum('salary') }};
+                            var activeEmployees = {{ $employees->where('status', 'active')->count() }};
+                            var inactiveEmployees = {{ $employees->where('status', 'inactive')->count() }};
 
-                            // Find the last row number
+                            return 'Report Generated: ' + new Date().toLocaleDateString() + '\n' +
+                                'Total Employees: ' + totalEmployees + '\n' +
+                                'Active: ' + activeEmployees + ' | Inactive: ' + inactiveEmployees + '\n' +
+                                'Total Salary: AED ' + formatNumber(totalSalary);
+                        },
+                        footer: true,
+                        exportOptions: {
+                            columns: ':visible',
+                            format: {
+                                body: function(data, row, column, node) {
+                                    // Remove HTML tags and badges
+                                    var cleanData = data.replace(/<[^>]*>/g, '').trim();
+                                    // Remove extra spaces
+                                    cleanData = cleanData.replace(/\s+/g, ' ');
+                                    return cleanData;
+                                }
+                            }
+                        },
+                        customize: function (xlsx) {
+                            var sheet = xlsx.xl.worksheets['sheet1.xml'];
                             var rows = $('row', sheet);
-                            var lastRowNum = rows.length;
+
+                            var totalEmployees = {{ $employees->count() }};
+                            var totalSalary = {{ $employees->sum('salary') }};
+                            var activeEmployees = {{ $employees->where('status', 'active')->count() }};
+                            var inactiveEmployees = {{ $employees->where('status', 'inactive')->count() }};
+
+                            var lastRowNum = rows.length + 1;
+
+                            // Add empty row
+                            $('sheetData', sheet).append('<row r="' + lastRowNum + '"></row>');
+                            lastRowNum++;
 
                             // Add totals row
-                            var totalsRow = '<row r="' + (lastRowNum + 1) + '">' +
-                                '<c r="A' + (lastRowNum + 1) + '" t="inlineStr"><is><t>{{ __("TOTALS") }}</t></is></c>' +
-                                '<c r="F' + (lastRowNum + 1) + '"><v>' + totalSalary + '</v></c>' +
-                                '<c r="H' + (lastRowNum + 1) + '" t="inlineStr"><is><t>' + totalEmployees + ' {{ __("employees") }}</t></is></c>' +
+                            // Columns: # | Name | Company | Iqama Type | Upcoming Stage | Salary | Expired Date | Status
+                            var totalsRow = '<row r="' + lastRowNum + '">' +
+                                '<c r="A' + lastRowNum + '" t="inlineStr"><is><t><b>TOTALS</b></t></is></c>' +
+                                '<c r="B' + lastRowNum + '"></c>' +
+                                '<c r="C' + lastRowNum + '"></c>' +
+                                '<c r="D' + lastRowNum + '"></c>' +
+                                '<c r="E' + lastRowNum + '"></c>' +
+                                '<c r="F' + lastRowNum + '"><v>' + totalSalary + '</v></c>' +
+                                '<c r="G' + lastRowNum + '"></c>' +
+                                '<c r="H' + lastRowNum + '" t="inlineStr"><is><t><b>Total: ' + totalEmployees + ' | Active: ' + activeEmployees + ' | Inactive: ' + inactiveEmployees + '</b></t></is></c>' +
                                 '</row>';
 
                             $('sheetData', sheet).append(totalsRow);
+
+                            // Set column widths for better readability
+                            var colWidths = [
+                                { wch: 5 },   // # (A)
+                                { wch: 25 },  // Name (B)
+                                { wch: 20 },  // Company (C)
+                                { wch: 15 },  // Iqama Type (D)
+                                { wch: 20 },  // Upcoming Stage (E)
+                                { wch: 15 },  // Salary (F)
+                                { wch: 15 },  // Expired Date (G)
+                                { wch: 12 }   // Status (H)
+                            ];
+
+                            // Add column width definitions
+                            var cols = $('cols', sheet);
+                            if (cols.length === 0) {
+                                cols = $('<cols/>');
+                                $('sheetData', sheet).before(cols);
+                            }
+
+                            cols.empty();
+                            for (var i = 0; i < colWidths.length; i++) {
+                                cols.append('<col min="' + (i + 1) + '" max="' + (i + 1) +
+                                    '" width="' + colWidths[i].wch + '" customWidth="1"/>');
+                            }
                         }
                     }
                 ],

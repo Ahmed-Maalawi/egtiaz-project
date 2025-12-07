@@ -593,27 +593,103 @@ ${formatNumber(totalDays)}
                     text: '<i class="fa fa-file-excel"></i> {{ __("Export Excel") }}',
                     className: 'btn btn-success',
                     title: 'Leaves_Report_{{ now()->format("Y_m_d") }}',
-                    message: 'Filtered Results',
-                    footer: true,
-                    customize: function (xlsx) {
-                        var sheet = xlsx.xl.worksheets['sheet1.xml'];
-
-                        // Add totals to Excel export
+                    messageTop: function() {
                         var totalLeaves = {{ $leaves->count() }};
                         var totalDays = {{ $leaves->sum('days_taken') }};
+                        var pendingCount = {{ $leaves->where('status', 'pending')->count() }};
+                        var approvedCount = {{ $leaves->where('status', 'approved')->count() }};
+                        var rejectedCount = {{ $leaves->where('status', 'rejected')->count() }};
 
-                        // Find the last row number
+                        return 'Report Generated: ' + new Date().toLocaleDateString() + '\n' +
+                            'Total Records: ' + totalLeaves + ' | ' +
+                            'Total Days: ' + totalDays + ' | ' +
+                            'Pending: ' + pendingCount + ' | ' +
+                            'Approved: ' + approvedCount + ' | ' +
+                            'Rejected: ' + rejectedCount;
+                    },
+                    footer: true,
+                    exportOptions: {
+                        columns: ':visible',
+                        format: {
+                            body: function(data, row, column, node) {
+                                // Remove HTML tags and badges
+                                return data.replace(/<[^>]*>/g, '').trim();
+                            }
+                        }
+                    },
+                    customize: function(xlsx) {
+                        var sheet = xlsx.xl.worksheets['sheet1.xml'];
+                        var sSh = xlsx.xl['styles.xml'];
+
+                        // Get all rows
                         var rows = $('row', sheet);
-                        var lastRowNum = rows.length;
+                        var lastRowNum = rows.length + 1;
 
-                        // Add totals row
-                        var totalsRow = '<row r="' + (lastRowNum + 1) + '">' +
-                            '<c r="A' + (lastRowNum + 1) + '" t="inlineStr"><is><t>{{ __("TOTALS") }}</t></is></c>' +
-                            '<c r="D' + (lastRowNum + 1) + '"><v>' + totalDays + '</v></c>' +
-                            '<c r="I' + (lastRowNum + 1) + '" t="inlineStr"><is><t>' + totalLeaves + ' {{ __("records") }}</t></is></c>' +
+                        // Calculate totals from visible data
+                        var totalDays = {{ $leaves->sum('days_taken') }};
+                        var totalRecords = {{ $leaves->count() }};
+
+                        // Add empty row
+                        var emptyRow = '<row r="' + lastRowNum + '"></row>';
+                        $('sheetData', sheet).append(emptyRow);
+                        lastRowNum++;
+
+                        // Add totals row with merged cells and styling
+                        var totalsRow = '<row r="' + lastRowNum + '">' +
+                            '<c r="A' + lastRowNum + '" t="inlineStr" s="2"><is><t>TOTALS</t></is></c>' +
+                            '<c r="B' + lastRowNum + '" s="2"></c>' +
+                            '<c r="C' + lastRowNum + '" s="2"></c>' +
+                            '<c r="D' + lastRowNum + '" s="2"><v>' + totalDays + '</v></c>' +
+                            '<c r="E' + lastRowNum + '" s="2"></c>' +
+                            '<c r="F' + lastRowNum + '" s="2"></c>' +
+                            '<c r="G' + lastRowNum + '" s="2"></c>' +
+                            '<c r="H' + lastRowNum + '" s="2"></c>' +
+                            '<c r="I' + lastRowNum + '" s="2"></c>' +
+                            '<c r="J' + lastRowNum + '" t="inlineStr" s="2"><is><t>Total Records: ' + totalRecords + '</t></is></c>' +
                             '</row>';
 
                         $('sheetData', sheet).append(totalsRow);
+
+                        // Style the totals row (bold and background color)
+                        var numFmts = $('numFmts', sSh);
+                        var cellXfs = $('cellXfs', sSh);
+
+                        // Add bold style for totals row
+                        var boldStyle = '<xf numFmtId="0" fontId="2" fillId="5" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"/>';
+                        cellXfs.append(boldStyle);
+
+                        // Merge cells for "TOTALS" label (A to C)
+                        if (!$('mergeCells', sheet).length) {
+                            $('sheetData', sheet).after('<mergeCells count="1"><mergeCell ref="A' + lastRowNum + ':C' + lastRowNum + '"/></mergeCells>');
+                        } else {
+                            var mergeCount = $('mergeCells', sheet).attr('count');
+                            $('mergeCells', sheet).attr('count', parseInt(mergeCount) + 1);
+                            $('mergeCells', sheet).append('<mergeCell ref="A' + lastRowNum + ':C' + lastRowNum + '"/>');
+                        }
+
+                        // Auto-fit columns
+                        var colWidth = [
+                            { wch: 5 },   // #
+                            { wch: 20 },  // User Name
+                            { wch: 15 },  // Leave Type
+                            { wch: 12 },  // Days
+                            { wch: 30 },  // Reason
+                            { wch: 12 },  // From
+                            { wch: 12 },  // To
+                            { wch: 20 },  // Approver
+                            { wch: 15 },  // Date
+                            { wch: 12 }   // Status
+                        ];
+
+                        var cols = $('cols', sheet);
+                        if (cols.length === 0) {
+                            cols = $('<cols/>');
+                            $('sheetData', sheet).before(cols);
+                        }
+
+                        for (var i = 0; i < colWidth.length; i++) {
+                            cols.append('<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + colWidth[i].wch + '" customWidth="1"/>');
+                        }
                     }
                 }
             ],

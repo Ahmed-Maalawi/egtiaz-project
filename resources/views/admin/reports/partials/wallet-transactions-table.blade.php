@@ -27,7 +27,7 @@
             @foreach($transactions as $transaction)
                 <tr>
                     <td>{{ $loop->iteration }}</td>
-                    <td>{{ $transaction->transaction_id ?? 'N/A' }}</td>
+                    <td>{{ $transaction->payment_id ?? 'N/A' }}</td>
                     <td>{{ $transaction->user->name ?? 'N/A' }}</td>
                     @if($showCompany ?? false)
                         <td>{{ $transaction->wallet->company->name ?? 'N/A' }}</td>
@@ -62,9 +62,9 @@
                             {{ ucfirst($transaction->status) }}
                         </span>
                     </td>
-                    <td>{{ $transaction->payment_method ?? 'N/A' }}</td>
+                    <td>{{ $transaction->type == 'stage_payment' ? __('Debit') : __('Credit') }}</td>
                     <td>{{ $transaction->created_at->format('Y-m-d H:i') }}</td>
-                    <td>{{ $transaction->processed_at?->format('Y-m-d H:i') ?? 'N/A' }}</td>
+                    <td>{{ $transaction->completed_at?->format('Y-m-d H:i') ?? '-' }}</td>
                 </tr>
             @endforeach
             </tbody>
